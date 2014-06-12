@@ -12,7 +12,6 @@ SimpleCov.start do
 end
 
 require 'logger'
-require 'active_record'
 require 'database_cleaner'
 require 'goldiloader'
 require 'yaml'
