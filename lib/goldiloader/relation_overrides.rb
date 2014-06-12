@@ -4,7 +4,7 @@ require 'goldiloader/association_helper'
 require 'goldiloader/model_registry'
 
 module Goldiloader
-  module RelationMethods
+  module RelationOverrides
     def exec_queries
       return super if loaded?
 

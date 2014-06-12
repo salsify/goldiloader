@@ -83,10 +83,15 @@ module Goldiloader
         # behavior.
         exists_module = Module.new do
           def exists?
-            any?
+            size > 0
           end
         end
-        association.proxy.proxy_extend(exists_module)
+
+        if ::ActiveRecord::VERSION::MAJOR >= 4
+          association.reader.extend(exists_module)
+        else
+          association.proxy.proxy_extend(exists_module)
+        end
       end
     end
 
@@ -99,7 +104,11 @@ module Goldiloader
       # TODO: Remove Me
       debug(association_path.size) { "Eager loading #{association_path} for #{model_string(models)}" }
 
-      ::ActiveRecord::Associations::Preloader.new(models, [association_name]).run
+      if ::ActiveRecord::VERSION::MAJOR >= 4
+        ::ActiveRecord::Associations::Preloader.new.preload(models, [association_name])
+      else
+        ::ActiveRecord::Associations::Preloader.new(models, [association_name]).run
+      end
 
       # TODO: Remove Me
       debug(association_path.size) do
