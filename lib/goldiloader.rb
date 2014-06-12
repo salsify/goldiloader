@@ -3,10 +3,11 @@
 require 'active_support/all'
 require 'active_record'
 require 'goldiloader/compatibility'
+require 'goldiloader/association_options'
 require 'goldiloader/association_helper'
 require 'goldiloader/relation_methods'
 
-Goldiloader::AssociationHelper.register_association_option
+Goldiloader::AssociationOptions.register
 
 class ActiveRecord::Base
   class << self
