@@ -17,13 +17,13 @@ Gem::Specification.new do |spec|
   spec.test_files    = Dir.glob('spec/**/*')
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'activerecord', ENV.fetch('RAILS_VERSION', ['>= 3.2', '<= 4.1'])
-  spec.add_dependency 'activesupport', ENV.fetch('RAILS_VERSION', ['>= 3.2', '<= 4.1'])
+  spec.add_dependency 'activerecord', ENV.fetch('RAILS_VERSION', '3.2.18')
+  spec.add_dependency 'activesupport', ENV.fetch('RAILS_VERSION', '3.2.18')
 
   spec.add_development_dependency 'coveralls'
   spec.add_development_dependency 'database_cleaner', '>= 1.2'
   spec.add_development_dependency 'rake'
-  spec.add_development_dependency 'rspec', '>= 2.14'
+  spec.add_development_dependency 'rspec', '~> 2'
   spec.add_development_dependency 'simplecov', '~> 0.7.1'
 
   if RUBY_PLATFORM == 'java'
