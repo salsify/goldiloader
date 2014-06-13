@@ -27,8 +27,11 @@ Goldiloader::AssociationOptions.register
 
 ActiveRecord::Associations::Association.class_eval do
 
+  class_attribute :default_auto_include
+  self.default_auto_include = false
+
   def auto_include?
-    options.fetch(:auto_include) { default_auto_include }
+    options.fetch(:auto_include) { self.class.default_auto_include }
   end
 
   def auto_include_context
@@ -38,30 +41,24 @@ ActiveRecord::Associations::Association.class_eval do
 
   private
 
-  def default_auto_include
-    false
-  end
-
   def load_with_auto_include(load_method, *args)
-    unless loaded?
-      if auto_include?
-        Goldiloader::AssociationLoader.load(auto_include_context.model_registry, owner,
-                                            auto_include_context.association_path)
-      else
-        send("#{load_method}_without_auto_include", *args)
-      end
+    if loaded?
+      target
+    elsif auto_include?
+      Goldiloader::AssociationLoader.load(auto_include_context.model_registry, owner,
+                                          auto_include_context.association_path)
+      target
+    else
+      send("#{load_method}_without_auto_include", *args)
     end
-    target
   end
 
 end
 
 ActiveRecord::Associations::SingularAssociation.class_eval do
-  private
+  self.default_auto_include = true
 
-  def default_auto_include
-    true
-  end
+  private
 
   def find_target_with_auto_include(*args)
     load_with_auto_include(:find_target, *args)

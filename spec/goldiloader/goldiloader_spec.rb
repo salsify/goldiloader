@@ -56,8 +56,7 @@ describe Goldiloader do
   end
 
   before do
-    # TODO: Do we need these?
-    [Blog, Post, Tag, User, Group].each do |klass|
+    [Address, Blog, Post, Tag, User, Group].each do |klass|
       allow(klass).to receive(:find_by_sql).and_call_original
     end
 
@@ -81,6 +80,8 @@ describe Goldiloader do
 
     expect(blogs.first.posts.map(&:title)).to match_array(['blog1-post1', 'blog1-post2'])
     expect(blogs.second.posts.map(&:title)).to match_array(['blog2-post1', 'blog2-post2'])
+
+    expect(Post).to have_received(:find_by_sql).once
   end
 
   it "auto eager loads belongs_to associations" do
@@ -99,6 +100,7 @@ describe Goldiloader do
     end
 
     expect(posts.map(&:blog).map(&:name)).to eq(['blog1', 'blog1', 'blog2', 'blog2'])
+    expect(Blog).to have_received(:find_by_sql).once
   end
 
   it "auto eager loads has_one associations" do
@@ -117,6 +119,7 @@ describe Goldiloader do
     end
 
     expect(users.map(&:address).map(&:city)).to match_array(['author1-city', 'author2-city', 'author3-city'])
+    expect(Address).to have_received(:find_by_sql).once
   end
 
   it "auto eager loads nested associations" do
@@ -131,6 +134,7 @@ describe Goldiloader do
     expect(blogs.first.posts.second.author).to eq author2
     expect(blogs.second.posts.first.author).to eq author3
     expect(blogs.second.posts.second.author).to eq author1
+    expect(Post).to have_received(:find_by_sql).once
   end
 
   it "auto eager loads has_many through associations" do
@@ -143,6 +147,7 @@ describe Goldiloader do
 
     expect(blogs.first.authors).to match_array([author1, author2])
     expect(blogs.second.authors).to match_array([author3, author1])
+    expect(User).to have_received(:find_by_sql).once
   end
 
   it "auto eager loads associations when the model is loaded via find" do
@@ -240,35 +245,133 @@ describe Goldiloader do
     end
   end
 
-  it "doesn't auto eager load has_many associations by default" do
-    blogs = Blog.order(:name).to_a
+  context "with default association auto_include configuration" do
 
-    # Force the first blogs first post to load
-    blogs.first.posts_with_default_options.to_a
+    it "doesn't auto eager load has_many associations by default" do
+      blogs = Blog.order(:name).to_a
 
-    blogs.drop(1).each do |blog|
-      expect(blog.association(:posts_with_default_options)).to_not be_loaded
+      # Force the first blogs first post to load
+      blogs.first.posts_with_default_options.to_a
+
+      blogs.drop(1).each do |blog|
+        expect(blog.association(:posts_with_default_options)).to_not be_loaded
+      end
+    end
+
+    it "auto eager loads has_one associations by default" do
+      users = User.order(:name).to_a
+
+      # Force the first user's address to load
+      users.first.address_with_default_options
+
+      users.drop(1).each do |blog|
+        expect(blog.association(:address_with_default_options)).to be_loaded
+      end
+    end
+
+    it "auto eager loads belongs_to associations by default" do
+      posts = Post.order(:title).to_a
+      # Force the first post's blog to load
+      posts.first.blog_with_default_options
+
+      posts.drop(1).each do |blog|
+        expect(blog.association(:blog_with_default_options)).to be_loaded
+      end
     end
   end
 
-  it "auto eager loads has_one associations by default" do
-    users = User.order(:name).to_a
+  context "with default association auto_include configuration" do
 
-    # Force the first user's address to load
-    users.first.address_with_default_options
+    it "doesn't auto eager load has_many associations" do
+      blogs = Blog.order(:name).to_a
 
-    users.drop(1).each do |blog|
-      expect(blog.association(:address_with_default_options)).to be_loaded
+      # Force the first blogs first post to load
+      blogs.first.posts_with_default_options.to_a
+
+      blogs.drop(1).each do |blog|
+        expect(blog.association(:posts_with_default_options)).to_not be_loaded
+      end
+    end
+
+    it "auto eager loads has_one associations" do
+      users = User.order(:name).to_a
+
+      # Force the first user's address to load
+      users.first.address_with_default_options
+
+      users.drop(1).each do |blog|
+        expect(blog.association(:address_with_default_options)).to be_loaded
+      end
+    end
+
+    it "auto eager loads belongs_to associations" do
+      posts = Post.order(:title).to_a
+      # Force the first post's blog to load
+      posts.first.blog_with_default_options
+
+      posts.drop(1).each do |blog|
+        expect(blog.association(:blog_with_default_options)).to be_loaded
+      end
     end
   end
 
-  it "auto eager loads belongs_to associations by default" do
-    posts = Post.order(:title).to_a
-    # Force the first post's blog to load
-    posts.first.blog_with_default_options
+  context "with auto_include disabled" do
 
-    posts.drop(1).each do |blog|
-      expect(blog.association(:blog_with_default_options)).to be_loaded
+    it "doesn't auto eager load has_many associations" do
+      blogs = Blog.order(:name).to_a
+
+      # Force the first blogs first post to load
+      posts = blogs.first.posts_without_auto_include.to_a
+      expect(posts).to match_array Post.where(blog_id: blogs.first.id)
+
+      blogs.drop(1).each do |blog|
+        expect(blog.association(:posts_without_auto_include)).to_not be_loaded
+      end
+    end
+
+    it "doesn't auto eager load has_one associations" do
+      users = User.order(:name).to_a
+
+      # Force the first user's address to load
+      user = users.first
+      address = user.address_without_auto_include
+      expect(address).to eq Address.where(user_id: user.id).first
+
+      users.drop(1).each do |blog|
+        expect(blog.association(:address_without_auto_include)).to_not be_loaded
+      end
+    end
+
+    it "doesn't auto eager load belongs_to associations" do
+      posts = Post.order(:title).to_a
+      # Force the first post's blog to load
+      post = posts.first
+      blog = post.blog_without_auto_include
+      expect(blog).to eq Blog.where(id: post.blog_id).first
+
+      posts.drop(1).each do |blog|
+        expect(blog.association(:blog_without_auto_include)).to_not be_loaded
+      end
+    end
+
+    it "still auto eager loads nested associations" do
+      posts = Post.order(:title).to_a
+      # Force the first post's blog to load
+      blog = posts.first.blog_without_auto_include
+
+      # Load another blogs posts
+      other_blog = posts.last.blog_without_auto_include
+      other_blog.posts.to_a
+
+      blog.posts.first.tags.first
+
+      blog.posts.each do |post|
+        expect(post.association(:tags)).to be_loaded
+      end
+
+      other_blog.posts.each do |post|
+        expect(post.association(:tags)).to_not be_loaded
+      end
     end
   end
 end

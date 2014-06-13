@@ -7,7 +7,7 @@ module Goldiloader
     end
 
     def register_models(models)
-      models.each do |model|
+      Array.wrap(models).each do |model|
         model.auto_include_context = self
         model_registry.register(model, association_path)
       end
