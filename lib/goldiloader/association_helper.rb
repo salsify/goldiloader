@@ -104,7 +104,7 @@ module Goldiloader
       # TODO: Remove Me
       debug(association_path.size) { "Eager loading #{association_path} for #{model_string(models)}" }
 
-      if ::ActiveRecord::VERSION::MAJOR >= 4
+      if ::ActiveRecord::VERSION::MAJOR >= 4.1
         ::ActiveRecord::Associations::Preloader.new.preload(models, [association_name])
       else
         ::ActiveRecord::Associations::Preloader.new(models, [association_name]).run
