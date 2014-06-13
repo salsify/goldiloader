@@ -1,3 +1,5 @@
+# encoding: UTF-8
+
 module Goldiloader
   class ModelRegistry
     def initialize
@@ -10,6 +12,7 @@ module Goldiloader
       @registry[key] << record
     end
 
+    # Returns all models with the same base class loaded from the same association path
     def peers(record, association_path)
       @registry.fetch(registry_key(record, association_path), [])
     end

@@ -68,7 +68,7 @@ end
 
 class Post < ActiveRecord::Base
   belongs_to :blog, auto_include: true
-  belongs_to :blog_with_default_options, class_name: 'Blog'
+  belongs_to :blog_with_default_options, class_name: 'Blog', foreign_key: :blog_id
   belongs_to :author, auto_include: true, class_name: 'User'
   has_many :post_tags, auto_include: true
   has_many :tags, through: :post_tags, auto_include: true

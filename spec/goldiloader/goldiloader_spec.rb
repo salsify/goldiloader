@@ -57,8 +57,9 @@ describe Goldiloader do
 
   before do
     # TODO: Do we need these?
-    Blog.stub(:find_by_sql).and_call_original
-    Post.stub(:find_by_sql).and_call_original
+    [Blog, Post, Tag, User, Group].each do |klass|
+      allow(klass).to receive(:find_by_sql).and_call_original
+    end
 
     ActiveRecord::Base.logger.info('Test setup complete')
   end
@@ -211,8 +212,8 @@ describe Goldiloader do
       expect(user.association(:posts)).to be_loaded
     end
 
-    expect(users.first.posts).to eq author1.posts
-    expect(users.second.posts).to eq author2.posts
+    expect(users.first.posts).to eq Post.where(author_id: author1.id)
+    expect(users.second.posts).to eq Post.where(author_id: author2.id)
   end
 
   it "only auto eager loads associations loaded through the same path" do
@@ -261,8 +262,7 @@ describe Goldiloader do
     end
   end
 
-  # TODO: Fix me
-  xit "auto eager loads belongs_to associations by default" do
+  it "auto eager loads belongs_to associations by default" do
     posts = Post.order(:title).to_a
     # Force the first post's blog to load
     posts.first.blog_with_default_options

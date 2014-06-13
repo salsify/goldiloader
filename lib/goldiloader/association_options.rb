@@ -1,3 +1,5 @@
+# encoding: UTF-8
+
 module Goldiloader
   module AssociationOptions
     extend self
@@ -14,15 +16,7 @@ module Goldiloader
       end
     end
 
-    def auto_include?(association)
-      association.options.fetch(:auto_include) { default_auto_include(association) }
-    end
-
     private
-
-    def default_auto_include(association)
-      !association.is_a?(::ActiveRecord::Associations::CollectionAssociation)
-    end
 
     def collection_association_classes
       # Association.descendants doesn't work well with lazy classloading :(
