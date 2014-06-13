@@ -10,11 +10,6 @@ module Goldiloader
     # Wraps all association methods for the given models to lazily eager load the association
     # for all similar models in the model_registry whenever values are read from the association.
     def extend_associations(model_registry, models, association_path)
-      # TODO: Remove me
-      debug(association_path.size) do
-        "Registering #{model_string(models)} for path #{association_path}" if models.present?
-      end
-
       Array.wrap(models).each do |model|
         model_registry.register(model, association_path)
 
@@ -101,50 +96,14 @@ module Goldiloader
         load_association?(model, association_name)
       end
 
-      # TODO: Remove Me
-      debug(association_path.size) { "Eager loading #{association_path} for #{model_string(models)}" }
-
       if ::ActiveRecord::VERSION::MAJOR >= 4.1
         ::ActiveRecord::Associations::Preloader.new.preload(models, [association_name])
       else
         ::ActiveRecord::Associations::Preloader.new(models, [association_name]).run
       end
 
-      # TODO: Remove Me
-      debug(association_path.size) do
-        unloaded_models = models.select { |model| load_association?(model, association_name) }
-        "Failed to eager load #{association_path} for #{model_string(unloaded_models)}" if unloaded_models.present?
-      end
-
-      # TODO: Remove Me
-      debug(association_path.size) do
-        loaded_models = models.reject { |model| load_association?(model, association_name) }
-        "Done eager loading #{association_path} for #{model_string(loaded_models)}"
-      end
-
       associated_models = models.map { |model| model.send(association_name) }.flatten.compact.uniq
       extend_associations(model_registry, associated_models, association_path)
-    end
-
-    # TODO: Remove me
-    def debug(indent)
-      if ENV.fetch('DEBUG_AUTO_EAGER_LOAD', 'false') == 'true'
-        result = yield
-        STDERR.puts "#{' ' * indent}#{result}" if result.present?
-      end
-    end
-
-    # TODO: Remove me
-    def model_string(models)
-      models = Array.wrap(models)
-      return "[]" unless models.present?
-
-      models = models.sort_by(&:id)
-
-      str = "#{models.first.class}("
-      str << models.map { |model| "#{model.id}:#{model.object_id.to_s(16)}" }.join(", ")
-      str << ")"
-      str
     end
 
     def load_association?(model, association_name)
