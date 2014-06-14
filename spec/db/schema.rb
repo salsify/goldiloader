@@ -40,11 +40,11 @@ end
 
 class Tag < ActiveRecord::Base
   belongs_to :parent, class_name: 'Tag'
-  has_many :children, class_name: 'Tag', foreign_key: :parent_id, auto_include: true
+  has_many :children, class_name: 'Tag', foreign_key: :parent_id
 
-  belongs_to :owner, polymorphic: true, auto_include: true
-  has_many :post_tags, auto_include: true
-  has_many :posts, through: :post_tags, auto_include: true
+  belongs_to :owner, polymorphic: true
+  has_many :post_tags
+  has_many :posts, through: :post_tags
 
   if Goldiloader::Compatibility.mass_assignment_security_enabled?
     attr_accessible :name
@@ -52,15 +52,15 @@ class Tag < ActiveRecord::Base
 end
 
 class PostTag < ActiveRecord::Base
-  belongs_to :post, auto_include: true
-  belongs_to :tag, auto_include: true
+  belongs_to :post
+  belongs_to :tag
 end
 
 class Blog < ActiveRecord::Base
-  has_many :posts, auto_include: true
-  has_many :posts_with_default_options, class_name: 'Post'
+  has_many :posts
   has_many :posts_without_auto_include, auto_include: false, class_name: 'Post'
-  has_many :authors, through: :posts, auto_include: true
+  has_many :posts_included_on_access, auto_include_on_access: true, class_name: 'Post'
+  has_many :authors, through: :posts
 
   if Goldiloader::Compatibility.mass_assignment_security_enabled?
     attr_accessible :name
@@ -68,12 +68,11 @@ class Blog < ActiveRecord::Base
 end
 
 class Post < ActiveRecord::Base
-  belongs_to :blog, auto_include: true
-  belongs_to :blog_with_default_options, class_name: 'Blog', foreign_key: :blog_id
+  belongs_to :blog
   belongs_to :blog_without_auto_include, auto_include: false, class_name: 'Blog', foreign_key: :blog_id
-  belongs_to :author, auto_include: true, class_name: 'User'
-  has_many :post_tags, auto_include: true
-  has_many :tags, through: :post_tags, auto_include: true
+  belongs_to :author, class_name: 'User'
+  has_many :post_tags
+  has_many :tags, through: :post_tags
 
   if Goldiloader::Compatibility.mass_assignment_security_enabled?
     attr_accessible :title
@@ -81,10 +80,9 @@ class Post < ActiveRecord::Base
 end
 
 class User < ActiveRecord::Base
-  has_many :posts, foreign_key: :author_id, auto_include: true
-  has_many :tags, as: :owner, auto_include: true
-  has_one :address, auto_include: true
-  has_one :address_with_default_options, class_name: 'Address'
+  has_many :posts, foreign_key: :author_id
+  has_many :tags, as: :owner
+  has_one :address
   has_one :address_without_auto_include, auto_include: false, class_name: 'Address'
 
   if Goldiloader::Compatibility.mass_assignment_security_enabled?
@@ -93,7 +91,7 @@ class User < ActiveRecord::Base
 end
 
 class Address < ActiveRecord::Base
-  belongs_to :user, auto_include: true
+  belongs_to :user
 
   if Goldiloader::Compatibility.mass_assignment_security_enabled?
     attr_accessible :city
@@ -101,7 +99,7 @@ class Address < ActiveRecord::Base
 end
 
 class Group < ActiveRecord::Base
-  has_many :tags, as: :owner, auto_include: true
+  has_many :tags, as: :owner
 
   if Goldiloader::Compatibility.mass_assignment_security_enabled?
     attr_accessible :name

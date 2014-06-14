@@ -124,7 +124,7 @@ describe Goldiloader do
 
   it "auto eager loads nested associations" do
     blogs = Blog.order(:name).to_a
-    blogs.first.posts.first.author
+    blogs.first.posts.to_a.first.author
 
     blogs.flat_map(&:posts).each do |blog|
       expect(blog.association(:author)).to be_loaded
@@ -139,7 +139,7 @@ describe Goldiloader do
 
   it "auto eager loads has_many through associations" do
     blogs = Blog.order(:name).to_a
-    blogs.first.authors.first
+    blogs.first.authors.to_a
 
     blogs.each do |blog|
       expect(blog.association(:authors)).to be_loaded
@@ -152,46 +152,10 @@ describe Goldiloader do
 
   it "auto eager loads associations when the model is loaded via find" do
     blog = Blog.find(blog1.id)
-    blog.posts.first.author
+    blog.posts.to_a.first.author
 
     blog.posts.each do |blog|
       expect(blog.association(:author)).to be_loaded
-    end
-  end
-
-  it "auto eager loads a has_many association when size is called" do
-    blogs = Blog.order(:name).to_a
-    blogs.first.posts.size
-
-    blogs.each do |blog|
-      expect(blog.association(:posts)).to be_loaded
-    end
-  end
-
-  it "auto eager loads a has_many association when exists? is called" do
-    blogs = Blog.order(:name).to_a
-    blogs.first.posts.exists?
-
-    blogs.each do |blog|
-      expect(blog.association(:posts)).to be_loaded
-    end
-  end
-
-  it "auto eager loads a has_many association when last is called" do
-    blogs = Blog.order(:name).to_a
-    blogs.first.posts.last
-
-    blogs.each do |blog|
-      expect(blog.association(:posts)).to be_loaded
-    end
-  end
-
-  it "auto eager loads a has_many association when ids is called" do
-    blogs = Blog.order(:name).to_a
-    blogs.first.post_ids
-
-    blogs.each do |blog|
-      expect(blog.association(:posts)).to be_loaded
     end
   end
 
@@ -245,74 +209,87 @@ describe Goldiloader do
     end
   end
 
-  context "with default association auto_include configuration" do
+  context "with auto_include_on_access false" do
 
-    it "doesn't auto eager load has_many associations by default" do
+    it "doesn't auto eager loads a has_many association when size is called" do
       blogs = Blog.order(:name).to_a
+      blogs.first.posts.size
 
-      # Force the first blogs first post to load
-      blogs.first.posts_with_default_options.to_a
-
-      blogs.drop(1).each do |blog|
-        expect(blog.association(:posts_with_default_options)).to_not be_loaded
+      blogs.each do |blog|
+        expect(blog.association(:posts)).to_not be_loaded
       end
     end
 
-    it "auto eager loads has_one associations by default" do
-      users = User.order(:name).to_a
+    it "doesn't auto eager loads a has_many association when exists? is called" do
+      blogs = Blog.order(:name).to_a
+      blogs.first.posts.exists?
 
-      # Force the first user's address to load
-      users.first.address_with_default_options
-
-      users.drop(1).each do |blog|
-        expect(blog.association(:address_with_default_options)).to be_loaded
+      blogs.each do |blog|
+        expect(blog.association(:posts)).to_not be_loaded
       end
     end
 
-    it "auto eager loads belongs_to associations by default" do
-      posts = Post.order(:title).to_a
-      # Force the first post's blog to load
-      posts.first.blog_with_default_options
+    it "doesn't auto eager loads a has_many association when last is called" do
+      blogs = Blog.order(:name).to_a
+      blogs.first.posts.last
 
-      posts.drop(1).each do |blog|
-        expect(blog.association(:blog_with_default_options)).to be_loaded
+      blogs.each do |blog|
+        expect(blog.association(:posts)).to_not be_loaded
+      end
+    end
+
+    it "doesn't auto eager loads a has_many association when ids is called" do
+      blogs = Blog.order(:name).to_a
+      blogs.first.post_ids
+
+      blogs.each do |blog|
+        expect(blog.association(:posts)).to_not be_loaded
       end
     end
   end
 
-  context "with default association auto_include configuration" do
+  context "with auto_include_on_access true" do
 
-    it "doesn't auto eager load has_many associations" do
+    it "auto eager loads a has_many association when size is called" do
       blogs = Blog.order(:name).to_a
+      blogs.first.posts_included_on_access.size
 
-      # Force the first blogs first post to load
-      blogs.first.posts_with_default_options.to_a
-
-      blogs.drop(1).each do |blog|
-        expect(blog.association(:posts_with_default_options)).to_not be_loaded
+      blogs.each do |blog|
+        expect(blog.association(:posts_included_on_access)).to be_loaded
       end
     end
 
-    it "auto eager loads has_one associations" do
-      users = User.order(:name).to_a
+    it "auto eager loads a has_many association when exists? is called" do
+      blogs = Blog.order(:name).to_a
+      blogs.first.posts_included_on_access.exists?
 
-      # Force the first user's address to load
-      users.first.address_with_default_options
-
-      users.drop(1).each do |blog|
-        expect(blog.association(:address_with_default_options)).to be_loaded
+      blogs.each do |blog|
+        expect(blog.association(:posts_included_on_access)).to be_loaded
       end
     end
 
-    it "auto eager loads belongs_to associations" do
-      posts = Post.order(:title).to_a
-      # Force the first post's blog to load
-      posts.first.blog_with_default_options
+    it "auto eager loads a has_many association when last is called" do
+      blogs = Blog.order(:name).to_a
+      blogs.first.posts_included_on_access.last
 
-      posts.drop(1).each do |blog|
-        expect(blog.association(:blog_with_default_options)).to be_loaded
+      blogs.each do |blog|
+        expect(blog.association(:posts_included_on_access)).to be_loaded
       end
     end
+
+    it "auto eager loads a has_many association when ids is called" do
+      blogs = Blog.order(:name).to_a
+      if ::ActiveRecord::VERSION::MAJOR >= 4
+        blogs.first.posts_included_on_access_ids
+      else
+        blogs.first.posts_included_on_acces_ids
+      end
+
+      blogs.each do |blog|
+        expect(blog.association(:posts_included_on_access)).to be_loaded
+      end
+    end
+
   end
 
   context "with auto_include disabled" do
@@ -363,7 +340,7 @@ describe Goldiloader do
       other_blog = posts.last.blog_without_auto_include
       other_blog.posts.to_a
 
-      blog.posts.first.tags.first
+      blog.posts.to_a.first.tags.to_a
 
       blog.posts.each do |post|
         expect(post.association(:tags)).to be_loaded

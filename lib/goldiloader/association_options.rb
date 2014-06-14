@@ -4,14 +4,17 @@ module Goldiloader
   module AssociationOptions
     extend self
 
+    # TODO: Better name for auto_include_on_access
+    OPTIONS = [:auto_include, :auto_include_on_access]
+
     def register
       if ::ActiveRecord::VERSION::MAJOR >= 4
-        ActiveRecord::Associations::Builder::Association.valid_options << :auto_include
+        ActiveRecord::Associations::Builder::Association.valid_options.concat(OPTIONS)
       else
         # Each subclass of CollectionAssociation will have its own copy of valid_options so we need
         # to register the valid option for each one.
         collection_association_classes.each do |assoc_class|
-          assoc_class.valid_options << :auto_include
+          assoc_class.valid_options.concat(OPTIONS)
         end
       end
     end

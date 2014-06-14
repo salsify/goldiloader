@@ -12,5 +12,6 @@ module Goldiloader
         model_registry.register(model, association_path)
       end
     end
+    alias_method :register_model, :register_models
   end
 end
