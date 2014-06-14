@@ -28,7 +28,6 @@ module Goldiloader
       # be the case in STI hierarchies e.g. only a subclass might have the association
       !model.destroyed? &&
         model.class.reflect_on_association(association_name).present? &&
-        !model.association(association_name).loaded? &&
         model.association(association_name).auto_include?
     end
 

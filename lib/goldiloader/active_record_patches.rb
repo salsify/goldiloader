@@ -38,11 +38,11 @@ ActiveRecord::Associations::Association.class_eval do
   def auto_include?
     # We only auto include associations that don't have in-memory changes since the
     # Rails association Preloader clobbers any in-memory changes
-    target.blank? && options.fetch(:auto_include) { self.class.default_auto_include }
+    target.blank? && !loaded? && options.fetch(:auto_include) { self.class.default_auto_include }
   end
 
   def auto_include_on_access?
-    options.fetch(:auto_include_on_access) { self.class.default_auto_include_on_access }
+    auto_include? && options.fetch(:auto_include_on_access) { self.class.default_auto_include_on_access }
   end
 
   def auto_include_context
@@ -100,6 +100,16 @@ ActiveRecord::Associations::CollectionAssociation.class_eval do
 
   alias_method_chain :load_target, :auto_include
 
+end
+
+[ActiveRecord::Associations::HasManyThroughAssociation, ActiveRecord::Associations::HasOneThroughAssociation].each do |klass|
+  klass.class_eval do
+    def auto_include?
+      # Only auto include through associations if the target association is auto-loadable
+      through_association = owner.association(through_reflection.name)
+      through_association.auto_include? && super
+    end
+  end
 end
 
 # The CollectionProxy just forwards exists? to the underlying scope so we need to intercept this and

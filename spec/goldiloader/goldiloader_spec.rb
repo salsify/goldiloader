@@ -233,6 +233,31 @@ describe Goldiloader do
     end
   end
 
+  context "when a has_many through association has in-memory changes" do
+    let!(:posts) { Post.order(:title).to_a }
+    let(:post) { posts.first }
+    let(:other_post) { posts.last }
+
+    before do
+      tag = Tag.create(name: 'new-tag')
+      post.post_tags.create(tag: tag)
+    end
+
+    it "returns the correct models for the modified has_many through association" do
+      expect(post.tags).to match_array PostTag.where(post_id: post.id).includes(:tag).map(&:tag)
+    end
+
+    it "doesn't auto eager load peers when accessing the modified has_many through association" do
+      post.tags.to_a
+      expect(other_post.association(:tags)).to_not be_loaded
+    end
+
+    it "returns the correct models for the modified has_many through association when accessing a peer" do
+      other_post.tags.to_a
+      expect(post.tags).to match_array PostTag.where(post_id: post.id).includes(:tag).map(&:tag)
+    end
+  end
+
   context "with auto_include_on_access false" do
 
     it "doesn't auto eager loads a has_many association when size is called" do
