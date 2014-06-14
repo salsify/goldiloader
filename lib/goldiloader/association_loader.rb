@@ -26,8 +26,10 @@ module Goldiloader
     def load?(model, association_name)
       # Need to make sure the model actually has the association which won't always
       # be the case in STI hierarchies e.g. only a subclass might have the association
-      !model.destroyed? && model.class.reflect_on_association(association_name).present? &&
-        !model.association(association_name).loaded?
+      !model.destroyed? &&
+        model.class.reflect_on_association(association_name).present? &&
+        !model.association(association_name).loaded? &&
+        model.association(association_name).auto_include?
     end
 
   end

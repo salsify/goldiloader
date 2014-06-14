@@ -36,7 +36,9 @@ ActiveRecord::Associations::Association.class_eval do
   self.default_auto_include_on_access = false
 
   def auto_include?
-    options.fetch(:auto_include) { self.class.default_auto_include }
+    # We only auto include associations that don't have in-memory changes since the
+    # Rails association Preloader clobbers any in-memory changes
+    target.blank? && options.fetch(:auto_include) { self.class.default_auto_include }
   end
 
   def auto_include_on_access?
