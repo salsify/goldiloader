@@ -84,16 +84,16 @@ end
 
 There are several association methods that ActiveRecord can either execute on in memory models or push down into SQL depending on whether or not the association is loaded. This includes the following methods:
 
-* first
-* second
-* third
-* forth
-* fifth
-* last
-* size
-* ids_reader
-* empty?
-* exists?
+* `first`
+* `second`
+* `third`
+* `forth`
+* `fifth`
+* `last`
+* `size`
+* `ids_reader`
+* `empty?`
+* `exists?`
 
 This can cause problems for certain usage patterns since we're no longer specifying eager loads:
 
