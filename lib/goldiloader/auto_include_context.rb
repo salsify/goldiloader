@@ -11,7 +11,9 @@ module Goldiloader
         model.auto_include_context = self
         model_registry.register(model, association_path)
       end
+      self
     end
+
     alias_method :register_model, :register_models
   end
 end

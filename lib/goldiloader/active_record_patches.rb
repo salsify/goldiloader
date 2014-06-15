@@ -1,17 +1,25 @@
 # encoding: UTF-8
 
-ActiveRecord::Base.class_eval do
-  attr_writer :auto_include_context
+module Goldiloader
+  module ActiveRecordBasePatches
+    extend ActiveSupport::Concern
 
-  def auto_include_context
-    @auto_include_context ||= begin
-                                context = Goldiloader::AutoIncludeContext.create_empty
-                                context.register_model(self)
-                                context
-                              end
+    included do
+      attr_writer :auto_include_context
+    end
+
+    def initialize_copy(other)
+      super
+      @auto_include_context = nil
+    end
+
+    def auto_include_context
+      @auto_include_context ||= Goldiloader::AutoIncludeContext.create_empty.register_model(self)
+    end
   end
-
 end
+
+ActiveRecord::Base.send(:include, Goldiloader::ActiveRecordBasePatches)
 
 ActiveRecord::Relation.class_eval do
 
@@ -26,8 +34,6 @@ ActiveRecord::Relation.class_eval do
 
   alias_method_chain :exec_queries, :auto_include
 end
-
-Goldiloader::AssociationOptions.register
 
 ActiveRecord::Associations::Association.class_eval do
 

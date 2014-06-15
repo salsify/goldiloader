@@ -34,3 +34,5 @@ module Goldiloader
     end
   end
 end
+
+Goldiloader::AssociationOptions.register
