@@ -4,8 +4,7 @@ module Goldiloader
   module AssociationOptions
     extend self
 
-    # TODO: Better name for auto_include_on_access
-    OPTIONS = [:auto_include, :auto_include_on_access]
+    OPTIONS = [:auto_include, :fully_load]
 
     def register
       if ::ActiveRecord::VERSION::MAJOR >= 4

@@ -37,9 +37,9 @@ end
 
 ActiveRecord::Associations::Association.class_eval do
 
-  class_attribute :default_auto_include, :default_auto_include_on_access
+  class_attribute :default_auto_include, :default_fully_load
   self.default_auto_include = true
-  self.default_auto_include_on_access = false
+  self.default_fully_load = false
 
   def auto_include?
     # We only auto include associations that don't have in-memory changes since the
@@ -47,8 +47,8 @@ ActiveRecord::Associations::Association.class_eval do
     target.blank? && !loaded? && options.fetch(:auto_include) { self.class.default_auto_include }
   end
 
-  def auto_include_on_access?
-    auto_include? && options.fetch(:auto_include_on_access) { self.class.default_auto_include_on_access }
+  def fully_load?
+    !loaded? && options.fetch(:fully_load) { self.class.default_fully_load }
   end
 
   def auto_include_context
@@ -90,12 +90,12 @@ ActiveRecord::Associations::CollectionAssociation.class_eval do
     next unless method_defined?(method)
 
     aliased_target, punctuation = method.to_s.sub(/([?!=])$/, ''), $1
-    define_method("#{aliased_target}_with_auto_include#{punctuation}") do |*args, &block|
-      load_target if auto_include_on_access? && !loaded?
-      send("#{aliased_target}_without_auto_include#{punctuation}", *args, &block)
+    define_method("#{aliased_target}_with_fully_load#{punctuation}") do |*args, &block|
+      load_target if fully_load?
+      send("#{aliased_target}_without_fully_load#{punctuation}", *args, &block)
     end
 
-    alias_method_chain method, :auto_include
+    alias_method_chain method, :fully_load
   end
 
   private
@@ -124,6 +124,6 @@ end
 # behavior.
 ActiveRecord::Associations::CollectionProxy.class_eval do
   def exists?
-    @association.auto_include_on_access? ? size > 0 : super
+    @association.fully_load? ? size > 0 : super
   end
 end

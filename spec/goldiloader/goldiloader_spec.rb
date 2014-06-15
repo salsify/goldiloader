@@ -258,7 +258,7 @@ describe Goldiloader do
     end
   end
 
-  context "with auto_include_on_access false" do
+  context "with fully_load false" do
 
     it "doesn't auto eager loads a has_many association when size is called" do
       blogs = Blog.order(:name).to_a
@@ -297,45 +297,41 @@ describe Goldiloader do
     end
   end
 
-  context "with auto_include_on_access true" do
+  context "with fully_load true" do
 
     it "auto eager loads a has_many association when size is called" do
       blogs = Blog.order(:name).to_a
-      blogs.first.posts_included_on_access.size
+      blogs.first.posts_fully_load.size
 
       blogs.each do |blog|
-        expect(blog.association(:posts_included_on_access)).to be_loaded
+        expect(blog.association(:posts_fully_load)).to be_loaded
       end
     end
 
     it "auto eager loads a has_many association when exists? is called" do
       blogs = Blog.order(:name).to_a
-      blogs.first.posts_included_on_access.exists?
+      blogs.first.posts_fully_load.exists?
 
       blogs.each do |blog|
-        expect(blog.association(:posts_included_on_access)).to be_loaded
+        expect(blog.association(:posts_fully_load)).to be_loaded
       end
     end
 
     it "auto eager loads a has_many association when last is called" do
       blogs = Blog.order(:name).to_a
-      blogs.first.posts_included_on_access.last
+      blogs.first.posts_fully_load.last
 
       blogs.each do |blog|
-        expect(blog.association(:posts_included_on_access)).to be_loaded
+        expect(blog.association(:posts_fully_load)).to be_loaded
       end
     end
 
     it "auto eager loads a has_many association when ids is called" do
       blogs = Blog.order(:name).to_a
-      if ::ActiveRecord::VERSION::MAJOR >= 4
-        blogs.first.posts_included_on_access_ids
-      else
-        blogs.first.posts_included_on_acces_ids
-      end
+      blogs.first.posts_fully_load_ids
 
       blogs.each do |blog|
-        expect(blog.association(:posts_included_on_access)).to be_loaded
+        expect(blog.association(:posts_fully_load)).to be_loaded
       end
     end
 

@@ -59,7 +59,7 @@ end
 class Blog < ActiveRecord::Base
   has_many :posts
   has_many :posts_without_auto_include, auto_include: false, class_name: 'Post'
-  has_many :posts_included_on_access, auto_include_on_access: true, class_name: 'Post'
+  has_many :posts_fully_load, fully_load: true, class_name: 'Post'
   has_many :authors, through: :posts
 
   if Goldiloader::Compatibility.mass_assignment_security_enabled?
