@@ -86,7 +86,7 @@ end
 
 ActiveRecord::Associations::CollectionAssociation.class_eval do
   # Force these methods to load the entire association for fully_load associations
-  [:first, :second, :third, :forth, :fifth, :last, :size, :ids_reader, :empty?].each do |method|
+  [:first, :second, :third, :fourth, :fifth, :last, :size, :ids_reader, :empty?].each do |method|
     # Some of these methods were added in Rails 4
     next unless method_defined?(method)
 
