@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 module Goldiloader
-  module ActiveRecordBasePatches
+  module AutoIncludableModel
     extend ActiveSupport::Concern
 
     included do
@@ -19,7 +19,7 @@ module Goldiloader
   end
 end
 
-ActiveRecord::Base.send(:include, Goldiloader::ActiveRecordBasePatches)
+ActiveRecord::Base.send(:include, Goldiloader::AutoIncludableModel)
 
 ActiveRecord::Relation.class_eval do
 
@@ -27,6 +27,7 @@ ActiveRecord::Relation.class_eval do
     return exec_queries_without_auto_include if loaded?
 
     models = exec_queries_without_auto_include
+    # Add all loaded models to the same AutoIncludeContext
     auto_include_context = Goldiloader::AutoIncludeContext.create_empty
     auto_include_context.register_models(models)
     models
@@ -44,7 +45,7 @@ ActiveRecord::Associations::Association.class_eval do
   def auto_include?
     # We only auto include associations that don't have in-memory changes since the
     # Rails association Preloader clobbers any in-memory changes
-    target.blank? && !loaded? && options.fetch(:auto_include) { self.class.default_auto_include }
+    !loaded? && target.blank? && options.fetch(:auto_include) { self.class.default_auto_include }
   end
 
   def fully_load?
@@ -84,7 +85,7 @@ ActiveRecord::Associations::SingularAssociation.class_eval do
 end
 
 ActiveRecord::Associations::CollectionAssociation.class_eval do
-  # Force these methods to load the entire association for auto_included associations
+  # Force these methods to load the entire association for fully_load associations
   [:first, :second, :third, :forth, :fifth, :last, :size, :ids_reader, :empty?].each do |method|
     # Some of these methods were added in Rails 4
     next unless method_defined?(method)
@@ -119,9 +120,7 @@ end
 end
 
 # The CollectionProxy just forwards exists? to the underlying scope so we need to intercept this and
-# force it to use any? which will use our patched find_target. CollectionProxy undefines define_singleton_method
-# (along with most instance methods) so we need to use #proxy_extend and a module to inject this
-# behavior.
+# force it to use size which handles fully_load properly.
 ActiveRecord::Associations::CollectionProxy.class_eval do
   def exists?
     @association.fully_load? ? size > 0 : super

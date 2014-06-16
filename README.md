@@ -1,5 +1,6 @@
 # Goldiloader
 
+[![Gem Version](https://badge.fury.io/rb/goldiloader.png)][gem]
 [![Build Status](https://secure.travis-ci.org/salsify/goldiloader.png?branch=master)][travis]
 [![Code Climate](https://codeclimate.com/github/salsify/goldiloader.png)][codeclimate]
 [![Coverage Status](https://coveralls.io/repos/salsify/goldiloader/badge.png)][coveralls]
@@ -8,7 +9,7 @@
 [codeclimate]: https://codeclimate.com/github/salsify/goldiloader
 [coveralls]: https://coveralls.io/r/salsify/goldiloader
 
-Wouldn't it be awesome if ActiveRecord didn't make you think about eager loading and it just did the "right" thing? Goldiloader can help.
+Wouldn't it be awesome if ActiveRecord didn't make you think about eager loading and it just did the "right" thing by default? With Goldiloader it can!
 
 Consider the following models:
 
@@ -89,13 +90,14 @@ There are several association methods that ActiveRecord can either execute on in
 * `third`
 * `forth`
 * `fifth`
+* `forty_two` (one of the hidden gems in Rails 4.1)
 * `last`
 * `size`
 * `ids_reader`
 * `empty?`
 * `exists?`
 
-This can cause problems for certain usage patterns since we're no longer specifying eager loads:
+This can cause problems for certain usage patterns if we're no longer specifying eager loads:
 
 ```
 > blogs = Blogs.limit(5).to_a
@@ -111,7 +113,7 @@ This can cause problems for certain usage patterns since we're no longer specify
 # SELECT * FROM posts WHERE blog_id IN (1,2,3,4,5)
 ```
 
-Notice the first call to `blog.posts.exists?` was executed via SQL because the `posts` association wasn't yet loaded. The `fully_load` option can be used to force ActiveRecord to fully load the assocation (and do any necessary automatic eager loading) when evaluating `exists?` and friends:
+Notice the first call to `blog.posts.exists?` was executed via SQL because the `posts` association wasn't yet loaded. The `fully_load` option can be used to force ActiveRecord to fully load the association (and do any necessary automatic eager loading) when evaluating methods like `exists?`:
 
 ```
 class Blog < ActiveRecord::Base
