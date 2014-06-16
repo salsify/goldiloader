@@ -89,7 +89,7 @@ There are several association methods that ActiveRecord can either execute on in
 * `first`
 * `second`
 * `third`
-* `forth`
+* `fourth`
 * `fifth`
 * `forty_two` (one of the hidden gems in Rails 4.1)
 * `last`
