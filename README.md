@@ -5,6 +5,7 @@
 [![Code Climate](https://codeclimate.com/github/salsify/goldiloader.png)][codeclimate]
 [![Coverage Status](https://coveralls.io/repos/salsify/goldiloader/badge.png)][coveralls]
 
+[gem]: https://rubygems.org/gems/goldiloader
 [travis]: http://travis-ci.org/salsify/goldiloader
 [codeclimate]: https://codeclimate.com/github/salsify/goldiloader
 [coveralls]: https://coveralls.io/r/salsify/goldiloader
