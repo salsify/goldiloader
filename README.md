@@ -50,6 +50,8 @@ Here are the same queries with the Goldiloader:
 
 Whoa! It automatically loaded all of the posts for our five blogs in a single database query without specifying any eager loads! Goldiloader assumes that you'll access all models loaded from a query in a uniform way. The first time you traverse an association on any of the models it will eager load the association for all the models. It even works with arbitrary nesting of associations.
 
+Read more about the motivation for the Goliloader in this [blog post](http://www.salsify.com/blog/automatic-eager-loading-rails/1869).
+
 ## Installation
 
 Add this line to your application's Gemfile:
