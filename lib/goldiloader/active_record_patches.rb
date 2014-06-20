@@ -122,7 +122,10 @@ end
 # The CollectionProxy just forwards exists? to the underlying scope so we need to intercept this and
 # force it to use size which handles fully_load properly.
 ActiveRecord::Associations::CollectionProxy.class_eval do
-  def exists?
-    @association.fully_load? ? size > 0 : super
+  def exists?(*args)
+    # We don't fully_load the association when arguments are passed to exists? since Rails always
+    # pushes this query into the database without any caching (and it likely not a common
+    # scenario worth optimizing).
+    args.empty? && @association.fully_load? ? size > 0 : super
   end
 end

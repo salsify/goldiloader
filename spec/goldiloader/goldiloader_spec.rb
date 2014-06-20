@@ -317,6 +317,15 @@ describe Goldiloader do
       end
     end
 
+    it "doesn't auto eager load a has_many association when exists? is called with arguments" do
+      blogs = Blog.order(:name).to_a
+      blogs.first.posts_fully_load.exists?(false)
+
+      blogs.each do |blog|
+        expect(blog.association(:posts_fully_load)).to_not be_loaded
+      end
+    end
+
     it "auto eager loads a has_many association when last is called" do
       blogs = Blog.order(:name).to_a
       blogs.first.posts_fully_load.last
