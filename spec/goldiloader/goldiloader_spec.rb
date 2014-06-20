@@ -209,6 +209,29 @@ describe Goldiloader do
     end
   end
 
+  context "when a model is destroyed" do
+    let!(:posts) { Post.where(blog_id: blog1.id).to_a }
+    let(:destroyed_post) { posts.first }
+    let(:other_post) { posts.last }
+
+    before do
+      blog_after_destroy = nil
+      destroyed_post.define_singleton_method(:after_post_destroy) do
+        blog_after_destroy = self.blog
+      end
+      destroyed_post.destroy
+      @blog_after_destroy = blog_after_destroy
+    end
+
+    it "can load associations in after_destroy callbacks" do
+      expect(@blog_after_destroy).to eq blog1
+    end
+
+    it "auto eager loads the associaton on other models" do
+      expect(other_post.association(:blog)).to be_loaded
+    end
+  end
+
   context "when a has_many association has in-memory changes" do
     let!(:blogs) { Blog.order(:name).to_a }
     let(:blog) { blogs.first }

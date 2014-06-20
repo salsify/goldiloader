@@ -74,8 +74,14 @@ class Post < ActiveRecord::Base
   has_many :post_tags
   has_many :tags, through: :post_tags
 
+  after_destroy :after_post_destroy
+
   if Goldiloader::Compatibility.mass_assignment_security_enabled?
     attr_accessible :title
+  end
+
+  def after_post_destroy
+    # Hook for tests
   end
 end
 
