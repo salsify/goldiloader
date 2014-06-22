@@ -209,6 +209,16 @@ describe Goldiloader do
     end
   end
 
+  it "auto eager loads associations that have been overridden" do
+    blogs = Blog.order(:name).to_a
+
+    blogs.first.association(:posts_overridden).load_target
+
+    blogs.each do |blog|
+      expect(blog.association(:posts_overridden)).to be_loaded
+    end
+  end
+
   context "when a model is destroyed" do
     let!(:posts) { Post.where(blog_id: blog1.id).to_a }
     let(:destroyed_post) { posts.first }

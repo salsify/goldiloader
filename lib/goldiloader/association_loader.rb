@@ -16,7 +16,9 @@ module Goldiloader
         ::ActiveRecord::Associations::Preloader.new(models, [association_name]).run
       end
 
-      associated_models = models.map { |model| model.send(association_name) }.flatten.compact.uniq
+      # Note we can't just do model.send(association_name) because the association method may have been
+      # overridden
+      associated_models = models.map { |model| model.association(association_name).target }.flatten.compact.uniq
       auto_include_context = Goldiloader::AutoIncludeContext.new(model_registry, association_path)
       auto_include_context.register_models(associated_models)
     end

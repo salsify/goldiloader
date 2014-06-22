@@ -60,10 +60,15 @@ class Blog < ActiveRecord::Base
   has_many :posts
   has_many :posts_without_auto_include, auto_include: false, class_name: 'Post'
   has_many :posts_fully_load, fully_load: true, class_name: 'Post'
+  has_many :posts_overridden, class_name: 'Post'
   has_many :authors, through: :posts
 
   if Goldiloader::Compatibility.mass_assignment_security_enabled?
     attr_accessible :name
+  end
+
+  def posts_overridden
+    'boom'
   end
 end
 
