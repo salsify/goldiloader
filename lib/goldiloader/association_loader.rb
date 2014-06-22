@@ -16,21 +16,51 @@ module Goldiloader
         ::ActiveRecord::Associations::Preloader.new(models, [association_name]).run
       end
 
-      # Note we can't just do model.send(association_name) because the association method may have been
-      # overridden
-      associated_models = models.map { |model| model.association(association_name).target }.flatten.compact.uniq
+      associated_models = associated_models(models, association_name)
+      # Workaround Rails #15853 by setting models read only
+      mark_read_only(associated_models) if read_only?(models, association_name)
       auto_include_context = Goldiloader::AutoIncludeContext.new(model_registry, association_path)
       auto_include_context.register_models(associated_models)
     end
 
     private
 
+    def mark_read_only(models)
+      models.each(&:readonly!)
+    end
+
+    def read_only?(models, association_name)
+      reflection = first_association_reflection(models, association_name)
+      if reflection.nil?
+        false
+      elsif ActiveRecord::VERSION::MAJOR >= 4
+        reflection.scope.readonly_value
+      else
+        reflection.options[:readonly]
+      end
+    end
+
+    def first_association_reflection(models, association_name)
+      # Find the first model with the association
+      model = models.find { |model| has_association?(model, association_name) }
+      model.class.reflect_on_association(association_name) if model
+    end
+
+    def associated_models(models, association_name)
+      # We can't just do model.send(association_name) because the association method may have been
+      # overridden
+      models.map { |model| model.association(association_name).target }.flatten.compact.uniq
+    end
+
     def load?(model, association_name)
       # Need to make sure the model actually has the association which won't always
       # be the case in STI hierarchies e.g. only a subclass might have the association
-      model.class.reflect_on_association(association_name).present? &&
+      has_association?(model, association_name) &&
         model.association(association_name).auto_include?
     end
 
+    def has_association?(model, association_name)
+      model.class.reflect_on_association(association_name).present?
+    end
   end
 end

@@ -219,6 +219,18 @@ describe Goldiloader do
     end
   end
 
+  it "marks auto eager loaded models as read only when the association is read only" do
+    blog = Blog.first!
+    post = blog.read_only_posts.to_a.first
+    expect { post.save! }.to raise_error(ActiveRecord::ReadOnlyRecord)
+  end
+
+  it "doesn't mark auto eager loaded models as read only when the association is not read only" do
+    blog = Blog.first!
+    post = blog.posts.to_a.first
+    expect { post.save! }.to_not raise_error
+  end
+
   context "when a model is destroyed" do
     let!(:posts) { Post.where(blog_id: blog1.id).to_a }
     let(:destroyed_post) { posts.first }
