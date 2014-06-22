@@ -231,6 +231,97 @@ describe Goldiloader do
     expect { post.save! }.to_not raise_error
   end
 
+  context "with associations that can't be eager loaded" do
+    let(:blogs) { Blog.order(:name).to_a }
+
+    before do
+      blog1.posts.create!(title: 'blog1-post3')
+      blog2.posts.create!(title: 'blog2-post3')
+    end
+
+    shared_examples "it doesn't auto eager the association" do |association_name|
+      specify do
+        blogs.drop(1).each do |blog|
+          expect(blog.association(association_name)).to_not be_loaded
+        end
+      end
+    end
+
+    context "associations with a limit" do
+      before do
+        blogs.first.limited_posts.to_a
+      end
+
+      it "applies the limit correctly" do
+        expect(blogs.first.limited_posts.to_a.size).to eq 2
+      end
+
+      it_behaves_like "it doesn't auto eager the association", :limited_posts
+    end
+
+    context "associations with a group" do
+      before do
+        blogs.first.grouped_posts.to_a
+      end
+
+      it "applies the group correctly" do
+        expect(blogs.first.grouped_posts.to_a.size).to eq 1
+      end
+
+      it_behaves_like "it doesn't auto eager the association", :grouped_posts
+    end
+
+    context "associations with an offset" do
+      before do
+        blogs.first.offset_posts.to_a
+      end
+
+      it "applies the offset correctly" do
+        expect(blogs.first.offset_posts.to_a.size).to eq 1
+      end
+
+      it_behaves_like "it doesn't auto eager the association", :offset_posts
+    end
+
+    context "associations with an overridden from" do
+      before do
+        blogs.first.from_posts.to_a
+      end
+
+      it "applies the from correctly" do
+        expect(blogs.first.from_posts.to_a.size).to eq 1
+      end
+
+      it_behaves_like "it doesn't auto eager the association", :from_posts
+    end
+  end
+
+  context "associations with a uniq" do
+    let!(:post1) do
+      Post.create! { |post| post.tags << child_tag1 << child_tag1 << child_tag3 }
+    end
+
+    let!(:post2) do
+      Post.create! { |post| post.tags << child_tag1 << child_tag1 << child_tag2 }
+    end
+
+    let(:posts) { Post.where(id: [post1.id, post2.id]).order(:id).to_a }
+
+    before do
+      posts.first.unique_tags.to_a
+    end
+
+    it "applies the uniq correctly" do
+      expect(posts.first.unique_tags.to_a).to match_array([child_tag1, child_tag3])
+    end
+
+    it "auto eager the association" do
+      posts.each do |blog|
+        expect(blog.association(:unique_tags)).to be_loaded
+      end
+    end
+  end
+
   context "when a model is destroyed" do
     let!(:posts) { Post.where(blog_id: blog1.id).to_a }
     let(:destroyed_post) { posts.first }

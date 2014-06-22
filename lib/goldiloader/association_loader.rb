@@ -10,11 +10,7 @@ module Goldiloader
         load?(model, association_name)
       end
 
-      if Gem::Version.new(::ActiveRecord::VERSION::STRING) >= Gem::Version.new('4.1')
-        ::ActiveRecord::Associations::Preloader.new.preload(models, [association_name])
-      else
-        ::ActiveRecord::Associations::Preloader.new(models, [association_name]).run
-      end
+      eager_load(models, association_name)
 
       associated_models = associated_models(models, association_name)
       # Workaround Rails #15853 by setting models read only
@@ -25,6 +21,14 @@ module Goldiloader
 
     private
 
+    def eager_load(models, association_name)
+      if Gem::Version.new(::ActiveRecord::VERSION::STRING) >= Gem::Version.new('4.1')
+        ::ActiveRecord::Associations::Preloader.new.preload(models, [association_name])
+      else
+        ::ActiveRecord::Associations::Preloader.new(models, [association_name]).run
+      end
+    end
+
     def mark_read_only(models)
       models.each(&:readonly!)
     end
@@ -33,10 +37,9 @@ module Goldiloader
       model = first_model_with_association(models, association_name)
       if model.nil?
         false
-      elsif ActiveRecord::VERSION::MAJOR >= 4
-        model.association(association_name).association_scope.readonly_value
       else
-        model.class.reflect_on_association(association_name).options[:readonly]
+        association_info = AssociationInfo.new(model.association(association_name))
+        association_info.read_only?
       end
     end
 

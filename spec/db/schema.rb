@@ -63,8 +63,17 @@ class Blog < ActiveRecord::Base
 
   if ActiveRecord::VERSION::MAJOR >= 4
     has_many :read_only_posts, -> { readonly }, class_name: 'Post'
+    has_many :limited_posts, -> { limit(2) }, class_name: 'Post'
+    has_many :grouped_posts, -> { group(:blog_id) }, class_name: 'Post'
+    has_many :offset_posts, -> { offset(2) }, class_name: 'Post'
+    has_many :from_posts, -> { from('(select distinct blog_id from posts) as posts') }, class_name: 'Post'
   else
     has_many :read_only_posts, readonly: true, class_name: 'Post'
+    has_many :limited_posts, limit: 2, class_name: 'Post'
+    has_many :grouped_posts, group: :blog_id, class_name: 'Post'
+    has_many :offset_posts, offset: 2, class_name: 'Post'
+    has_many :from_posts, finder_sql: Proc.new { "select distinct blog_id from posts where blog_id = #{self.id}" },
+             class_name: 'Post'
   end
 
   has_many :posts_overridden, class_name: 'Post'
@@ -85,6 +94,12 @@ class Post < ActiveRecord::Base
   belongs_to :author, class_name: 'User'
   has_many :post_tags
   has_many :tags, through: :post_tags
+
+  if ActiveRecord::VERSION::MAJOR >= 4
+    has_many :unique_tags, -> { distinct }, through: :post_tags, source: :tag, class_name: 'Tag'
+  else
+    has_many :unique_tags, through: :post_tags, source: :tag, uniq: true, class_name: 'Tag'
+  end
 
   after_destroy :after_post_destroy
 

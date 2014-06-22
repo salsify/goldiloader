@@ -45,7 +45,7 @@ ActiveRecord::Associations::Association.class_eval do
   def auto_include?
     # We only auto include associations that don't have in-memory changes since the
     # Rails association Preloader clobbers any in-memory changes
-    !loaded? && target.blank? && options.fetch(:auto_include) { self.class.default_auto_include }
+    !loaded? && target.blank? && options.fetch(:auto_include) { self.class.default_auto_include } && eager_loadable?
   end
 
   def fully_load?
@@ -55,6 +55,14 @@ ActiveRecord::Associations::Association.class_eval do
   def auto_include_context
     @auto_include_context ||= Goldiloader::AutoIncludeContext.new(owner.auto_include_context.model_registry,
                                                                   owner.auto_include_context.association_path + [reflection.name])
+  end
+
+  def eager_loadable?
+    association_info = Goldiloader::AssociationInfo.new(self)
+    !association_info.limit? &&
+        !association_info.offset? &&
+        !association_info.group? &&
+        !association_info.from?
   end
 
   private
