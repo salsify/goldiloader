@@ -30,20 +30,18 @@ module Goldiloader
     end
 
     def read_only?(models, association_name)
-      reflection = first_association_reflection(models, association_name)
-      if reflection.nil?
+      model = first_model_with_association(models, association_name)
+      if model.nil?
         false
       elsif ActiveRecord::VERSION::MAJOR >= 4
-        reflection.scope.readonly_value
+        model.association(association_name).association_scope.readonly_value
       else
-        reflection.options[:readonly]
+        model.class.reflect_on_association(association_name).options[:readonly]
       end
     end
 
-    def first_association_reflection(models, association_name)
-      # Find the first model with the association
-      model = models.find { |model| has_association?(model, association_name) }
-      model.class.reflect_on_association(association_name) if model
+    def first_model_with_association(models, association_name)
+      models.find { |model| has_association?(model, association_name) }
     end
 
     def associated_models(models, association_name)

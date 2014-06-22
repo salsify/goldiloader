@@ -49,3 +49,5 @@ RSpec.configure do |config|
     DatabaseCleaner.clean
   end
 end
+
+puts "Testing with ActiveRecord #{ActiveRecord::VERSION::STRING}"
