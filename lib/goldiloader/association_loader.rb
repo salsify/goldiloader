@@ -6,8 +6,8 @@ module Goldiloader
 
     def load(model_registry, model, association_path)
       *model_path, association_name = *association_path
-      models = model_registry.peers(model, model_path).select do |model|
-        load?(model, association_name)
+      models = model_registry.peers(model, model_path).select do |peer|
+        load?(peer, association_name)
       end
 
       eager_load(models, association_name)

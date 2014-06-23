@@ -68,7 +68,7 @@ ActiveRecord::Associations::Association.class_eval do
   private
 
   def load_with_auto_include(load_method, *args)
-    if loaded?
+    if loaded? && !stale_target?
       target
     elsif auto_include?
       Goldiloader::AssociationLoader.load(auto_include_context.model_registry, owner,
