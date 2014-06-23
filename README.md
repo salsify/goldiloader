@@ -128,6 +128,10 @@ end
 
 This gem is tested with Rails 3.2, 4.0, and 4.1 using MRI 1.9.3, 2.0.0, 2.1.0 and JRuby in 1.9 mode. [Salsify](http://salsify.com) is not yet using this gem in production so proceed with caution. Let us know if you find any issues or have any other feedback. 
 
+## Change log
+
+See the [change log](https://github.com/salsify/goldiloader/blob/master/CHANGELOG.md).
+
 ## Contributing
 
 1. Fork it
