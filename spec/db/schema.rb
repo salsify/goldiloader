@@ -67,6 +67,10 @@ class Blog < ActiveRecord::Base
     has_many :grouped_posts, -> { group(:blog_id) }, class_name: 'Post'
     has_many :offset_posts, -> { offset(2) }, class_name: 'Post'
     has_many :from_posts, -> { from('(select distinct blog_id from posts) as posts') }, class_name: 'Post'
+
+    has_many :posts_ordered_by_author, -> { joins(:author).order('users.name') }, class_name: 'Post'
+
+    has_many :authors_with_join, -> { joins(:address).order('addresses.city') }, through: :posts, source: :author
   else
     has_many :read_only_posts, readonly: true, class_name: 'Post'
     has_many :limited_posts, limit: 2, class_name: 'Post'
@@ -74,10 +78,13 @@ class Blog < ActiveRecord::Base
     has_many :offset_posts, offset: 2, class_name: 'Post'
     has_many :from_posts, finder_sql: Proc.new { "select distinct blog_id from posts where blog_id = #{self.id}" },
              class_name: 'Post'
+
+    has_many :posts_ordered_by_author, include: :author, order: 'users.name', class_name: 'Post'
   end
 
   has_many :posts_overridden, class_name: 'Post'
   has_many :authors, through: :posts
+  has_many :addresses, through: :authors
 
   if Goldiloader::Compatibility.mass_assignment_security_enabled?
     attr_accessible :name

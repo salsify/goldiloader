@@ -150,6 +150,19 @@ describe Goldiloader do
     expect(User).to have_received(:find_by_sql).once
   end
 
+  it "auto eager loads nested has_many through associations" do
+    blogs = Blog.order(:name).to_a
+    blogs.first.addresses.to_a
+
+    blogs.each do |blog|
+      expect(blog.association(:addresses)).to be_loaded
+    end
+
+    expect(blogs.first.addresses).to match_array([author1, author2].map(&:address))
+    expect(blogs.second.addresses).to match_array([author3, author1].map(&:address))
+    expect(Address).to have_received(:find_by_sql).once
+  end
+
   it "auto eager loads associations when the model is loaded via find" do
     blog = Blog.find(blog1.id)
     blog.posts.to_a.first.author
@@ -235,8 +248,8 @@ describe Goldiloader do
     let(:blogs) { Blog.order(:name).to_a }
 
     before do
-      blog1.posts.create!(title: 'blog1-post3')
-      blog2.posts.create!(title: 'blog2-post3')
+      blog1.posts.create!(title: 'blog1-post3', author: author1)
+      blog2.posts.create!(title: 'blog2-post3', author: author1)
     end
 
     shared_examples "it doesn't auto eager the association" do |association_name|
@@ -293,6 +306,32 @@ describe Goldiloader do
       end
 
       it_behaves_like "it doesn't auto eager the association", :from_posts
+    end
+
+    if ActiveRecord::VERSION::MAJOR >= 4
+      context "associations with a join" do
+        before do
+          blogs.first.posts_ordered_by_author.to_a
+        end
+
+        it "applies the join correctly" do
+          expect(blogs.first.posts_ordered_by_author.to_a.size).to eq 3
+        end
+
+        it_behaves_like "it doesn't auto eager the association", :posts_ordered_by_author
+      end
+
+      context "associations with a join in a has_many_through" do
+        before do
+          blogs.first.authors_with_join.to_a
+        end
+
+        it "applies the join correctly" do
+          expect(blogs.first.authors_with_join.to_a.size).to eq 3
+        end
+
+        it_behaves_like "it doesn't auto eager the association", :authors_with_join
+      end
     end
   end
 

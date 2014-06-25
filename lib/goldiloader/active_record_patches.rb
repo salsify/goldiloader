@@ -57,15 +57,17 @@ ActiveRecord::Associations::Association.class_eval do
                                                                   owner.auto_include_context.association_path + [reflection.name])
   end
 
+  private
+
   def eager_loadable?
     association_info = Goldiloader::AssociationInfo.new(self)
     !association_info.limit? &&
         !association_info.offset? &&
         !association_info.group? &&
-        !association_info.from?
+        !association_info.from? &&
+        # Joins not properly eager loaded - See https://github.com/salsify/goldiloader/issues/11
+        !association_info.joins?
   end
-
-  private
 
   def load_with_auto_include(load_method, *args)
     if loaded? && !stale_target?
