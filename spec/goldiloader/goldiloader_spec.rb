@@ -333,6 +333,29 @@ describe Goldiloader do
         it_behaves_like "it doesn't auto eager the association", :authors_with_join
       end
     end
+
+    if Gem::Version.new(::ActiveRecord::VERSION::STRING) >= Gem::Version.new('4.1')
+      context "associations with an unscoped" do
+        let(:authors) { User.order(:id).to_a }
+
+        before do
+          author1.address.update_attributes!(city: 'Boston')
+          author2.address.update_attributes!(city: 'Philadelphia')
+          author3.address.update_attributes!(city: 'Philadelphia')
+          authors.first.scoped_address_with_default_scope_remove
+        end
+
+        it "applies the unscope correctly" do
+          expect(authors.first.scoped_address_with_default_scope_remove).to be_present
+        end
+
+        it "doesn't auto eager the association" do
+          authors.drop(1).each do |author|
+            expect(author.association(:scoped_address_with_default_scope_remove)).to_not be_loaded
+          end
+        end
+      end
+    end
   end
 
   context "associations with a uniq" do

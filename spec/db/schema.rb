@@ -125,12 +125,26 @@ class User < ActiveRecord::Base
   has_one :address
   has_one :address_without_auto_include, auto_include: false, class_name: 'Address'
 
+  if Gem::Version.new(::ActiveRecord::VERSION::STRING) >= Gem::Version.new('4.1')
+    has_one :scoped_address_with_default_scope_remove, -> { unscope(where: :city) }, class_name: 'ScopedAddress'
+  end
+
   if Goldiloader::Compatibility.mass_assignment_security_enabled?
     attr_accessible :name
   end
 end
 
 class Address < ActiveRecord::Base
+  belongs_to :user
+
+  if Goldiloader::Compatibility.mass_assignment_security_enabled?
+    attr_accessible :city
+  end
+end
+
+class ScopedAddress < ActiveRecord::Base
+  self.table_name = 'addresses'
+  default_scope { where(city: ['Philadelphia'])}
   belongs_to :user
 
   if Goldiloader::Compatibility.mass_assignment_security_enabled?

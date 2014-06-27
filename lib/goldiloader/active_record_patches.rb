@@ -66,7 +66,9 @@ ActiveRecord::Associations::Association.class_eval do
         !association_info.group? &&
         !association_info.from? &&
         # Joins not properly eager loaded - See https://github.com/salsify/goldiloader/issues/11
-        !association_info.joins?
+        !association_info.joins? &&
+        # Unscope not properly eager loaded - https://github.com/salsify/goldiloader/issues/13
+        !association_info.unscope?
   end
 
   def load_with_auto_include(load_method, *args)

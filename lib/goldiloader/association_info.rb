@@ -5,6 +5,16 @@ module Goldiloader
       @association = association
     end
 
+    if Gem::Version.new(::ActiveRecord::VERSION::STRING) >= Gem::Version.new('4.1')
+      def unscope?
+        @association.association_scope.unscope_values.present?
+      end
+    else
+      def unscope?
+        false
+      end
+    end
+
     if ActiveRecord::VERSION::MAJOR >= 4
       def read_only?
         @association.association_scope.readonly_value.present?
