@@ -4,6 +4,12 @@
 
 * Fix ActiveRecord and ActiveSupport dependencies to work with versions greater than 4.1.0. Thanks for the pull
   requests [Alexey Volodkin](https://github.com/miraks) and [Philip Claren](https://github.com/DerKobe).
+* Workaround [issue 13](https://github.com/salsify/goldiloader/issues/13) by not auto-eager loading associations
+  that use `unscope`. This workaround will be removed when the underlying 
+  [bug 11036](https://github.com/rails/rails/issues/11036) in the Rails eager loader is fixed.
+* Workaround [issue 11](https://github.com/salsify/goldiloader/issues/11) by not auto-eager loading associations
+  that use `joins`. This workaround will be removed when the underlying 
+  [bug 11518](https://github.com/rails/rails/pull/11518) in the Rails eager loader is fixed.
 
 ### 0.0.4
  
