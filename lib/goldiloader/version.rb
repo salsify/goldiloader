@@ -1,5 +1,5 @@
 # encoding: UTF-8
 
 module Goldiloader
-  VERSION = '0.0.5'
+  VERSION = '0.0.6'
 end

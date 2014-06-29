@@ -1,5 +1,7 @@
 # Changelog
 
+### 0.0.6 (unreleased)
+
 ### 0.0.5
 
 * Fix ActiveRecord and ActiveSupport dependencies to work with versions greater than 4.1.0. Thanks for the pull
