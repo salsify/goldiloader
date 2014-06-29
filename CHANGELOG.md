@@ -10,6 +10,8 @@
 * Workaround [issue 11](https://github.com/salsify/goldiloader/issues/11) by not auto-eager loading associations
   that use `joins`. This workaround will be removed when the underlying 
   [bug 11518](https://github.com/rails/rails/pull/11518) in the Rails eager loader is fixed.
+* Fix [issue 15](https://github.com/salsify/goldiloader/issues/15) - Don't auto eager load associations 
+  with finder_sql in Rails 4.0. Previously this was only done for Rails 3.2.
 
 ### 0.0.4
  

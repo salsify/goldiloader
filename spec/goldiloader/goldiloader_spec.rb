@@ -296,16 +296,32 @@ describe Goldiloader do
       it_behaves_like "it doesn't auto eager the association", :offset_posts
     end
 
-    context "associations with an overridden from" do
-      before do
-        blogs.first.from_posts.to_a
-      end
+    if ActiveRecord::VERSION::MAJOR >= 4
+      context "associations with an overridden from" do
+        before do
+          blogs.first.from_posts.to_a
+        end
 
-      it "applies the from correctly" do
-        expect(blogs.first.from_posts.to_a.size).to eq 1
-      end
+        it "applies the from correctly" do
+          expect(blogs.first.from_posts.to_a.size).to eq 1
+        end
 
-      it_behaves_like "it doesn't auto eager the association", :from_posts
+        it_behaves_like "it doesn't auto eager the association", :from_posts
+      end
+    end
+
+    if Goldiloader::Compatibility.association_finder_sql_enabled?
+      context "associations with finder_sql" do
+        before do
+          blogs.first.finder_sql_posts.to_a
+        end
+
+        it "applies the finder_sql correctly" do
+          expect(blogs.first.finder_sql_posts.to_a.size).to eq 1
+        end
+
+        it_behaves_like "it doesn't auto eager the association", :finder_sql_posts
+      end
     end
 
     if ActiveRecord::VERSION::MAJOR >= 4
@@ -334,7 +350,7 @@ describe Goldiloader do
       end
     end
 
-    if Gem::Version.new(::ActiveRecord::VERSION::STRING) >= Gem::Version.new('4.1')
+    if Goldiloader::Compatibility.unscope_query_method_enabled?
       context "associations with an unscoped" do
         let(:authors) { User.order(:id).to_a }
 

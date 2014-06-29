@@ -7,14 +7,14 @@ module Goldiloader
       @association = association
     end
 
-    if Gem::Version.new(::ActiveRecord::VERSION::STRING) >= Gem::Version.new('4.1')
-      def unscope?
+    def unscope?
+      Goldiloader::Compatibility.unscope_query_method_enabled? &&
         @association.association_scope.unscope_values.present?
-      end
-    else
-      def unscope?
-        false
-      end
+    end
+
+    def finder_sql?
+      Goldiloader::Compatibility.association_finder_sql_enabled? &&
+        @association.options[:finder_sql].present?
     end
 
     if ActiveRecord::VERSION::MAJOR >= 4
@@ -68,7 +68,7 @@ module Goldiloader
       end
 
       def from?
-        @association.options[:finder_sql].present?
+        false
       end
 
       def group?

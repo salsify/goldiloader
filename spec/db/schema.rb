@@ -76,10 +76,13 @@ class Blog < ActiveRecord::Base
     has_many :limited_posts, limit: 2, class_name: 'Post'
     has_many :grouped_posts, group: :blog_id, class_name: 'Post'
     has_many :offset_posts, offset: 2, class_name: 'Post'
-    has_many :from_posts, finder_sql: Proc.new { "select distinct blog_id from posts where blog_id = #{self.id}" },
-             class_name: 'Post'
 
     has_many :posts_ordered_by_author, include: :author, order: 'users.name', class_name: 'Post'
+  end
+
+  if Goldiloader::Compatibility.association_finder_sql_enabled?
+    has_many :finder_sql_posts, finder_sql: Proc.new { "select distinct blog_id from posts where blog_id = #{self.id}" },
+             class_name: 'Post'
   end
 
   has_many :posts_overridden, class_name: 'Post'
@@ -125,7 +128,7 @@ class User < ActiveRecord::Base
   has_one :address
   has_one :address_without_auto_include, auto_include: false, class_name: 'Address'
 
-  if Gem::Version.new(::ActiveRecord::VERSION::STRING) >= Gem::Version.new('4.1')
+  if Goldiloader::Compatibility.unscope_query_method_enabled?
     has_one :scoped_address_with_default_scope_remove, -> { unscope(where: :city) }, class_name: 'ScopedAddress'
   end
 

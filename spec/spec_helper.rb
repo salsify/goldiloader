@@ -16,9 +16,6 @@ require 'database_cleaner'
 require 'goldiloader'
 require 'yaml'
 
-spec_dir = File.dirname(__FILE__)
-Dir["#{spec_dir}/support/**/*.rb"].sort.each { |f| require f }
-
 FileUtils.makedirs('log')
 
 ActiveRecord::Base.logger = Logger.new('log/test.log')
