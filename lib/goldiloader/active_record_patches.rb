@@ -14,7 +14,12 @@ module Goldiloader
     end
 
     def auto_include_context
-      @auto_include_context ||= Goldiloader::AutoIncludeContext.create_empty.register_model(self)
+      @auto_include_context ||= Goldiloader::AutoIncludeContext.new.register_model(self)
+    end
+
+    def reload(*)
+      @auto_include_context = nil
+      super
     end
   end
 end
@@ -28,7 +33,7 @@ ActiveRecord::Relation.class_eval do
 
     models = exec_queries_without_auto_include
     # Add all loaded models to the same AutoIncludeContext
-    auto_include_context = Goldiloader::AutoIncludeContext.create_empty
+    auto_include_context = Goldiloader::AutoIncludeContext.new
     auto_include_context.register_models(models)
     models
   end
@@ -52,11 +57,6 @@ ActiveRecord::Associations::Association.class_eval do
     !loaded? && options.fetch(:fully_load) { self.class.default_fully_load }
   end
 
-  def auto_include_context
-    @auto_include_context ||= Goldiloader::AutoIncludeContext.new(owner.auto_include_context.model_registry,
-                                                                  owner.auto_include_context.association_path + [reflection.name])
-  end
-
   private
 
   def eager_loadable?
@@ -75,8 +75,7 @@ ActiveRecord::Associations::Association.class_eval do
     if loaded? && !stale_target?
       target
     elsif auto_include?
-      Goldiloader::AssociationLoader.load(auto_include_context.model_registry, owner,
-                                          auto_include_context.association_path)
+      Goldiloader::AssociationLoader.load(owner, reflection.name)
       target
     else
       send("#{load_method}_without_auto_include", *args)

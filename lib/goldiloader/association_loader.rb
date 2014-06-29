@@ -4,19 +4,18 @@ module Goldiloader
   module AssociationLoader
     extend self
 
-    def load(model_registry, model, association_path)
-      *model_path, association_name = *association_path
-      models = model_registry.peers(model, model_path).select do |peer|
+    def load(model, association_name)
+      models = model.auto_include_context.models.select do |peer|
         load?(peer, association_name)
       end
 
       eager_load(models, association_name)
 
-      associated_models = associated_models(models, association_name)
       # Workaround Rails #15853 by setting models read only
-      mark_read_only(associated_models) if read_only?(models, association_name)
-      auto_include_context = Goldiloader::AutoIncludeContext.new(model_registry, association_path)
-      auto_include_context.register_models(associated_models)
+      if read_only?(models, association_name)
+        associated_models = associated_models(models, association_name)
+        mark_read_only(associated_models)
+      end
     end
 
     private
