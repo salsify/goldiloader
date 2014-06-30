@@ -167,10 +167,6 @@ Associations with any of the following options cannot be eager loaded:
 
 Goldiloader detects associations with any of these options and disables automatic eager loading on them.
 
-### has_one associations that rely on SQL limits
-
-### finder_sql
-
 ## Status
 
 This gem is tested with Rails 3.2, 4.0, and 4.1 using MRI 1.9.3, 2.0.0, 2.1.0 and JRuby in 1.9 mode. 
