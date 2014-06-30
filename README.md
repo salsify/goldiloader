@@ -124,9 +124,58 @@ class Blog < ActiveRecord::Base
 end
 ```
 
+## Limitations
+
+Goldiloader leverages the ActiveRecord eager loader so it shares some of the same limitations. 
+
+### has_one associations that rely on a SQL limit
+
+You should not try to auto eager load (or regular eager load) `has_one` associations that actually correspond to multiple records and rely on a SQL limit to only return one record. Consider the following example:
+
+```
+class Blog < ActiveRecord::Base
+  has_many :posts
+  has_one :most_recent_post, -> { order(published_at: desc) }, class_name: 'Post'
+end
+```
+
+With standard Rails lazy loading the `most_recent_post` association is loaded with a query like this:
+
+```
+SELECT * FROM posts WHERE blog_id = 1 ORDER BY published_at DESC LIMIT 1
+```
+
+With auto eager loading (or regular eager loading) the `most_recent_post` association is loaded with a query like this:
+
+```
+SELECT * FROM posts WHERE blog_id IN (1,2,3,4,5) ORDER BY published_at DESC
+```
+
+Notice the SQL limit can no longer be used which results in fetching all posts for each blog. This can cause severe performance problems if there are a large number of posts. 
+
+### Other Limitations
+
+Associations with any of the following options cannot be eager loaded:
+
+* `limit`
+* `offset`
+* `finder_sql`
+* `group` (due to a Rails bug)
+* `from` (due to a Rails bug)
+* `unscope` (due to a Rails bug)
+* `joins` (Rails bug)
+
+Goldiloader detects associations with any of these options and disables automatic eager loading on them.
+
+### has_one associations that rely on SQL limits
+
+### finder_sql
+
 ## Status
 
-This gem is tested with Rails 3.2, 4.0, and 4.1 using MRI 1.9.3, 2.0.0, 2.1.0 and JRuby in 1.9 mode. [Salsify](http://salsify.com) is not yet using this gem in production so proceed with caution. Let us know if you find any issues or have any other feedback. 
+This gem is tested with Rails 3.2, 4.0, and 4.1 using MRI 1.9.3, 2.0.0, 2.1.0 and JRuby in 1.9 mode. 
+
+[Salsify](http://salsify.com) is not yet using this gem in production so proceed with caution. Let us know if you find any issues or have any other feedback. 
 
 ## Change log
 
