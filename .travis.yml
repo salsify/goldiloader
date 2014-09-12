@@ -1,9 +1,9 @@
 language: ruby
 env:
   matrix:
-    - RAILS_VERSION="~> 3.2.18" JRUBY_OPTS="$JRUBY_OPTS --debug"
-    - RAILS_VERSION="~> 4.0.5" JRUBY_OPTS="$JRUBY_OPTS --debug"
-    - RAILS_VERSION="~> 4.1.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
+    - RAILS_VERSION="~> 3.2.19" JRUBY_OPTS="$JRUBY_OPTS --debug"
+    - RAILS_VERSION="~> 4.0.10" JRUBY_OPTS="$JRUBY_OPTS --debug"
+    - RAILS_VERSION="~> 4.1.6" JRUBY_OPTS="$JRUBY_OPTS --debug"
 rvm:
   - 1.9.3
   - 2.0.0
