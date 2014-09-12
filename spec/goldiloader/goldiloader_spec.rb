@@ -372,6 +372,34 @@ describe Goldiloader do
         end
       end
     end
+
+    if ActiveRecord::VERSION::MAJOR < 4
+      context "unique_tags_has_and_belongs associations with a uniq" do
+        let!(:post1) do
+          Post.create! { |post| post.tags << child_tag1 << child_tag1 << child_tag3 }
+        end
+
+        let!(:post2) do
+          Post.create! { |post| post.tags << child_tag1 << child_tag1 << child_tag2 }
+        end
+
+        let(:posts) { Post.where(id: [post1.id, post2.id]).order(:id).to_a }
+
+        before do
+          posts.first.unique_tags_has_and_belongs.to_a
+        end
+
+        it "applies the uniq correctly" do
+          expect(posts.first.unique_tags_has_and_belongs.to_a.size).to eq 2
+        end
+
+        it "doesn't auto eager the association" do
+          posts.drop(1).each do |author|
+            expect(author.association(:unique_tags_has_and_belongs)).to_not be_loaded
+          end
+        end
+      end
+    end
   end
 
   context "associations with a uniq" do

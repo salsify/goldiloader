@@ -1,6 +1,9 @@
 # Changelog
 
 ### 0.0.6 (unreleased)
+* Workaround [issue 16](https://github.com/salsify/goldiloader/issues/16) by not auto-eager loading 
+  has_and_belongs_to_many associations with a uniq in Rails 3.2 since Rails doesn't eager load them 
+  properly.
 
 ### 0.0.5
 

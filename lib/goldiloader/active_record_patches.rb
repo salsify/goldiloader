@@ -68,7 +68,7 @@ ActiveRecord::Associations::Association.class_eval do
         !association_info.finder_sql? &&
         # Joins not properly eager loaded - See https://github.com/salsify/goldiloader/issues/11
         !association_info.joins? &&
-        # Unscope not properly eager loaded - https://github.com/salsify/goldiloader/issues/13
+        # Unscope not properly eager loaded - See https://github.com/salsify/goldiloader/issues/13
         !association_info.unscope?
   end
 
@@ -127,6 +127,16 @@ end
       # Only auto include through associations if the target association is auto-loadable
       through_association = owner.association(through_reflection.name)
       through_association.auto_include? && super
+    end
+  end
+end
+
+# uniq in Rails 3 not properly eager loaded - See https://github.com/salsify/goldiloader/issues/16
+if ActiveRecord::VERSION::MAJOR < 4
+  ActiveRecord::Associations::HasAndBelongsToManyAssociation.class_eval do
+    def eager_loadable?
+      association_info = Goldiloader::AssociationInfo.new(self)
+      super && !association_info.uniq?
     end
   end
 end

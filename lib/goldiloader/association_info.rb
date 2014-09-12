@@ -43,6 +43,10 @@ module Goldiloader
         (@association.association_scope.joins_values.size - num_through_joins) > 0
       end
 
+      def uniq?
+        @association.association_scope.uniq_value
+      end
+
       private
 
       def num_through_joins
@@ -78,6 +82,10 @@ module Goldiloader
       def joins?
         # Rails 3 didn't support joins for associations
         false
+      end
+
+      def uniq?
+        @association.options[:uniq]
       end
     end
 

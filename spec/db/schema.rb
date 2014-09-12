@@ -111,6 +111,10 @@ class Post < ActiveRecord::Base
     has_many :unique_tags, through: :post_tags, source: :tag, uniq: true, class_name: 'Tag'
   end
 
+  if ActiveRecord::VERSION::MAJOR < 4
+    has_and_belongs_to_many :unique_tags_has_and_belongs, join_table: :post_tags, class_name: 'Tag', uniq: true
+  end
+
   after_destroy :after_post_destroy
 
   if Goldiloader::Compatibility.mass_assignment_security_enabled?
