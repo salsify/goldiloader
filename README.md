@@ -68,7 +68,7 @@ Or install it yourself as:
 
 ## Usage
 
-By default all associations will be automatically eager loaded when they are first accessed so hopefully most use cases should require no additional configuration. 
+By default all associations will be automatically eager loaded when they are first accessed so hopefully most use cases should require no additional configuration. Note you're still free to explicitly eager load associations via `eager_load`, `includes`, or `preload`.
 
 ### Association Options
 
@@ -163,7 +163,8 @@ Associations with any of the following options cannot be eager loaded:
 * `group` (due to a Rails bug)
 * `from` (due to a Rails bug)
 * `unscope` (due to a Rails bug)
-* `joins` (Rails bug)
+* `joins` (due to a Rails bug)
+* `uniq` (only Rails 3.2 - due to a Rails bug)
 
 Goldiloader detects associations with any of these options and disables automatic eager loading on them.
 
@@ -171,7 +172,7 @@ Goldiloader detects associations with any of these options and disables automati
 
 This gem is tested with Rails 3.2, 4.0, and 4.1 using MRI 1.9.3, 2.0.0, 2.1.0 and JRuby in 1.9 mode. 
 
-[Salsify](http://salsify.com) is not yet using this gem in production so proceed with caution. Let us know if you find any issues or have any other feedback. 
+Let us know if you find any issues or have any other feedback. 
 
 ## Change log
 
