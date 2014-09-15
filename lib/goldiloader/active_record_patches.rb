@@ -32,9 +32,7 @@ ActiveRecord::Relation.class_eval do
     return exec_queries_without_auto_include if loaded?
 
     models = exec_queries_without_auto_include
-    # Add all loaded models to the same AutoIncludeContext
-    auto_include_context = Goldiloader::AutoIncludeContext.new
-    auto_include_context.register_models(models)
+    Goldiloader::AutoIncludeContext.register_models(models, eager_load_values)
     models
   end
 

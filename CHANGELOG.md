@@ -4,6 +4,8 @@
 * Workaround [issue 16](https://github.com/salsify/goldiloader/issues/16) by not auto-eager loading 
   has_and_belongs_to_many associations with a uniq in Rails 3.2 since Rails doesn't eager load them 
   properly.
+* Fix [issue 17](https://github.com/salsify/goldiloader/issues/17) - models eager loaded via an explicit
+  call to eager_load now auto eager load nested models.
 
 ### 0.0.5
 

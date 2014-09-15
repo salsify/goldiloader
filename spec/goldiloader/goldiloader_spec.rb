@@ -244,6 +244,46 @@ describe Goldiloader do
     expect { post.save! }.to_not raise_error
   end
 
+  context "with manual eager loading" do
+    let(:blogs) { Blog.order(:name).send(load_method, :posts).to_a }
+
+    before do
+      blogs.first.posts.to_a.first.author
+    end
+
+    shared_examples "it auto-eager loads associations of manually eager loaded associations" do
+      specify do
+        blogs.flat_map(&:posts).drop(1).each do |blog|
+          expect(blog.association(:author)).to be_loaded
+        end
+
+        expect(blogs.first.posts.first.author).to eq author1
+        expect(blogs.first.posts.second.author).to eq author2
+        expect(blogs.second.posts.first.author).to eq author3
+        expect(blogs.second.posts.second.author).to eq author1
+        expect(Post).to have_received(:find_by_sql).at_most(:once)
+      end
+    end
+
+    context "via includes" do
+      let(:load_method) { :includes }
+
+      it_behaves_like "it auto-eager loads associations of manually eager loaded associations"
+    end
+
+    context "via eager_load" do
+      let(:load_method) { :eager_load }
+
+      it_behaves_like "it auto-eager loads associations of manually eager loaded associations"
+    end
+
+    context "via preload" do
+      let(:load_method) { :preload }
+
+      it_behaves_like "it auto-eager loads associations of manually eager loaded associations"
+    end
+  end
+
   context "with associations that can't be eager loaded" do
     let(:blogs) { Blog.order(:name).to_a }
 
