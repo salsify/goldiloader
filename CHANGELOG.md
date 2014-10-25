@@ -1,6 +1,6 @@
 # Changelog
 
-### 0.0.7 (unreleased)
+### 0.0.7
 * Fix [issue 20](https://github.com/salsify/goldiloader/issues/20) by not auto-eager loading 
   associations that are instance dependent. Eager loading these associations produces potentially
   incorrect results and leads to a deprecation warning in Rails 4.2.
