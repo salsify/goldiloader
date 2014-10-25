@@ -67,7 +67,8 @@ ActiveRecord::Associations::Association.class_eval do
         # Joins not properly eager loaded - See https://github.com/salsify/goldiloader/issues/11
         !association_info.joins? &&
         # Unscope not properly eager loaded - See https://github.com/salsify/goldiloader/issues/13
-        !association_info.unscope?
+        !association_info.unscope? &&
+        !association_info.instance_dependent?
   end
 
   def load_with_auto_include(load_method, *args)

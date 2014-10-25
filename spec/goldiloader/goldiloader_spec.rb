@@ -440,6 +440,20 @@ describe Goldiloader do
         end
       end
     end
+
+    if ActiveRecord::VERSION::MAJOR >= 4
+      context "associations with an instance dependent scope" do
+        before do
+          blogs.first.instance_dependent_posts.to_a
+        end
+
+        it "applies the scope correctly" do
+          expect(blogs.first.instance_dependent_posts.to_a).to match_array(blogs.first.posts)
+        end
+
+        it_behaves_like "it doesn't auto eager the association", :instance_dependent_posts
+      end
+    end
   end
 
   context "associations with a uniq" do

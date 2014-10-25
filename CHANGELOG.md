@@ -1,6 +1,11 @@
 # Changelog
 
-### 0.0.6 (unreleased)
+### 0.0.7 (unreleased)
+* Fix [issue 20](https://github.com/salsify/goldiloader/issues/20) by not auto-eager loading 
+  associations that are instance dependent. Eager loading these associations produces potentially
+  incorrect results and leads to a deprecation warning in Rails 4.2.
+
+### 0.0.6
 * Workaround [issue 16](https://github.com/salsify/goldiloader/issues/16) by not auto-eager loading 
   has_and_belongs_to_many associations with a uniq in Rails 3.2 since Rails doesn't eager load them 
   properly.

@@ -67,6 +67,7 @@ class Blog < ActiveRecord::Base
     has_many :grouped_posts, -> { group(:blog_id) }, class_name: 'Post'
     has_many :offset_posts, -> { offset(2) }, class_name: 'Post'
     has_many :from_posts, -> { from('(select distinct blog_id from posts) as posts') }, class_name: 'Post'
+    has_many :instance_dependent_posts, ->(instance) { Post.where(blog_id: instance.id) }, class_name: 'Post'
 
     has_many :posts_ordered_by_author, -> { joins(:author).order('users.name') }, class_name: 'Post'
 

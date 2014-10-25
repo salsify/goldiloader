@@ -7,44 +7,50 @@ module Goldiloader
       @association = association
     end
 
-    def unscope?
-      Goldiloader::Compatibility.unscope_query_method_enabled? &&
-        @association.association_scope.unscope_values.present?
-    end
-
     def finder_sql?
       Goldiloader::Compatibility.association_finder_sql_enabled? &&
-        @association.options[:finder_sql].present?
+        association_options[:finder_sql].present?
     end
 
     if ActiveRecord::VERSION::MAJOR >= 4
+      delegate :association_scope, :reflection, to: :@association
+
       def read_only?
-        @association.association_scope.readonly_value.present?
+        association_scope.readonly_value.present?
       end
 
       def offset?
-        @association.association_scope.offset_value.present?
+        association_scope.offset_value.present?
       end
 
       def limit?
-        @association.association_scope.limit_value.present?
+        association_scope.limit_value.present?
       end
 
       def from?
-        @association.association_scope.from_value.present?
+        association_scope.from_value.present?
       end
 
       def group?
-        @association.association_scope.group_values.present?
+        association_scope.group_values.present?
       end
 
       def joins?
         # Yuck - Through associations will always have a join for *each* 'through' table
-        (@association.association_scope.joins_values.size - num_through_joins) > 0
+        (association_scope.joins_values.size - num_through_joins) > 0
       end
 
       def uniq?
-        @association.association_scope.uniq_value
+        association_scope.uniq_value
+      end
+
+      def instance_dependent?
+        reflection.scope.present? && reflection.scope.arity > 0
+      end
+
+      def unscope?
+        Goldiloader::Compatibility.unscope_query_method_enabled? &&
+            association_scope.unscope_values.present?
       end
 
       private
@@ -60,15 +66,15 @@ module Goldiloader
       end
     else
       def read_only?
-        @association.options[:readonly].present?
+        association_options[:readonly].present?
       end
 
       def offset?
-        @association.options[:offset].present?
+        association_options[:offset].present?
       end
 
       def limit?
-        @association.options[:limit].present?
+        association_options[:limit].present?
       end
 
       def from?
@@ -76,7 +82,7 @@ module Goldiloader
       end
 
       def group?
-        @association.options[:group].present?
+        association_options[:group].present?
       end
 
       def joins?
@@ -85,9 +91,24 @@ module Goldiloader
       end
 
       def uniq?
-        @association.options[:uniq]
+        association_options[:uniq]
+      end
+
+      def instance_dependent?
+        # Rails 3 didn't support this
+        false
+      end
+
+      def unscope?
+        # Rails 3 didn't support this
+        false
       end
     end
 
+    private
+
+    def association_options
+      @association.options
+    end
   end
 end
