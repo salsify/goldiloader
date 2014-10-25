@@ -21,7 +21,7 @@ module Goldiloader
         associations.each do |association|
           nested_models = models.flat_map do |model|
             model.association(association).target
-          end
+          end.compact
 
           register_models(nested_models, nested_associations[association])
         end

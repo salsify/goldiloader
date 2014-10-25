@@ -4,6 +4,8 @@
 * Fix [issue 20](https://github.com/salsify/goldiloader/issues/20) by not auto-eager loading 
   associations that are instance dependent. Eager loading these associations produces potentially
   incorrect results and leads to a deprecation warning in Rails 4.2.
+* Fix [issue 21](https://github.com/salsify/goldiloader/issues/21) - Handle explicit eager loads
+  of singular associations that are nil.
 
 ### 0.0.6
 * Workaround [issue 16](https://github.com/salsify/goldiloader/issues/16) by not auto-eager loading 

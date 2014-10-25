@@ -114,6 +114,37 @@ describe Goldiloader::AutoIncludeContext do
       end
     end
 
+    context "when nested associations are nil" do
+      let!(:roots) do
+        [
+            create_mock_model(car: cars.first),
+            create_mock_model(car: nil),
+            create_mock_model(car: cars.last)
+        ]
+      end
+
+      let!(:cars) do
+        [
+            create_mock_model,
+            create_mock_model
+        ]
+      end
+
+      before do
+        Goldiloader::AutoIncludeContext.register_models(roots, :car)
+      end
+
+      it "sets the AutoIncludeContext for roots" do
+        expect(roots.map(&:auto_include_context).uniq.size).to eq 1
+        expect(roots.first.auto_include_context.models).to match_array(roots)
+      end
+
+      it "sets the AutoIncludeContext for child nested associations" do
+        expect(cars.map(&:auto_include_context).uniq.size).to eq 1
+        expect(cars.first.auto_include_context.models).to match_array(cars)
+      end
+    end
+
     def create_mock_models(num)
       num.times.map { create_mock_model }
     end
