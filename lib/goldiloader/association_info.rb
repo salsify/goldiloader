@@ -16,32 +16,32 @@ module Goldiloader
       delegate :association_scope, :reflection, to: :@association
 
       def read_only?
-        association_scope.readonly_value.present?
+        association_scope && association_scope.readonly_value.present?
       end
 
       def offset?
-        association_scope.offset_value.present?
+        association_scope && association_scope.offset_value.present?
       end
 
       def limit?
-        association_scope.limit_value.present?
+        association_scope && association_scope.limit_value.present?
       end
 
       def from?
-        association_scope.from_value.present?
+        association_scope && association_scope.from_value.present?
       end
 
       def group?
-        association_scope.group_values.present?
+        association_scope && association_scope.group_values.present?
       end
 
       def joins?
         # Yuck - Through associations will always have a join for *each* 'through' table
-        (association_scope.joins_values.size - num_through_joins) > 0
+        association_scope && (association_scope.joins_values.size - num_through_joins) > 0
       end
 
       def uniq?
-        association_scope.uniq_value
+        association_scope && association_scope.uniq_value
       end
 
       def instance_dependent?
@@ -50,6 +50,7 @@ module Goldiloader
 
       def unscope?
         Goldiloader::Compatibility.unscope_query_method_enabled? &&
+            association_scope &&
             association_scope.unscope_values.present?
       end
 

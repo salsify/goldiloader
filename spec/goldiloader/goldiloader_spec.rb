@@ -475,9 +475,42 @@ describe Goldiloader do
       expect(posts.first.unique_tags.to_a).to match_array([child_tag1, child_tag3])
     end
 
-    it "auto eager the association" do
+    it "auto eager loads the association" do
       posts.each do |blog|
         expect(blog.association(:unique_tags)).to be_loaded
+      end
+    end
+  end
+
+  context "polymorphic associations with nil" do
+    let!(:user) { User.create! }
+    let!(:group) { Group.create! }
+
+    let!(:post1) do
+      Post.create! { |post| post.owner = user }
+    end
+
+    let!(:post2) do
+      Post.create! { |post| post.owner = group }
+    end
+
+    let!(:post3) do
+      Post.create!
+    end
+
+    let(:posts) { Post.where(id: [post1, post2, post3].map(&:id)).order(:id).to_a }
+
+    before do
+      posts.first.owner
+    end
+
+    it "loads the association correctly" do
+      expect(posts.map(&:owner)).to eq [user, group, nil]
+    end
+
+    it "auto eager loads the association" do
+      posts.select(&:owner_id).each do |post|
+        expect(post.association(:owner)).to be_loaded
       end
     end
   end

@@ -10,6 +10,8 @@ ActiveRecord::Schema.define(:version => 0) do
     t.string :title
     t.integer :blog_id
     t.integer :author_id
+    t.string :owner_type
+    t.integer :owner_id
   end
 
   create_table(:users, force: true) do |t|
@@ -105,6 +107,8 @@ class Post < ActiveRecord::Base
   belongs_to :author, class_name: 'User'
   has_many :post_tags
   has_many :tags, through: :post_tags
+
+  belongs_to :owner, polymorphic: true
 
   if ActiveRecord::VERSION::MAJOR >= 4
     has_many :unique_tags, -> { distinct }, through: :post_tags, source: :tag, class_name: 'Tag'
