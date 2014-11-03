@@ -1,9 +1,10 @@
 # Changelog
 
-### 0.0.8 (unreleased)
+### 0.0.9 (unreleased)
+
+### 0.0.8
 * Fix [issue 23](https://github.com/salsify/goldiloader/issues/23) - Handle polymorphic belongs_to
   associations in Rails 4 that have a mix of non-nil and nil values.
-  
 
 ### 0.0.7
 * Fix [issue 20](https://github.com/salsify/goldiloader/issues/20) by not auto-eager loading 
