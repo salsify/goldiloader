@@ -1,16 +1,17 @@
 language: ruby
 env:
-  - RAILS_VERSION="~> 3.2.20" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 4.0.11" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 4.1.7" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 4.2.0.beta4" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 3.2.21" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 4.0.13" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 4.1.9" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 4.2.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
 rvm:
   - 1.9.3
   - 2.0.0
   - 2.1.0
+  - 2.2.0
   - jruby-19mode
 matrix:
   exclude:
     # See https://github.com/salsify/goldiloader/issues/22
     - rvm: jruby-19mode
-      env: RAILS_VERSION="~> 4.2.0.beta4" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 4.2.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
