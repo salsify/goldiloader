@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.0.10 (unreleased)
+*
+
 ### 0.0.9
 * Merge [pull request](https://github.com/salsify/goldiloader/pull/24) - Optimization: Cache compatibility
   checks. **Thanks Jonathan Calvert!**
