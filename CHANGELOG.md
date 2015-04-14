@@ -1,6 +1,8 @@
 # Changelog
 
-### 0.0.9 (unreleased)
+### 0.0.9
+* Merge [pull request](https://github.com/salsify/goldiloader/pull/24) - Optimization: Cache compatibility
+  checks. **Thanks Jonathan Calvert!**
 
 ### 0.0.8
 * Fix [issue 23](https://github.com/salsify/goldiloader/issues/23) - Handle polymorphic belongs_to
