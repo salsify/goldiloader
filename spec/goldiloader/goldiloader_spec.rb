@@ -300,6 +300,14 @@ describe Goldiloader do
       end
     end
 
+    shared_examples "it auto eager loads the association" do |association_name|
+      specify do
+        blogs.drop(1).each do |blog|
+          expect(blog.association(association_name)).to be_loaded
+        end
+      end
+    end
+
     context "associations with a limit" do
       before do
         blogs.first.limited_posts.to_a
@@ -371,10 +379,15 @@ describe Goldiloader do
         end
 
         it "applies the join correctly" do
-          expect(blogs.first.posts_ordered_by_author.to_a.size).to eq 3
+          sorted_post_authors = blogs.first.posts.map(&:author).map(&:name).sort
+          expect(blogs.first.posts_ordered_by_author.map(&:author).map(&:name)).to eq sorted_post_authors
         end
 
-        it_behaves_like "it doesn't auto eager the association", :posts_ordered_by_author
+        if Goldiloader::Compatibility.joins_eager_loadable?
+          it_behaves_like "it auto eager loads the association", :posts_ordered_by_author
+        else
+          it_behaves_like "it doesn't auto eager the association", :posts_ordered_by_author
+        end
       end
 
       context "associations with a join in a has_many_through" do
@@ -383,10 +396,15 @@ describe Goldiloader do
         end
 
         it "applies the join correctly" do
-          expect(blogs.first.authors_with_join.to_a.size).to eq 3
+          sorted_post_cities = blogs.first.posts.map(&:author).map(&:address).map(&:city).sort
+          expect(blogs.first.posts_ordered_by_author.map(&:author).map(&:address).map(&:city)).to eq sorted_post_cities
         end
 
-        it_behaves_like "it doesn't auto eager the association", :authors_with_join
+        if Goldiloader::Compatibility.joins_eager_loadable?
+          it_behaves_like "it auto eager loads the association", :authors_with_join
+        else
+          it_behaves_like "it doesn't auto eager the association", :authors_with_join
+        end
       end
     end
 

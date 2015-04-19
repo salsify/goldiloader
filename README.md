@@ -162,7 +162,7 @@ Associations with any of the following options cannot be eager loaded:
 * `finder_sql`
 * `group` (due to a Rails bug)
 * `from` (due to a Rails bug)
-* `joins` (due to a Rails bug)
+* `joins` (only Rails 4.0/4.1 - due to a Rails bug)
 * `uniq` (only Rails 3.2 - due to a Rails bug)
 
 Goldiloader detects associations with any of these options and disables automatic eager loading on them.

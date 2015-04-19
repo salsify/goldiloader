@@ -64,8 +64,7 @@ ActiveRecord::Associations::Association.class_eval do
         !association_info.group? &&
         !association_info.from? &&
         !association_info.finder_sql? &&
-        # Joins not properly eager loaded - See https://github.com/salsify/goldiloader/issues/11
-        !association_info.joins? &&
+        (Goldiloader::Compatibility.joins_eager_loadable? || !association_info.joins?) &&
         !association_info.instance_dependent?
   end
 

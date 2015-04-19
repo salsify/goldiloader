@@ -3,6 +3,8 @@
 ### 0.0.10 (unreleased)
 * Fix [issue 13](https://github.com/salsify/goldiloader/issues/13) - Handle associations in Rails 4.1+ that 
   use unscope.
+* Fix [issue 11](https://github.com/salsify/goldiloader/issues/11) - Eager load associations with joins in 
+  Rails 4.2+ now that the underlying Rails bug has been fixed.
 
 ### 0.0.9
 * Merge [pull request](https://github.com/salsify/goldiloader/pull/24) - Optimization: Cache compatibility

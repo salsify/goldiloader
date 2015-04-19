@@ -3,9 +3,11 @@
 module Goldiloader
   module Compatibility
 
-    MASS_ASSIGNMENT_SECURITY = ::ActiveRecord::VERSION::MAJOR < 4 || defined?(::ActiveRecord::MassAssignmentSecurity)
-    ASSOCIATION_FINDER_SQL = ::Gem::Version.new(::ActiveRecord::VERSION::STRING) < ::Gem::Version.new('4.1')
-    UNSCOPE_QUERY_METHOD = ::Gem::Version.new(::ActiveRecord::VERSION::STRING) >= ::Gem::Version.new('4.1')
+    ACTIVE_RECORD_VERSION = ::Gem::Version.new(::ActiveRecord::VERSION::STRING)
+    MASS_ASSIGNMENT_SECURITY = ACTIVE_RECORD_VERSION < ::Gem::Version.new('4') || defined?(::ActiveRecord::MassAssignmentSecurity)
+    ASSOCIATION_FINDER_SQL = ACTIVE_RECORD_VERSION < ::Gem::Version.new('4.1')
+    UNSCOPE_QUERY_METHOD = ACTIVE_RECORD_VERSION >= ::Gem::Version.new('4.1')
+    JOINS_EAGER_LOADABLE = ACTIVE_RECORD_VERSION >= ::Gem::Version.new('4.2')
 
     def self.mass_assignment_security_enabled?
       MASS_ASSIGNMENT_SECURITY
@@ -17,6 +19,12 @@ module Goldiloader
 
     def self.unscope_query_method_enabled?
       UNSCOPE_QUERY_METHOD
+    end
+
+    def self.joins_eager_loadable?
+      # Associations with joins were not eager loadable prior to Rails 4.2 due to
+      # https://github.com/rails/rails/pull/17678
+      JOINS_EAGER_LOADABLE
     end
   end
 end
