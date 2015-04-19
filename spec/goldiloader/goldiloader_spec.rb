@@ -405,9 +405,9 @@ describe Goldiloader do
           expect(authors.first.scoped_address_with_default_scope_remove).to be_present
         end
 
-        it "doesn't auto eager the association" do
+        it "auto eager loads the association" do
           authors.drop(1).each do |author|
-            expect(author.association(:scoped_address_with_default_scope_remove)).to_not be_loaded
+            expect(author.association(:scoped_address_with_default_scope_remove)).to be_loaded
           end
         end
       end

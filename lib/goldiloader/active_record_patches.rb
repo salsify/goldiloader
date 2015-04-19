@@ -66,8 +66,6 @@ ActiveRecord::Associations::Association.class_eval do
         !association_info.finder_sql? &&
         # Joins not properly eager loaded - See https://github.com/salsify/goldiloader/issues/11
         !association_info.joins? &&
-        # Unscope not properly eager loaded - See https://github.com/salsify/goldiloader/issues/13
-        !association_info.unscope? &&
         !association_info.instance_dependent?
   end
 
