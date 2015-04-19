@@ -162,7 +162,6 @@ Associations with any of the following options cannot be eager loaded:
 * `finder_sql`
 * `group` (due to a Rails bug)
 * `from` (due to a Rails bug)
-* `unscope` (due to a Rails bug)
 * `joins` (due to a Rails bug)
 * `uniq` (only Rails 3.2 - due to a Rails bug)
 
@@ -170,7 +169,7 @@ Goldiloader detects associations with any of these options and disables automati
 
 ## Status
 
-This gem is tested with Rails 3.2, 4.0, 4.1, and 4.2 using MRI 1.9.3, 2.0.0, 2.1.0 and JRuby in 1.9 mode. 
+This gem is tested with Rails 3.2, 4.0, 4.1, and 4.2 using MRI 1.9.3, 2.0, 2.1, 2.2 and JRuby in 1.9 mode. 
 
 Let us know if you find any issues or have any other feedback. 
 
