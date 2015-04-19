@@ -16,5 +16,5 @@ matrix:
     - rvm: jruby-19mode
       env: RAILS_VERSION="~> 4.2.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
     # See https://github.com/rails/rails/pull/18306
-    - rvm: 2.2.0
+    - rvm: 2.2.2
       env: RAILS_VERSION="~> 3.2.21" JRUBY_OPTS="$JRUBY_OPTS --debug"
