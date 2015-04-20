@@ -8,6 +8,7 @@ module Goldiloader
     ASSOCIATION_FINDER_SQL = ACTIVE_RECORD_VERSION < ::Gem::Version.new('4.1')
     UNSCOPE_QUERY_METHOD = ACTIVE_RECORD_VERSION >= ::Gem::Version.new('4.1')
     JOINS_EAGER_LOADABLE = ACTIVE_RECORD_VERSION >= ::Gem::Version.new('4.2')
+    UNSCOPED_EAGER_LOADABLE = ACTIVE_RECORD_VERSION >= ::Gem::Version.new('4.1.9')
 
     def self.mass_assignment_security_enabled?
       MASS_ASSIGNMENT_SECURITY
@@ -25,6 +26,12 @@ module Goldiloader
       # Associations with joins were not eager loadable prior to Rails 4.2 due to
       # https://github.com/rails/rails/pull/17678
       JOINS_EAGER_LOADABLE
+    end
+
+    def self.unscoped_eager_loadable?
+      # Unscoped associations weren't properly eager loaded until after Rails 4.1.9.
+      # See https://github.com/rails/rails/issues/11036.
+      UNSCOPED_EAGER_LOADABLE
     end
   end
 end
