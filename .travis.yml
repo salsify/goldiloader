@@ -1,9 +1,9 @@
 language: ruby
 env:
-  - RAILS_VERSION="~> 3.2.21" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 3.2.22" JRUBY_OPTS="$JRUBY_OPTS --debug"
   - RAILS_VERSION="~> 4.0.13" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 4.1.10" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 4.2.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 4.1.12" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 4.2.3" JRUBY_OPTS="$JRUBY_OPTS --debug"
 rvm:
   - 1.9.3
   - 2.0.0
@@ -14,7 +14,4 @@ matrix:
   exclude:
     # See https://github.com/salsify/goldiloader/issues/22
     - rvm: jruby-19mode
-      env: RAILS_VERSION="~> 4.2.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
-    # See https://github.com/rails/rails/pull/18306
-    - rvm: 2.2.2
-      env: RAILS_VERSION="~> 3.2.21" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 4.2.3" JRUBY_OPTS="$JRUBY_OPTS --debug"
