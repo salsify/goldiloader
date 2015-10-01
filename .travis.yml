@@ -1,4 +1,5 @@
 language: ruby
+sudo: false
 env:
   - RAILS_VERSION="~> 3.2.22" JRUBY_OPTS="$JRUBY_OPTS --debug"
   - RAILS_VERSION="~> 4.0.13" JRUBY_OPTS="$JRUBY_OPTS --debug"
