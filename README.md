@@ -169,7 +169,7 @@ Goldiloader detects associations with any of these options and disables automati
 
 ## Status
 
-This gem is tested with Rails 3.2, 4.0, 4.1, and 4.2 using MRI 1.9.3, 2.0, 2.1, 2.2 and JRuby in 1.9 mode. 
+This gem is tested with Rails 3.2, 4.0, 4.1, 4.2, and 5.0 using MRI 1.9.3, 2.0, 2.1, 2.2 and JRuby in 1.9 mode. 
 
 Let us know if you find any issues or have any other feedback. 
 

@@ -5,6 +5,8 @@
   in Rails 4.1.9+ now that the underlying Rails bug has been fixed.
 * Fix [issue 11](https://github.com/salsify/goldiloader/issues/11) - Eager load associations with joins in 
   Rails 4.2+ now that the underlying Rails bug has been fixed.
+* Initial support for Rails 5. There are no known issues but see 
+  [issue 27](https://github.com/salsify/goldiloader/issues/27) for remaining tasks.
 
 ### 0.0.9
 * Merge [pull request](https://github.com/salsify/goldiloader/pull/24) - Optimization: Cache compatibility

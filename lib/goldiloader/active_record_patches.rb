@@ -36,7 +36,7 @@ ActiveRecord::Relation.class_eval do
     models
   end
 
-  alias_method_chain :exec_queries, :auto_include
+  Goldiloader::Compatibility.alias_method_chain self, :exec_queries, :auto_include
 end
 
 ActiveRecord::Associations::Association.class_eval do
@@ -90,7 +90,7 @@ ActiveRecord::Associations::SingularAssociation.class_eval do
     load_with_auto_include(:find_target, *args)
   end
 
-  alias_method_chain :find_target, :auto_include
+  Goldiloader::Compatibility.alias_method_chain self, :find_target, :auto_include
 end
 
 ActiveRecord::Associations::CollectionAssociation.class_eval do
@@ -105,7 +105,7 @@ ActiveRecord::Associations::CollectionAssociation.class_eval do
       send("#{aliased_target}_without_fully_load#{punctuation}", *args, &block)
     end
 
-    alias_method_chain method, :fully_load
+    Goldiloader::Compatibility.alias_method_chain self, method, :fully_load
   end
 
   private
@@ -114,7 +114,7 @@ ActiveRecord::Associations::CollectionAssociation.class_eval do
     load_with_auto_include(:load_target, *args)
   end
 
-  alias_method_chain :load_target, :auto_include
+  Goldiloader::Compatibility.alias_method_chain self, :load_target, :auto_include
 
 end
 

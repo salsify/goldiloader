@@ -28,7 +28,11 @@ module Goldiloader
       end
 
       def from?
-        association_scope && association_scope.from_value.present?
+        if ActiveRecord::VERSION::MAJOR >= 5
+          association_scope && association_scope.from_clause.present?
+        else
+          association_scope && association_scope.from_value.present?
+        end
       end
 
       def group?
@@ -36,8 +40,14 @@ module Goldiloader
       end
 
       def joins?
+        return false unless association_scope
+
+        num_joins = association_scope.joins_values.size
+        if ActiveRecord::VERSION::MAJOR >= 5
+          num_joins += association_scope.left_joins_values.size + association_scope.left_outer_joins.size
+        end
         # Yuck - Through associations will always have a join for *each* 'through' table
-        association_scope && (association_scope.joins_values.size - num_through_joins) > 0
+        num_joins - num_through_joins > 0
       end
 
       def uniq?
