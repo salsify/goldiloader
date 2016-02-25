@@ -1,6 +1,8 @@
 # Changelog
 
-### 0.0.10 (unreleased)
+### 0.0.11 (unreleased)
+
+### 0.0.10
 * Fix [issue 13](https://github.com/salsify/goldiloader/issues/13) - Eager load associations with unscope
   in Rails 4.1.9+ now that the underlying Rails bug has been fixed.
 * Fix [issue 11](https://github.com/salsify/goldiloader/issues/11) - Eager load associations with joins in 
