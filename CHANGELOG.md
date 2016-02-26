@@ -10,6 +10,7 @@
 * Initial support for Rails 5. There are no known issues but see 
   [issue 27](https://github.com/salsify/goldiloader/issues/27) for remaining tasks.
 * MRI 2.3.0 support.
+* JRuby 9000 support.
 
 ### 0.0.9
 * Merge [pull request](https://github.com/salsify/goldiloader/pull/24) - Optimization: Cache compatibility
