@@ -10,8 +10,8 @@ module Goldiloader
       end
 
       eager_load(models, association_name)
-
-      # Workaround Rails #15853 by setting models read only
+      
+      # Workaround Rails #15853 for Rails < 4.2.0 by setting models read only
       if read_only?(models, association_name)
         associated_models = associated_models(models, association_name)
         mark_read_only(associated_models)
