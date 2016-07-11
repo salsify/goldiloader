@@ -1,28 +1,28 @@
 language: ruby
 sudo: false
 env:
-  - RAILS_VERSION="~> 3.2.22" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 3.2.22.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
   - RAILS_VERSION="~> 4.0.13" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 4.1.14" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 4.2.5" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 5.0.0.beta3" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 4.1.15" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 4.2.6" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 5.0.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
 rvm:
   - 1.9.3
   - 2.0.0
   - 2.1.6
-  - 2.2.2
-  - 2.3.0
+  - 2.2.4
+  - 2.3.1
   - jruby-19mode
-  - jruby-9.0.5.0
+  - jruby-9.1.2.0
 matrix:
   exclude:
     - rvm: 1.9.3
-      env: RAILS_VERSION="~> 5.0.0.beta3" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
     - rvm: 2.0.0
-      env: RAILS_VERSION="~> 5.0.0.beta3" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
     - rvm: 2.1.6
-      env: RAILS_VERSION="~> 5.0.0.beta3" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
     - rvm: jruby-19mode
-      env: RAILS_VERSION="~> 5.0.0.beta3" JRUBY_OPTS="$JRUBY_OPTS --debug"
-    - rvm: jruby-9.0.5.0
-      env: RAILS_VERSION="~> 5.0.0.beta3" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
+    - rvm: jruby-9.1.2.0
+      env: RAILS_VERSION="~> 5.0.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
