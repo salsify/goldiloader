@@ -120,6 +120,8 @@ class Post < ActiveRecord::Base
     has_and_belongs_to_many :unique_tags_has_and_belongs, join_table: :post_tags, class_name: 'Tag', uniq: true
   end
 
+  has_and_belongs_to_many :tags_without_auto_include, join_table: :post_tags, class_name: 'Tag', auto_include: false
+
   after_destroy :after_post_destroy
 
   if Goldiloader::Compatibility.mass_assignment_security_enabled?

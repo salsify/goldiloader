@@ -732,6 +732,17 @@ describe Goldiloader do
       end
     end
 
+    it "doesn't auto eager load has_and_belongs_to_many associations" do
+      posts = Post.all.to_a
+
+      # Force the first post's tags to load
+      posts.first.tags_without_auto_include.to_a
+
+      posts.drop(1).each do |post|
+        expect(post.association(:tags_without_auto_include)).to_not be_loaded
+      end
+    end
+
     it "still auto eager loads nested associations" do
       posts = Post.order(:title).to_a
       # Force the first post's blog to load
