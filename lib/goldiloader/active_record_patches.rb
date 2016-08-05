@@ -138,6 +138,29 @@ if ActiveRecord::VERSION::MAJOR < 4
   end
 end
 
+# In Rails >= 4.1 has_and_belongs_to_many associations create a has_many associations
+# under the covers so we need to make sure to propagate the auto_include option to that
+# association
+if Goldiloader::Compatibility::ACTIVE_RECORD_VERSION >= ::Gem::Version.new('4.1')
+  ActiveRecord::Associations::ClassMethods.class_eval do
+    
+    def has_and_belongs_to_many_with_auto_include_option(name, scope = nil, options = {}, &extension)
+      if scope.is_a?(Hash)
+        options = scope
+        scope = nil
+      end
+
+      result = has_and_belongs_to_many_without_auto_include_option(name, scope, options, &extension)
+      if options.include?(:auto_include)
+        _reflect_on_association(name).options[:auto_include] = options[:auto_include]
+      end
+      result
+    end
+
+    Goldiloader::Compatibility.alias_method_chain self, :has_and_belongs_to_many, :auto_include_option
+  end
+end
+
 # The CollectionProxy just forwards exists? to the underlying scope so we need to intercept this and
 # force it to use size which handles fully_load properly.
 ActiveRecord::Associations::CollectionProxy.class_eval do

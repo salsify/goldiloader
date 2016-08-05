@@ -1,7 +1,9 @@
 # Changelog
 
 ### 0.0.11 (unreleased)
-
+* Fix [issue 34](https://github.com/salsify/goldiloader/issues/34) - HABTM associations now honor 
+  the auto_include option.
+  
 ### 0.0.10
 * Fix [issue 13](https://github.com/salsify/goldiloader/issues/13) - Eager load associations with unscope
   in Rails 4.1.9+ now that the underlying Rails bug has been fixed.
