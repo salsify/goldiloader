@@ -138,7 +138,7 @@ if ActiveRecord::VERSION::MAJOR < 4
   end
 end
 
-# In Rails > 4.1 has_and_belongs_to_many associations create a has_many associations
+# In Rails >= 4.1 has_and_belongs_to_many associations create a has_many associations
 # under the covers so we need to make sure to propagate the auto_include option to that
 # association
 if Goldiloader::Compatibility::ACTIVE_RECORD_VERSION >= ::Gem::Version.new('4.1')
