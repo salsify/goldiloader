@@ -14,7 +14,7 @@ Wouldn't it be awesome if ActiveRecord didn't make you think about eager loading
 
 Consider the following models:
 
-```
+```ruby
 class Blog < ActiveRecord::Base
   has_many :posts
 end
@@ -26,7 +26,7 @@ end
 
 Here are some sample queries without the Goldiloader:
 
-```
+```ruby
 > blogs = Blogs.limit(5).to_a
 # SELECT * FROM blogs LIMIT 5
 
@@ -40,7 +40,7 @@ Here are some sample queries without the Goldiloader:
 
 Here are the same queries with the Goldiloader:
 
-```
+```ruby
 > blogs = Blogs.limit(5).to_a
 # SELECT * FROM blogs LIMIT 5
 
@@ -78,7 +78,7 @@ Goldiloader supports a few options on ActiveRecord associations to customize its
 
 You can disable automatic eager loading on specific associations with the `auto_include` option:
 
-```
+```ruby
 class Blog < ActiveRecord::Base
   has_many :posts, auto_include: false
 end
@@ -102,7 +102,7 @@ There are several association methods that ActiveRecord can either execute on in
 
 This can cause problems for certain usage patterns if we're no longer specifying eager loads:
 
-```
+```ruby
 > blogs = Blogs.limit(5).to_a
 # SELECT * FROM blogs LIMIT 5
 
@@ -118,7 +118,7 @@ This can cause problems for certain usage patterns if we're no longer specifying
 
 Notice the first call to `blog.posts.exists?` was executed via SQL because the `posts` association wasn't yet loaded. The `fully_load` option can be used to force ActiveRecord to fully load the association (and do any necessary automatic eager loading) when evaluating methods like `exists?`:
 
-```
+```ruby
 class Blog < ActiveRecord::Base
   has_many :posts, fully_load: true
 end
@@ -132,7 +132,7 @@ Goldiloader leverages the ActiveRecord eager loader so it shares some of the sam
 
 You should not try to auto eager load (or regular eager load) `has_one` associations that actually correspond to multiple records and rely on a SQL limit to only return one record. Consider the following example:
 
-```
+```ruby
 class Blog < ActiveRecord::Base
   has_many :posts
   has_one :most_recent_post, -> { order(published_at: desc) }, class_name: 'Post'
@@ -141,13 +141,13 @@ end
 
 With standard Rails lazy loading the `most_recent_post` association is loaded with a query like this:
 
-```
+```sql
 SELECT * FROM posts WHERE blog_id = 1 ORDER BY published_at DESC LIMIT 1
 ```
 
 With auto eager loading (or regular eager loading) the `most_recent_post` association is loaded with a query like this:
 
-```
+```sql
 SELECT * FROM posts WHERE blog_id IN (1,2,3,4,5) ORDER BY published_at DESC
 ```
 
