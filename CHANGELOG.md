@@ -3,6 +3,8 @@
 ### 0.0.11 (unreleased)
 * Fix [issue 34](https://github.com/salsify/goldiloader/issues/34) - HABTM associations now honor 
   the auto_include option.
+* Fix [issue 39](https://github.com/salsify/goldiloader/issues/39) - `CollectionProxy#exists?` should return false 
+  for a new model's association with no values.
   
 ### 0.0.10
 * Fix [issue 13](https://github.com/salsify/goldiloader/issues/13) - Eager load associations with unscope

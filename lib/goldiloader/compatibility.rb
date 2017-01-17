@@ -4,7 +4,8 @@ module Goldiloader
   module Compatibility
 
     ACTIVE_RECORD_VERSION = ::Gem::Version.new(::ActiveRecord::VERSION::STRING)
-    MASS_ASSIGNMENT_SECURITY = ACTIVE_RECORD_VERSION < ::Gem::Version.new('4') || defined?(::ActiveRecord::MassAssignmentSecurity)
+    RAILS_3 = ACTIVE_RECORD_VERSION < ::Gem::Version.new('4')
+    MASS_ASSIGNMENT_SECURITY = RAILS_3 || defined?(::ActiveRecord::MassAssignmentSecurity)
     ASSOCIATION_FINDER_SQL = ACTIVE_RECORD_VERSION < ::Gem::Version.new('4.1')
     UNSCOPE_QUERY_METHOD = ACTIVE_RECORD_VERSION >= ::Gem::Version.new('4.1')
     JOINS_EAGER_LOADABLE = ACTIVE_RECORD_VERSION >= ::Gem::Version.new('4.2')

@@ -763,4 +763,25 @@ describe Goldiloader do
       end
     end
   end
+
+  describe "CollectionProxy#exists?" do
+    it "returns true for collections with values" do
+      expect(parent_tag1.children).to exist
+    end
+
+    it "returns false for collections without values" do
+      expect(child_tag1.children).not_to exist
+    end
+
+    if Goldiloader::Compatibility::RAILS_3
+      # Make sure we mimic the broken behavior of Rails 3
+      it "returns true for new models with empty associations" do
+        expect(Tag.new.children).to exist
+      end
+    else
+      it "returns false for new models with empty associations" do
+        expect(Tag.new.children).not_to exist
+      end
+    end
+  end
 end

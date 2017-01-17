@@ -168,6 +168,12 @@ ActiveRecord::Associations::CollectionProxy.class_eval do
     # We don't fully_load the association when arguments are passed to exists? since Rails always
     # pushes this query into the database without any caching (and it likely not a common
     # scenario worth optimizing).
-    args.empty? && @association.fully_load? ? size > 0 : super
+    if args.empty? && @association.fully_load?
+      size > 0
+    elsif Goldiloader::Compatibility::RAILS_3
+      scoped.exists?(*args)
+    else
+      scope.exists?(*args)
+    end
   end
 end
