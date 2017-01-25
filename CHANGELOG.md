@@ -1,6 +1,9 @@
 # Changelog
 
-### 0.0.11 (unreleased)
+### 0.0.12 (unreleased)
+* 
+
+### 0.0.11
 * Fix [issue 34](https://github.com/salsify/goldiloader/issues/34) - HABTM associations now honor 
   the auto_include option.
 * Fix [issue 39](https://github.com/salsify/goldiloader/issues/39) - `CollectionProxy#exists?` should return false 
