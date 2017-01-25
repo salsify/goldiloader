@@ -13,7 +13,7 @@ rvm:
   - 2.2.6
   - 2.3.3
   - jruby-19mode
-  - jruby-9.1.6.0
+  - jruby-9.1.7.0
 matrix:
   exclude:
     - rvm: 1.9.3
@@ -24,5 +24,5 @@ matrix:
       env: RAILS_VERSION="~> 5.0.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
     - rvm: jruby-19mode
       env: RAILS_VERSION="~> 5.0.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
-    - rvm: jruby-9.1.6.0
+    - rvm: jruby-9.1.7.0
       env: RAILS_VERSION="~> 5.0.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
