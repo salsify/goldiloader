@@ -15,10 +15,9 @@ Gem::Specification.new do |spec|
 
   spec.files         = `git ls-files`.split($/)
   spec.test_files    = Dir.glob('spec/**/*')
-  spec.require_paths = ['lib']
 
-  spec.add_dependency 'activerecord', ENV.fetch('RAILS_VERSION', ['>= 3.2', '< 5.1'])
-  spec.add_dependency 'activesupport', ENV.fetch('RAILS_VERSION', ['>= 3.2', '< 5.1'])
+  spec.add_dependency 'activerecord', ENV.fetch('RAILS_VERSION', ['>= 3.2', '< 5.2'])
+  spec.add_dependency 'activesupport', ENV.fetch('RAILS_VERSION', ['>= 3.2', '< 5.2'])
 
   spec.add_development_dependency 'coveralls'
   spec.add_development_dependency 'database_cleaner', '>= 1.2'
@@ -35,6 +34,5 @@ Gem::Specification.new do |spec|
   else
     spec.add_development_dependency 'sqlite3'
   end
-
 end
 
