@@ -1,7 +1,7 @@
 # Changelog
 
 ### 0.0.12 (unreleased)
-* 
+* Fix [issue 42](https://github.com/salsify/goldiloader/issues/42) - inverse_of now work properly in Rails 5.x.
 
 ### 0.0.11
 * Fix [issue 34](https://github.com/salsify/goldiloader/issues/34) - HABTM associations now honor 

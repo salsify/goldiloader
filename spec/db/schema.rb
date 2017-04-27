@@ -60,6 +60,7 @@ end
 
 class Blog < ActiveRecord::Base
   has_many :posts
+  has_many :posts_with_inverse_of, class_name: 'Post', inverse_of: :blog
   has_many :posts_without_auto_include, auto_include: false, class_name: 'Post'
   has_many :posts_fully_load, fully_load: true, class_name: 'Post'
 
