@@ -8,14 +8,12 @@ Gem::Specification.new do |spec|
   spec.version       = Goldiloader::VERSION
   spec.authors       = ['Joel Turkel']
   spec.email         = ['jturkel@salsify.com']
-  spec.description   = %q{Automatically eager loads Rails associations as associations are traversed}
-  spec.summary       = %q{Automatic Rails association eager loading}
+  spec.description   = "Automatically eager loads Rails associations as associations are traversed"
+  spec.summary       = "Automatic Rails association eager loading"
   spec.homepage      = 'https://github.com/salsify/goldiloader'
   spec.license       = 'MIT'
 
-  spec.files         = `git ls-files`.split($/)
-  spec.test_files    = Dir.glob('spec/**/*')
-  spec.require_paths = ['lib']
+  spec.files         = `git ls-files lib Readme.md LICENSE.txt`.split($/)
 
   spec.add_dependency 'activerecord', ENV.fetch('RAILS_VERSION', ['>= 3.2', '< 5.1'])
   spec.add_dependency 'activesupport', ENV.fetch('RAILS_VERSION', ['>= 3.2', '< 5.1'])
@@ -35,6 +33,5 @@ Gem::Specification.new do |spec|
   else
     spec.add_development_dependency 'sqlite3'
   end
-
 end
 
