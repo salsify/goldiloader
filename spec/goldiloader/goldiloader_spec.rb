@@ -674,6 +674,7 @@ describe Goldiloader do
     end
 
     it "auto eager loads a has_many association when last is called" do
+      skip "Not supported on rails 5.1" if ActiveRecord::VERSION::STRING >= "5.1.0"
       blogs = Blog.order(:name).to_a
       blogs.first.posts_fully_load.last
 
