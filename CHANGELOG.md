@@ -1,7 +1,7 @@
 # Changelog
 
 ### 0.0.12 (unreleased)
-* 
+* Rails 5.1 support
 
 ### 0.0.11
 * Fix [issue 34](https://github.com/salsify/goldiloader/issues/34) - HABTM associations now honor 

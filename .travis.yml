@@ -4,25 +4,37 @@ env:
   - RAILS_VERSION="~> 3.2.22.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
   - RAILS_VERSION="~> 4.0.13" JRUBY_OPTS="$JRUBY_OPTS --debug"
   - RAILS_VERSION="~> 4.1.16" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 4.2.7.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 5.0.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 4.2.8" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 5.0.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 5.1.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  - RAILS_VERSION="~> 5.2.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
 rvm:
   - 1.9.3
   - 2.0.0
   - 2.1.10
-  - 2.2.6
+  - 2.2.7
   - 2.3.3
   - jruby-19mode
   - jruby-9.1.7.0
 matrix:
   exclude:
     - rvm: 1.9.3
-      env: RAILS_VERSION="~> 5.0.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
     - rvm: 2.0.0
-      env: RAILS_VERSION="~> 5.0.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
     - rvm: 2.1.10
-      env: RAILS_VERSION="~> 5.0.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
     - rvm: jruby-19mode
-      env: RAILS_VERSION="~> 5.0.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
     - rvm: jruby-9.1.7.0
-      env: RAILS_VERSION="~> 5.0.1" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
+    - rvm: 1.9.3
+      env: RAILS_VERSION="~> 5.1.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
+    - rvm: 2.0.0
+      env: RAILS_VERSION="~> 5.1.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
+    - rvm: 2.1.10
+      env: RAILS_VERSION="~> 5.1.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
+    - rvm: jruby-19mode
+      env: RAILS_VERSION="~> 5.1.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
+    - rvm: jruby-9.1.7.0
+      env: RAILS_VERSION="~> 5.1.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
