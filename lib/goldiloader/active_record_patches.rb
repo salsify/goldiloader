@@ -95,7 +95,12 @@ end
 
 ActiveRecord::Associations::CollectionAssociation.class_eval do
   # Force these methods to load the entire association for fully_load associations
-  [:first, :second, :third, :fourth, :fifth, :last, :size, :ids_reader, :empty?].each do |method|
+  association_methods = [:size, :ids_reader, :empty?]
+  if Goldiloader::Compatibility::ACTIVE_RECORD_VERSION < ::Gem::Version.new('5.1')
+    association_methods.concat([:first, :second, :third, :fourth, :fifth, :last])
+  end
+
+  association_methods.each do |method|
     # Some of these methods were added in Rails 4
     next unless method_defined?(method)
 
@@ -115,6 +120,13 @@ ActiveRecord::Associations::CollectionAssociation.class_eval do
   end
 
   Goldiloader::Compatibility.alias_method_chain self, :load_target, :auto_include
+
+  if Goldiloader::Compatibility::ACTIVE_RECORD_VERSION >= ::Gem::Version.new('5.1')
+    def find_from_target_with_fully_load?
+      fully_load? || find_from_target_without_fully_load?
+    end
+    Goldiloader::Compatibility.alias_method_chain self, :find_from_target?, :fully_load
+  end
 
 end
 
