@@ -198,6 +198,21 @@ describe Goldiloader do
     expect(users.second.posts).to eq Post.where(author_id: author2.id)
   end
 
+  it "sets inverse associations properly" do
+    blogs = Blog.order(:name).to_a
+
+    # Force the first blog's posts to load
+    blogs.first.posts_with_inverse_of.to_a
+
+    blogs.each do |blog|
+      expect(blog.association(:posts_with_inverse_of)).to be_loaded
+      blog.posts_with_inverse_of.each do |post|
+        expect(post.association(:blog)).to be_loaded
+        expect(post.blog.object_id).to eq(blog.object_id)
+      end
+    end
+  end
+
   it "only auto eager loads associations loaded through the same path" do
     root_tags = Tag.where(parent_id: nil).order(:name).to_a
     root_tags.first.children.to_a
