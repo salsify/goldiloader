@@ -28,10 +28,10 @@ ActiveRecord::Base.send(:include, Goldiloader::AutoIncludableModel)
 
 ActiveRecord::Relation.class_eval do
 
-  def exec_queries_with_auto_include
-    return exec_queries_without_auto_include if loaded?
+  def exec_queries_with_auto_include(&block)
+    return exec_queries_without_auto_include(&block) if loaded?
 
-    models = exec_queries_without_auto_include
+    models = exec_queries_without_auto_include(&block)
     Goldiloader::AutoIncludeContext.register_models(models, eager_load_values)
     models
   end

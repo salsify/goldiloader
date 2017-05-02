@@ -1,12 +1,15 @@
 language: ruby
 sudo: false
 env:
-  - RAILS_VERSION="~> 3.2.22.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 4.0.13" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 4.1.16" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 4.2.8" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 5.0.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
-  - RAILS_VERSION="~> 5.1.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
+  global:
+    - JRUBY_OPTS="$JRUBY_OPTS --debug"
+  matrix:
+    - RAILS_VERSION="~> 3.2.22.2"
+    - RAILS_VERSION="~> 4.0.13"
+    - RAILS_VERSION="~> 4.1.16"
+    - RAILS_VERSION="~> 4.2.7.1"
+    - RAILS_VERSION="~> 5.0.2"
+    - RAILS_VERSION="~> 5.1.0"
 rvm:
   - 1.9.3
   - 2.0.0
@@ -18,22 +21,22 @@ rvm:
 matrix:
   exclude:
     - rvm: 1.9.3
-      env: RAILS_VERSION="~> 5.0.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.2"
     - rvm: 2.0.0
-      env: RAILS_VERSION="~> 5.0.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.2"
     - rvm: 2.1.10
-      env: RAILS_VERSION="~> 5.0.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.2"
     - rvm: jruby-19mode
-      env: RAILS_VERSION="~> 5.0.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.2"
     - rvm: jruby-9.1.7.0
-      env: RAILS_VERSION="~> 5.0.2" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.0.2"
     - rvm: 1.9.3
-      env: RAILS_VERSION="~> 5.1.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.1.0"
     - rvm: 2.0.0
-      env: RAILS_VERSION="~> 5.1.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.1.0"
     - rvm: 2.1.10
-      env: RAILS_VERSION="~> 5.1.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.1.0"
     - rvm: jruby-19mode
-      env: RAILS_VERSION="~> 5.1.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.1.0"
     - rvm: jruby-9.1.7.0
-      env: RAILS_VERSION="~> 5.1.0" JRUBY_OPTS="$JRUBY_OPTS --debug"
+      env: RAILS_VERSION="~> 5.1.0"
