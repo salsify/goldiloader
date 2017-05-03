@@ -15,8 +15,8 @@ Gem::Specification.new do |spec|
 
   spec.files         = `git ls-files lib Readme.md LICENSE.txt`.split($/)
 
-  spec.add_dependency 'activerecord', ENV.fetch('RAILS_VERSION', ['>= 3.2', '< 5.1'])
-  spec.add_dependency 'activesupport', ENV.fetch('RAILS_VERSION', ['>= 3.2', '< 5.1'])
+  spec.add_dependency 'activerecord', ENV.fetch('RAILS_VERSION', ['>= 3.2', '< 5.2'])
+  spec.add_dependency 'activesupport', ENV.fetch('RAILS_VERSION', ['>= 3.2', '< 5.2'])
 
   spec.add_development_dependency 'coveralls'
   spec.add_development_dependency 'database_cleaner', '>= 1.2'
