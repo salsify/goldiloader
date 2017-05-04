@@ -15,6 +15,8 @@ Gem::Specification.new do |spec|
 
   spec.files         = `git ls-files lib Readme.md LICENSE.txt`.split($/)
 
+  spec.required_ruby_version = '>= 2.1'
+
   spec.add_dependency 'activerecord', ENV.fetch('RAILS_VERSION', ['>= 4.2', '< 5.2'])
   spec.add_dependency 'activesupport', ENV.fetch('RAILS_VERSION', ['>= 4.2', '< 5.2'])
 
