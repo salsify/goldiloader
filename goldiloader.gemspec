@@ -24,7 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'database_cleaner', '>= 1.2'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec', '~> 3'
-  spec.add_development_dependency 'simplecov', '~> 0.7.1'
+  spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'mime-types'
 
   if RUBY_PLATFORM == 'java'
