@@ -359,133 +359,75 @@ describe Goldiloader do
       it_behaves_like "it doesn't auto eager the association", :offset_posts
     end
 
-    if ActiveRecord::VERSION::MAJOR >= 4
-      context "associations with an overridden from" do
-        before do
-          blogs.first.from_posts.to_a
-        end
-
-        it "applies the from correctly" do
-          expect(blogs.first.from_posts.to_a.size).to eq 1
-        end
-
-        it_behaves_like "it doesn't auto eager the association", :from_posts
+    context "associations with an overridden from" do
+      before do
+        blogs.first.from_posts.to_a
       end
+
+      it "applies the from correctly" do
+        expect(blogs.first.from_posts.to_a.size).to eq 1
+      end
+
+      it_behaves_like "it doesn't auto eager the association", :from_posts
     end
 
-    if Goldiloader::Compatibility.association_finder_sql_enabled?
-      context "associations with finder_sql" do
-        before do
-          blogs.first.finder_sql_posts.to_a
-        end
-
-        it "applies the finder_sql correctly" do
-          expect(blogs.first.finder_sql_posts.to_a.size).to eq 1
-        end
-
-        it_behaves_like "it doesn't auto eager the association", :finder_sql_posts
+    context "associations with a join" do
+      before do
+        blogs.first.posts_ordered_by_author.to_a
       end
+
+      it "applies the join correctly" do
+        sorted_post_authors = blogs.first.posts.map(&:author).map(&:name).sort
+        expect(blogs.first.posts_ordered_by_author.map(&:author).map(&:name)).to eq sorted_post_authors
+      end
+
+      it_behaves_like "it auto eager loads the association", :posts_ordered_by_author
     end
 
-    if ActiveRecord::VERSION::MAJOR >= 4
-      context "associations with a join" do
-        before do
-          blogs.first.posts_ordered_by_author.to_a
-        end
-
-        it "applies the join correctly" do
-          sorted_post_authors = blogs.first.posts.map(&:author).map(&:name).sort
-          expect(blogs.first.posts_ordered_by_author.map(&:author).map(&:name)).to eq sorted_post_authors
-        end
-
-        if Goldiloader::Compatibility.joins_eager_loadable?
-          it_behaves_like "it auto eager loads the association", :posts_ordered_by_author
-        else
-          it_behaves_like "it doesn't auto eager the association", :posts_ordered_by_author
-        end
+    context "associations with a join in a has_many_through" do
+      before do
+        blogs.first.authors_with_join.to_a
       end
 
-      context "associations with a join in a has_many_through" do
-        before do
-          blogs.first.authors_with_join.to_a
-        end
+      it "applies the join correctly" do
+        sorted_post_cities = blogs.first.posts.map(&:author).map(&:address).map(&:city).sort
+        expect(blogs.first.posts_ordered_by_author.map(&:author).map(&:address).map(&:city)).to eq sorted_post_cities
+      end
 
-        it "applies the join correctly" do
-          sorted_post_cities = blogs.first.posts.map(&:author).map(&:address).map(&:city).sort
-          expect(blogs.first.posts_ordered_by_author.map(&:author).map(&:address).map(&:city)).to eq sorted_post_cities
-        end
+      it_behaves_like "it auto eager loads the association", :authors_with_join
+    end
 
-        if Goldiloader::Compatibility.joins_eager_loadable?
-          it_behaves_like "it auto eager loads the association", :authors_with_join
-        else
-          it_behaves_like "it doesn't auto eager the association", :authors_with_join
+    context "associations with an unscoped" do
+      let(:authors) { User.order(:id).to_a }
+
+      before do
+        author1.address.update_attributes!(city: 'Boston')
+        author2.address.update_attributes!(city: 'Philadelphia')
+        author3.address.update_attributes!(city: 'Philadelphia')
+        authors.first.scoped_address_with_default_scope_remove
+      end
+
+      it "applies the unscope correctly" do
+        expect(authors.first.scoped_address_with_default_scope_remove).to be_present
+      end
+
+      it "auto eager loads the association" do
+        authors.drop(1).each do |author|
+          expect(author.association(:scoped_address_with_default_scope_remove)).to be_loaded
         end
       end
     end
 
-    if Goldiloader::Compatibility.unscope_query_method_enabled?
-      context "associations with an unscoped" do
-        let(:authors) { User.order(:id).to_a }
-
-        before do
-          author1.address.update_attributes!(city: 'Boston')
-          author2.address.update_attributes!(city: 'Philadelphia')
-          author3.address.update_attributes!(city: 'Philadelphia')
-          authors.first.scoped_address_with_default_scope_remove
-        end
-
-        it "applies the unscope correctly" do
-          expect(authors.first.scoped_address_with_default_scope_remove).to be_present
-        end
-
-        it "auto eager loads the association" do
-          authors.drop(1).each do |author|
-            expect(author.association(:scoped_address_with_default_scope_remove)).to be_loaded
-          end
-        end
+    context "associations with an instance dependent scope" do
+      before do
+        blogs.first.instance_dependent_posts.to_a
       end
-    end
 
-    if ActiveRecord::VERSION::MAJOR < 4
-      context "unique_tags_has_and_belongs associations with a uniq" do
-        let!(:post1) do
-          Post.create! { |post| post.tags << child_tag1 << child_tag1 << child_tag3 }
-        end
-
-        let!(:post2) do
-          Post.create! { |post| post.tags << child_tag1 << child_tag1 << child_tag2 }
-        end
-
-        let(:posts) { Post.where(id: [post1.id, post2.id]).order(:id).to_a }
-
-        before do
-          posts.first.unique_tags_has_and_belongs.to_a
-        end
-
-        it "applies the uniq correctly" do
-          expect(posts.first.unique_tags_has_and_belongs.to_a.size).to eq 2
-        end
-
-        it "doesn't auto eager the association" do
-          posts.drop(1).each do |author|
-            expect(author.association(:unique_tags_has_and_belongs)).to_not be_loaded
-          end
-        end
+      it "applies the scope correctly" do
+        expect(blogs.first.instance_dependent_posts.to_a).to match_array(blogs.first.posts)
       end
-    end
 
-    if ActiveRecord::VERSION::MAJOR >= 4
-      context "associations with an instance dependent scope" do
-        before do
-          blogs.first.instance_dependent_posts.to_a
-        end
-
-        it "applies the scope correctly" do
-          expect(blogs.first.instance_dependent_posts.to_a).to match_array(blogs.first.posts)
-        end
-
-        it_behaves_like "it doesn't auto eager the association", :instance_dependent_posts
-      end
+      it_behaves_like "it doesn't auto eager the association", :instance_dependent_posts
     end
   end
 
@@ -788,15 +730,8 @@ describe Goldiloader do
       expect(child_tag1.children).not_to exist
     end
 
-    if Goldiloader::Compatibility::RAILS_3
-      # Make sure we mimic the broken behavior of Rails 3
-      it "returns true for new models with empty associations" do
-        expect(Tag.new.children).to exist
-      end
-    else
-      it "returns false for new models with empty associations" do
-        expect(Tag.new.children).not_to exist
-      end
+    it "returns false for new models with empty associations" do
+      expect(Tag.new.children).not_to exist
     end
   end
 end

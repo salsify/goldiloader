@@ -63,9 +63,6 @@ ActiveRecord::Associations::Association.class_eval do
         !association_info.offset? &&
         !association_info.group? &&
         !association_info.from? &&
-        !association_info.finder_sql? &&
-        (Goldiloader::Compatibility.unscoped_eager_loadable? || !association_info.unscope?) &&
-        (Goldiloader::Compatibility.joins_eager_loadable? || !association_info.joins?) &&
         !association_info.instance_dependent?
   end
 
@@ -101,9 +98,6 @@ ActiveRecord::Associations::CollectionAssociation.class_eval do
   end
 
   association_methods.each do |method|
-    # Some of these methods were added in Rails 4
-    next unless method_defined?(method)
-
     aliased_target, punctuation = method.to_s.sub(/([?!=])$/, ''), $1
     define_method("#{aliased_target}_with_fully_load#{punctuation}") do |*args, &block|
       load_target if fully_load?
@@ -140,37 +134,25 @@ end
   end
 end
 
-# uniq in Rails 3 not properly eager loaded - See https://github.com/salsify/goldiloader/issues/16
-if ActiveRecord::VERSION::MAJOR < 4
-  ActiveRecord::Associations::HasAndBelongsToManyAssociation.class_eval do
-    def eager_loadable?
-      association_info = Goldiloader::AssociationInfo.new(self)
-      super && !association_info.uniq?
-    end
-  end
-end
-
 # In Rails >= 4.1 has_and_belongs_to_many associations create a has_many associations
 # under the covers so we need to make sure to propagate the auto_include option to that
 # association
-if Goldiloader::Compatibility::ACTIVE_RECORD_VERSION >= ::Gem::Version.new('4.1')
-  ActiveRecord::Associations::ClassMethods.class_eval do
-    
-    def has_and_belongs_to_many_with_auto_include_option(name, scope = nil, options = {}, &extension)
-      if scope.is_a?(Hash)
-        options = scope
-        scope = nil
-      end
+ActiveRecord::Associations::ClassMethods.class_eval do
 
-      result = has_and_belongs_to_many_without_auto_include_option(name, scope, options, &extension)
-      if options.include?(:auto_include)
-        _reflect_on_association(name).options[:auto_include] = options[:auto_include]
-      end
-      result
+  def has_and_belongs_to_many_with_auto_include_option(name, scope = nil, options = {}, &extension)
+    if scope.is_a?(Hash)
+      options = scope
+      scope = nil
     end
 
-    Goldiloader::Compatibility.alias_method_chain self, :has_and_belongs_to_many, :auto_include_option
+    result = has_and_belongs_to_many_without_auto_include_option(name, scope, options, &extension)
+    if options.include?(:auto_include)
+      _reflect_on_association(name).options[:auto_include] = options[:auto_include]
+    end
+    result
   end
+
+  Goldiloader::Compatibility.alias_method_chain self, :has_and_belongs_to_many, :auto_include_option
 end
 
 # The CollectionProxy just forwards exists? to the underlying scope so we need to intercept this and
@@ -182,8 +164,6 @@ ActiveRecord::Associations::CollectionProxy.class_eval do
     # scenario worth optimizing).
     if args.empty? && @association.fully_load?
       size > 0
-    elsif Goldiloader::Compatibility::RAILS_3
-      scoped.exists?(*args)
     else
       scope.exists?(*args)
     end

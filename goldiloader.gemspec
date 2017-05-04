@@ -15,20 +15,20 @@ Gem::Specification.new do |spec|
 
   spec.files         = `git ls-files lib Readme.md LICENSE.txt`.split($/)
 
-  spec.add_dependency 'activerecord', ENV.fetch('RAILS_VERSION', ['>= 3.2', '< 5.2'])
-  spec.add_dependency 'activesupport', ENV.fetch('RAILS_VERSION', ['>= 3.2', '< 5.2'])
+  spec.required_ruby_version = '>= 2.1'
+
+  spec.add_dependency 'activerecord', ENV.fetch('RAILS_VERSION', ['>= 4.2', '< 5.2'])
+  spec.add_dependency 'activesupport', ENV.fetch('RAILS_VERSION', ['>= 4.2', '< 5.2'])
 
   spec.add_development_dependency 'coveralls'
   spec.add_development_dependency 'database_cleaner', '>= 1.2'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec', '~> 3'
   spec.add_development_dependency 'simplecov', '~> 0.7.1'
-  # mime-type 3 requires Ruby >= 2.0
-  spec.add_development_dependency 'mime-types', '~> 2'
+  spec.add_development_dependency 'mime-types'
 
   if RUBY_PLATFORM == 'java'
-    # jdbc-sqlite3 > 3.8 doesn't work with JRuby 1.7
-    spec.add_development_dependency 'jdbc-sqlite3', '~> 3.8.11'
+    spec.add_development_dependency 'jdbc-sqlite3'
     spec.add_development_dependency 'activerecord-jdbcsqlite3-adapter'
   else
     spec.add_development_dependency 'sqlite3'
