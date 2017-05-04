@@ -12,6 +12,8 @@
 
 Wouldn't it be awesome if ActiveRecord didn't make you think about eager loading and it just did the "right" thing by default? With Goldiloader it can!
 
+**This branch only supports Rails 4.2+ with Ruby 2.1+. For older versions of Rails/Ruby use [1-0-stable](https://github.com/salsify/goldiloader/blob/1-0-stable/README.md).**
+
 Consider the following models:
 
 ```ruby
@@ -169,7 +171,7 @@ Goldiloader detects associations with any of these options and disables automati
 
 ## Status
 
-This gem is tested with Rails 3.2, 4.0, 4.1, 4.2, 5.0 and 5.1 using MRI 1.9.3, 2.0, 2.1, 2.2, 2.3, JRuby 1.7 in 1.9 mode, and JRuby 9000. 
+This gem is tested with Rails 4.2, 5.0 and 5.1 using MRI 2.1, 2.2, and 2.3 and JRuby 9000. 
 
 Let us know if you find any issues or have any other feedback. 
 

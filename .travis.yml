@@ -4,36 +4,22 @@ env:
   global:
     - JRUBY_OPTS="$JRUBY_OPTS --debug"
   matrix:
-    - RAILS_VERSION="~> 3.2.22.2"
-    - RAILS_VERSION="~> 4.0.13"
-    - RAILS_VERSION="~> 4.1.16"
-    - RAILS_VERSION="~> 4.2.7.1"
+    - RAILS_VERSION="~> 4.2.8"
     - RAILS_VERSION="~> 5.0.2"
     - RAILS_VERSION="~> 5.1.0"
 rvm:
-  - 1.9.3
-  - 2.0.0
   - 2.1.10
   - 2.2.7
-  - 2.3.3
-  - jruby-19mode
+  - 2.3.4
   - jruby-9.1.7.0
 matrix:
   exclude:
-    - rvm: 1.9.3
-      env: RAILS_VERSION="~> 5.0.2"
-    - rvm: 2.0.0
-      env: RAILS_VERSION="~> 5.0.2"
     - rvm: 2.1.10
       env: RAILS_VERSION="~> 5.0.2"
     - rvm: jruby-19mode
       env: RAILS_VERSION="~> 5.0.2"
     - rvm: jruby-9.1.7.0
       env: RAILS_VERSION="~> 5.0.2"
-    - rvm: 1.9.3
-      env: RAILS_VERSION="~> 5.1.0"
-    - rvm: 2.0.0
-      env: RAILS_VERSION="~> 5.1.0"
     - rvm: 2.1.10
       env: RAILS_VERSION="~> 5.1.0"
     - rvm: jruby-19mode

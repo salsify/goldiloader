@@ -1,7 +1,10 @@
 # Changelog
 
+### 2.0.0 (unreleased)
+* Rails 5.1 support.
+* Drop Rails 3.2, 4.0 and 4.1 and Ruby 1.9 and 2.0 support.
+
 ### 0.0.12 (unreleased)
-* Rails 5.1 support
 * Fix [issue 42](https://github.com/salsify/goldiloader/issues/42) - inverse_of now work properly in Rails 5.x.
 
 ### 0.0.11
