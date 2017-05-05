@@ -1,5 +1,8 @@
 # Changelog
 
+### 1.0.1
+* No code changes. Fix bad deploy.
+
 ### 1.0.0
 * Version bump only release
 
