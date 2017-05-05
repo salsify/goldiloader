@@ -652,7 +652,19 @@ describe Goldiloader do
 
   context "with auto_include disabled" do
 
-    it "doesn't auto eager load has_many associations" do
+    it "doesn't auto eager load associations when the query disables auto include" do
+      blogs = Blog.auto_include(false).order(:name).to_a
+
+      # Force the first blogs first post to load
+      posts = blogs.first.posts.to_a
+      expect(posts).to match_array Post.where(blog_id: blogs.first.id)
+
+      blogs.drop(1).each do |blog|
+        expect(blog.association(:posts)).to_not be_loaded
+      end
+    end
+
+    it "doesn't auto eager load has_many associations with auto include disabled" do
       blogs = Blog.order(:name).to_a
 
       # Force the first blogs first post to load
@@ -664,7 +676,7 @@ describe Goldiloader do
       end
     end
 
-    it "doesn't auto eager load has_one associations" do
+    it "doesn't auto eager load has_one associations with auto include disabled" do
       users = User.order(:name).to_a
 
       # Force the first user's address to load
@@ -677,7 +689,7 @@ describe Goldiloader do
       end
     end
 
-    it "doesn't auto eager load belongs_to associations" do
+    it "doesn't auto eager load belongs_to associations with auto include disabled" do
       posts = Post.order(:title).to_a
       # Force the first post's blog to load
       post = posts.first
@@ -689,7 +701,7 @@ describe Goldiloader do
       end
     end
 
-    it "doesn't auto eager load has_and_belongs_to_many associations" do
+    it "doesn't auto eager load has_and_belongs_to_many associations with auto include disabled" do
       posts = Post.all.to_a
 
       # Force the first post's tags to load

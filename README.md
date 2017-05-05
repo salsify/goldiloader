@@ -72,19 +72,25 @@ Or install it yourself as:
 
 By default all associations will be automatically eager loaded when they are first accessed so hopefully most use cases should require no additional configuration. Note you're still free to explicitly eager load associations via `eager_load`, `includes`, or `preload`.
 
-### Association Options
+### Disabling Automatic Eager Loading
 
-Goldiloader supports a few options on ActiveRecord associations to customize its behavior.
+You can disable automatic eager loading with `auto_include` query scope method:
 
-#### auto_include
+```ruby
+Blog.order(:name).auto_include(false)
+```
 
-You can disable automatic eager loading on specific associations with the `auto_include` option:
+This can also be used to disable automatic eager loading for associations:
 
 ```ruby
 class Blog < ActiveRecord::Base
-  has_many :posts, auto_include: false
+  has_many :posts, -> { auto_include(false) }
 end
 ```
+
+### Association Options
+
+Goldiloader supports a few options on ActiveRecord associations to customize its behavior.
 
 #### fully_load
 
@@ -164,10 +170,25 @@ Associations with any of the following options cannot be eager loaded:
 * `finder_sql`
 * `group` (due to a Rails bug)
 * `from` (due to a Rails bug)
-* `joins` (only Rails 4.0/4.1 - due to a Rails bug)
-* `uniq` (only Rails 3.2 - due to a Rails bug)
 
 Goldiloader detects associations with any of these options and disables automatic eager loading on them.
+
+## Upgrading
+
+### From 0.x, 1.x
+
+The `auto_include` association option has been removed in favor of the `auto_include` query scope method. 
+Associations that specify this option must migrate to use the query scope method:
+
+```ruby
+class Blog < ActiveRecord::Base
+  # Old syntax
+  has_many :posts, auto_include: false
+  
+  # New syntax
+  has_many :posts, -> { auto_include(false) }
+end
+```
 
 ## Status
 

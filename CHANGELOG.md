@@ -1,6 +1,8 @@
 # Changelog
 
 ### 2.0.0 (unreleased)
+* Add `auto_include` query scope method.
+* Remove `auto_include` association option in favor of using the `auto_include` query scope method.
 * Add Rails 5.1 support.
 * Drop Rails 3.2, 4.0 and 4.1 and Ruby 1.9 and 2.0 support.
 * Change ActiveRecord monkey patching to use `Module#prepend` instead of `alias_method_chain`.

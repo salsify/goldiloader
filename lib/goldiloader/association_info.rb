@@ -17,6 +17,10 @@ module Goldiloader
       association_scope && association_scope.limit_value.present?
     end
 
+    def auto_include?
+      association_scope.nil? || association_scope.auto_include_value
+    end
+
     def from?
       if ActiveRecord::VERSION::MAJOR >= 5
         association_scope && association_scope.from_clause.present?
