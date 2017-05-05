@@ -1,6 +1,9 @@
 # Changelog
 
-### 0.0.12 (unreleased)
+### 1.0.0
+* Version bump only release
+
+### 0.0.12
 * Fix [issue 42](https://github.com/salsify/goldiloader/issues/42) - inverse_of now work properly in Rails 5.x.
 
 ### 0.0.11
