@@ -1,5 +1,8 @@
 # Changelog
 
+### 2.0.1
+* No code changes. Fix bad deploy.
+
 ### 2.0.0
 * Add `auto_include` query scope method.
 * Remove `auto_include` association option in favor of using the `auto_include` query scope method.
