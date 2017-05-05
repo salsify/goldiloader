@@ -4,7 +4,7 @@ module Goldiloader
   module AssociationOptions
     extend self
 
-    OPTIONS = [:auto_include, :fully_load].freeze
+    OPTIONS = [:fully_load].freeze
 
     # This is only used in Rails 5+
     module AssociationBuilderExtension

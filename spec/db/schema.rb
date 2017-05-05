@@ -57,7 +57,7 @@ end
 class Blog < ActiveRecord::Base
   has_many :posts
   has_many :posts_with_inverse_of, class_name: 'Post', inverse_of: :blog
-  has_many :posts_without_auto_include, auto_include: false, class_name: 'Post'
+  has_many :posts_without_auto_include, -> { auto_include(false) }, class_name: 'Post'
   has_many :posts_fully_load, fully_load: true, class_name: 'Post'
 
   has_many :read_only_posts, -> { readonly }, class_name: 'Post'
@@ -82,7 +82,7 @@ end
 
 class Post < ActiveRecord::Base
   belongs_to :blog
-  belongs_to :blog_without_auto_include, auto_include: false, class_name: 'Blog', foreign_key: :blog_id
+  belongs_to :blog_without_auto_include, -> { auto_include(false) }, class_name: 'Blog', foreign_key: :blog_id
   belongs_to :author, class_name: 'User'
   has_many :post_tags
   has_many :tags, through: :post_tags
@@ -91,7 +91,7 @@ class Post < ActiveRecord::Base
 
   has_many :unique_tags, -> { distinct }, through: :post_tags, source: :tag, class_name: 'Tag'
 
-  has_and_belongs_to_many :tags_without_auto_include, join_table: :post_tags, class_name: 'Tag', auto_include: false
+  has_and_belongs_to_many :tags_without_auto_include, -> { auto_include(false) }, join_table: :post_tags, class_name: 'Tag'
 
   after_destroy :after_post_destroy
 
@@ -104,7 +104,7 @@ class User < ActiveRecord::Base
   has_many :posts, foreign_key: :author_id
   has_many :tags, as: :owner
   has_one :address
-  has_one :address_without_auto_include, auto_include: false, class_name: 'Address'
+  has_one :address_without_auto_include, -> { auto_include(false) }, class_name: 'Address'
 
   has_one :scoped_address_with_default_scope_remove, -> { unscope(where: :city) }, class_name: 'ScopedAddress'
 end

@@ -6,6 +6,10 @@ module Goldiloader
 
     included do
       attr_writer :auto_include_context
+
+      class << self
+        delegate :auto_include, to: :all
+      end
     end
 
     def initialize_copy(other)
@@ -21,51 +25,69 @@ module Goldiloader
       @auto_include_context = nil
       super
     end
-
-    module ClassMethods
-      # In Rails >= 4.1 has_and_belongs_to_many associations create a has_many associations
-      # under the covers so we need to make sure to propagate the auto_include option to that
-      # association
-      def has_and_belongs_to_many(name, scope = nil, options = {}, &extension)
-        if scope.is_a?(Hash)
-          options = scope
-          scope = nil
-        end
-
-        result = super(name, scope, options, &extension)
-        if options.include?(:auto_include)
-          _reflect_on_association(name).options[:auto_include] = options[:auto_include]
-        end
-        result
-      end
-    end
   end
   ::ActiveRecord::Base.include(::Goldiloader::BasePatch)
 
   module RelationPatch
     def exec_queries
-      return super if loaded?
+      return super if loaded? || !auto_include_value
 
       models = super
       Goldiloader::AutoIncludeContext.register_models(models, eager_load_values)
       models
     end
+
+    def auto_include(auto_include = true)
+      spawn.auto_include!(auto_include)
+    end
+
+    def auto_include!(auto_include = true)
+      self.auto_include_value = auto_include
+      self
+    end
+
+    def auto_include_value
+      # Note: Don't use get_value because that doesn't work properly with defaulting boolean values
+      @values.fetch(:auto_include, true)
+    end
+
+    def auto_include_value=(value)
+      if Goldiloader::Compatibility.rails_4?
+        raise ::ActiveRecord::Relation::ImmutableRelation if @loaded
+        check_cached_relation
+        @values[:auto_include] = value
+      elsif Goldiloader::Compatibility.rails_5_0?
+        assert_mutability!
+        @values[:auto_include] = value
+      else
+        set_value(:auto_include, value)
+      end
+    end
   end
   ::ActiveRecord::Relation.prepend(::Goldiloader::RelationPatch)
+
+  module MergerPatch
+    private
+
+    def merge_single_values
+      relation.auto_include_value = other.auto_include_value
+      super
+    end
+  end
+  ActiveRecord::Relation::Merger.prepend(::Goldiloader::MergerPatch)
 
   module AssociationPatch
     extend ActiveSupport::Concern
 
     included do
-      class_attribute :default_auto_include, :default_fully_load
-      self.default_auto_include = true
+      class_attribute :default_fully_load
       self.default_fully_load = false
     end
 
     def auto_include?
       # We only auto include associations that don't have in-memory changes since the
       # Rails association Preloader clobbers any in-memory changes
-      !loaded? && target.blank? && options.fetch(:auto_include) { self.class.default_auto_include } && eager_loadable?
+      !loaded? && target.blank? && eager_loadable?
     end
 
     def fully_load?
@@ -80,7 +102,8 @@ module Goldiloader
         !association_info.offset? &&
         !association_info.group? &&
         !association_info.from? &&
-        !association_info.instance_dependent?
+        !association_info.instance_dependent? &&
+        association_info.auto_include?
     end
 
     def load_with_auto_include
