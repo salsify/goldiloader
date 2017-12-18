@@ -1,9 +1,9 @@
 # Goldiloader
 
-[![Gem Version](https://badge.fury.io/rb/goldiloader.png)][gem]
-[![Build Status](https://secure.travis-ci.org/salsify/goldiloader.png?branch=master)][travis]
-[![Code Climate](https://codeclimate.com/github/salsify/goldiloader.png)][codeclimate]
-[![Coverage Status](https://coveralls.io/repos/salsify/goldiloader/badge.png)][coveralls]
+[![Gem Version](https://badge.fury.io/rb/goldiloader.svg)][gem]
+[![Build Status](https://secure.travis-ci.org/salsify/goldiloader.svg?branch=master)][travis]
+[![Code Climate](https://codeclimate.com/github/salsify/goldiloader.svg)][codeclimate]
+[![Coverage Status](https://coveralls.io/repos/salsify/goldiloader/badge.svg)][coveralls]
 
 [gem]: https://rubygems.org/gems/goldiloader
 [travis]: http://travis-ci.org/salsify/goldiloader
