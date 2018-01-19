@@ -12,18 +12,10 @@ rvm:
   - 2.2.8
   - 2.3.5
   - 2.4.2
-  - jruby-9.1.7.0
+  - jruby-9.1.13.0
 matrix:
   exclude:
     - rvm: 2.1.10
       env: RAILS_VERSION="~> 5.0.6"
-    - rvm: jruby-19mode
-      env: RAILS_VERSION="~> 5.0.6"
-    - rvm: jruby-9.1.7.0
-      env: RAILS_VERSION="~> 5.0.6"
     - rvm: 2.1.10
-      env: RAILS_VERSION="~> 5.1.4"
-    - rvm: jruby-19mode
-      env: RAILS_VERSION="~> 5.1.4"
-    - rvm: jruby-9.1.7.0
       env: RAILS_VERSION="~> 5.1.4"
