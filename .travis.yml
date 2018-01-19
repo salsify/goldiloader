@@ -3,10 +3,10 @@ sudo: false
 env:
   global:
     - JRUBY_OPTS="$JRUBY_OPTS --debug"
-  matrix:
-    - RAILS_VERSION="~> 4.2.8"
-    - RAILS_VERSION="~> 5.0.6"
-    - RAILS_VERSION="~> 5.1.4"
+gemfile:
+  - gemfiles/rails_4.2.gemfile
+  - gemfiles/rails_5.0.gemfile
+  - gemfiles/rails_5.1.gemfile
 rvm:
   - 2.1.10
   - 2.2.8
@@ -16,6 +16,6 @@ rvm:
 matrix:
   exclude:
     - rvm: 2.1.10
-      env: RAILS_VERSION="~> 5.0.6"
+      gemfile: gemfiles/rails_5.0.gemfile
     - rvm: 2.1.10
-      env: RAILS_VERSION="~> 5.1.4"
+      gemfile: gemfiles/rails_5.1.gemfile

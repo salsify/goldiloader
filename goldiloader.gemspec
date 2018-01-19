@@ -17,9 +17,10 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 2.1'
 
-  spec.add_dependency 'activerecord', ENV.fetch('RAILS_VERSION', ['>= 4.2', '< 5.2'])
-  spec.add_dependency 'activesupport', ENV.fetch('RAILS_VERSION', ['>= 4.2', '< 5.2'])
+  spec.add_dependency 'activerecord', '>= 4.2', '< 5.2'
+  spec.add_dependency 'activesupport', '>= 4.2', '< 5.2'
 
+  spec.add_development_dependency 'appraisal'
   spec.add_development_dependency 'coveralls'
   spec.add_development_dependency 'database_cleaner', '>= 1.2'
   spec.add_development_dependency 'rake'
