@@ -181,7 +181,7 @@ Most of the Rails limitations with eager loading can be worked around by pushing
 class Blog < ActiveRecord::Base
   has_many :posts
   has_one :most_recent_post, -> { order(published_at: desc) }, class_name: 'Post'
-  has_one :recent_posts, -> { order(published_at: desc).limit(5) }, class_name: 'Post'
+  has_many :recent_posts, -> { order(published_at: desc).limit(5) }, class_name: 'Post'
 end
 ```
 This can be reworked to push the order/limit into a database view:
@@ -190,7 +190,7 @@ This can be reworked to push the order/limit into a database view:
 CREATE VIEW most_recent_post_references AS
 SELECT blogs.id AS blog_id, p.id as post_id
 FROM blogs, LATERAL (
-  SELECT posts.id, posts.name
+  SELECT posts.id
   FROM posts
   WHERE posts.blog_id = blogs.id
   ORDER BY published_at DESC
