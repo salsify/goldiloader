@@ -134,7 +134,7 @@ end
 
 ## Limitations
 
-Goldiloader leverages the ActiveRecord eager loader so it shares some of the same limitations. 
+Goldiloader leverages the ActiveRecord eager loader so it shares some of the same limitations. See [eager loading workarounds](#eager-loading-limitation-workarounds) for some potential workarounds.
 
 ### has_one associations that rely on a SQL limit
 
@@ -172,6 +172,61 @@ Associations with any of the following options cannot be eager loaded:
 * `from` (due to a Rails bug)
 
 Goldiloader detects associations with any of these options and disables automatic eager loading on them.
+
+### Eager Loading Limitation Workarounds
+
+Most of the Rails limitations with eager loading can be worked around by pushing the problematic SQL into the database via database views. Consider the following example with associations that can't be eager loaded due to SQL limits:
+
+```ruby
+class Blog < ActiveRecord::Base
+  has_many :posts
+  has_one :most_recent_post, -> { order(published_at: desc) }, class_name: 'Post'
+  has_many :recent_posts, -> { order(published_at: desc).limit(5) }, class_name: 'Post'
+end
+```
+This can be reworked to push the order/limit into a database view:
+
+```sql
+CREATE VIEW most_recent_post_references AS
+SELECT blogs.id AS blog_id, p.id as post_id
+FROM blogs, LATERAL (
+  SELECT posts.id
+  FROM posts
+  WHERE posts.blog_id = blogs.id
+  ORDER BY published_at DESC
+  LIMIT 1
+) p
+
+CREATE VIEW recent_post_references AS
+SELECT blogs.id AS blog_id, p.id as post_id, p.published_at AS post_published_at
+FROM blogs, LATERAL (
+  SELECT posts.id, posts.published_at
+  FROM posts
+  WHERE posts.blog_id = blogs.id
+  ORDER BY published_at DESC
+  LIMIT 5
+) p
+```
+The models would now be:
+```ruby
+class Blog < ActiveRecord::Base
+  has_many :posts
+  has_one :most_recent_post_reference
+  has_one :most_recent_post, through: :most_recent_post_reference, source: :post
+  has_many :recent_post_references, -> { order(post_published_at: desc) }
+  has_many :recent_posts, through: :recent_post_reference, source: :post
+end
+
+class MostRecentPostReference < ActiveRecord::Base
+  belongs_to :post
+  belongs_to :blog
+end
+
+class RecentPostReference < ActiveRecord::Base
+  belongs_to :post
+  belongs_to :blog
+end
+```
 
 ## Upgrading
 
