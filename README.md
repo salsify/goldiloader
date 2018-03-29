@@ -200,7 +200,7 @@ FROM blogs, LATERAL (
 CREATE VIEW recent_post_references AS
 SELECT blogs.id AS blog_id, p.id as post_id, p.published_at AS post_published_at
 FROM blogs, LATERAL (
-  SELECT posts.id, posts.name, posts.published_at
+  SELECT posts.id, posts.published_at
   FROM posts
   WHERE posts.blog_id = blogs.id
   ORDER BY published_at DESC
