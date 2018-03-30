@@ -8,9 +8,15 @@ Gem::Specification.new do |spec|
   spec.version       = Goldiloader::VERSION
   spec.authors       = ['Joel Turkel']
   spec.email         = ['jturkel@salsify.com']
-  spec.description   = "Automatically eager loads Rails associations as associations are traversed"
-  spec.summary       = "Automatic Rails association eager loading"
+  spec.description   = 'Automatically eager loads Rails associations as associations are traversed'
+  spec.summary       = 'Automatic Rails association eager loading'
   spec.homepage      = 'https://github.com/salsify/goldiloader'
+  spec.metadata      = {
+    'homepage_uri' => 'https://github.com/salsify/goldiloader',
+    'changelog_uri' => 'https://github.com/salsify/goldiloader/blob/master/CHANGELOG.md',
+    'source_code_uri' => 'https://github.com/salsify/goldiloader/',
+    'bug_tracker_uri' => 'https://github.com/salsify/goldiloader/issues',
+  }
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files lib Readme.md LICENSE.txt`.split($/)
