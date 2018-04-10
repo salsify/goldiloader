@@ -1,5 +1,8 @@
 # Changelog
 
+### 2.1.0
+* Rails 5.2 support.
+
 ### 2.0.1
 * No code changes. Fix bad deploy.
 

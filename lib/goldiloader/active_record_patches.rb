@@ -103,7 +103,8 @@ module Goldiloader
         !association_info.group? &&
         !association_info.from? &&
         !association_info.instance_dependent? &&
-        association_info.auto_include?
+        association_info.auto_include? &&
+        (!owner.destroyed? || ::Goldiloader::Compatibility.destroyed_model_associations_eager_loadable?)
     end
 
     def load_with_auto_include
