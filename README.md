@@ -114,8 +114,8 @@ This can cause problems for certain usage patterns if we're no longer specifying
 > blogs = Blogs.limit(5).to_a
 # SELECT * FROM blogs LIMIT 5
 
-> blogs.each do |blog| 
-    if blog.posts.exists? 
+> blogs.each do |blog|
+    if blog.posts.exists?
       puts blog.posts
     else
       puts 'No posts'
@@ -159,7 +159,7 @@ With auto eager loading (or regular eager loading) the `most_recent_post` associ
 SELECT * FROM posts WHERE blog_id IN (1,2,3,4,5) ORDER BY published_at DESC
 ```
 
-Notice the SQL limit can no longer be used which results in fetching all posts for each blog. This can cause severe performance problems if there are a large number of posts. 
+Notice the SQL limit can no longer be used which results in fetching all posts for each blog. This can cause severe performance problems if there are a large number of posts.
 
 ### Other Limitations
 
@@ -232,14 +232,14 @@ end
 
 ### From 0.x, 1.x
 
-The `auto_include` association option has been removed in favor of the `auto_include` query scope method. 
+The `auto_include` association option has been removed in favor of the `auto_include` query scope method.
 Associations that specify this option must migrate to use the query scope method:
 
 ```ruby
 class Blog < ActiveRecord::Base
   # Old syntax
   has_many :posts, auto_include: false
-  
+
   # New syntax
   has_many :posts, -> { auto_include(false) }
 end
@@ -247,9 +247,9 @@ end
 
 ## Status
 
-This gem is tested with Rails 4.2, 5.0, 5.1 and 5.2 using MRI 2.1, 2.2, 2.3 and 2.4 and JRuby 9000. 
+This gem is tested with Rails 4.2, 5.0, 5.1 and 5.2 using MRI 2.1, 2.2, 2.3, 2.4 and 2.5 and JRuby 9000. 
 
-Let us know if you find any issues or have any other feedback. 
+Let us know if you find any issues or have any other feedback.
 
 ## Change log
 
