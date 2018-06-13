@@ -8,6 +8,7 @@ module Goldiloader
     PRE_RAILS_5_1_5 = ACTIVE_RECORD_VERSION < ::Gem::Version.new('5.1.5')
     FROM_EAGER_LOADABLE = ACTIVE_RECORD_VERSION >= ::Gem::Version.new('5.1.5') ||
       (ACTIVE_RECORD_VERSION >= ::Gem::Version.new('5.0.7') && ACTIVE_RECORD_VERSION < ::Gem::Version.new('5.1.0'))
+    GROUP_EAGER_LOADABLE = FROM_EAGER_LOADABLE
 
     def self.rails_4?
       ::ActiveRecord::VERSION::MAJOR == 4
@@ -24,6 +25,10 @@ module Goldiloader
 
     def self.from_eager_loadable?
       FROM_EAGER_LOADABLE
+    end
+
+    def self.group_eager_loadable?
+      GROUP_EAGER_LOADABLE
     end
   end
 end

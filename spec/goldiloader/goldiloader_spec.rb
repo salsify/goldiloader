@@ -343,8 +343,12 @@ describe Goldiloader do
       it "applies the group correctly" do
         expect(blogs.first.grouped_posts.to_a.size).to eq 1
       end
-
-      it_behaves_like "it doesn't auto eager load the association", :grouped_posts
+      
+      if ::Goldiloader::Compatibility::ACTIVE_RECORD_VERSION >= ::Gem::Version.new('5.0.7')
+        it_behaves_like "it auto eager loads the association", :grouped_posts
+      else
+        it_behaves_like "it doesn't auto eager load the association", :grouped_posts
+      end
     end
 
     context "associations with an offset" do
