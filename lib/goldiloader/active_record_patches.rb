@@ -101,7 +101,7 @@ module Goldiloader
       !association_info.limit? &&
         !association_info.offset? &&
         !association_info.group? &&
-        !association_info.from? &&
+        (!association_info.from? || ::Goldiloader::Compatibility.from_eager_loadable?) &&
         !association_info.instance_dependent? &&
         association_info.auto_include? &&
         (!owner.destroyed? || ::Goldiloader::Compatibility.destroyed_model_associations_eager_loadable?)
