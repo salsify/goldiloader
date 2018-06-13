@@ -307,7 +307,7 @@ describe Goldiloader do
       blog2.posts.create!(title: 'blog2-post3', author: author1)
     end
 
-    shared_examples "it doesn't auto eager the association" do |association_name|
+    shared_examples "it doesn't auto eager load the association" do |association_name|
       specify do
         blogs.drop(1).each do |blog|
           expect(blog.association(association_name)).to_not be_loaded
@@ -332,7 +332,7 @@ describe Goldiloader do
         expect(blogs.first.limited_posts.to_a.size).to eq 2
       end
 
-      it_behaves_like "it doesn't auto eager the association", :limited_posts
+      it_behaves_like "it doesn't auto eager load the association", :limited_posts
     end
 
     context "associations with a group" do
@@ -344,7 +344,7 @@ describe Goldiloader do
         expect(blogs.first.grouped_posts.to_a.size).to eq 1
       end
 
-      it_behaves_like "it doesn't auto eager the association", :grouped_posts
+      it_behaves_like "it doesn't auto eager load the association", :grouped_posts
     end
 
     context "associations with an offset" do
@@ -356,7 +356,7 @@ describe Goldiloader do
         expect(blogs.first.offset_posts.to_a.size).to eq 1
       end
 
-      it_behaves_like "it doesn't auto eager the association", :offset_posts
+      it_behaves_like "it doesn't auto eager load the association", :offset_posts
     end
 
     context "associations with an overridden from" do
@@ -368,7 +368,11 @@ describe Goldiloader do
         expect(blogs.first.from_posts.to_a.size).to eq 1
       end
 
-      it_behaves_like "it doesn't auto eager the association", :from_posts
+      if ::Goldiloader::Compatibility::ACTIVE_RECORD_VERSION >= ::Gem::Version.new('5.0.7')
+        it_behaves_like "it auto eager loads the association", :from_posts
+      else
+        it_behaves_like "it doesn't auto eager load the association", :from_posts
+      end
     end
 
     context "associations with a join" do
@@ -427,7 +431,7 @@ describe Goldiloader do
         expect(blogs.first.instance_dependent_posts.to_a).to match_array(blogs.first.posts)
       end
 
-      it_behaves_like "it doesn't auto eager the association", :instance_dependent_posts
+      it_behaves_like "it doesn't auto eager load the association", :instance_dependent_posts
     end
   end
 

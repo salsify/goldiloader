@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.1.1
+* Enable eager loading of associations with a `from` in Rails 5.0.x >= 5.0.7 and Rails >= 5.1.5 because
+  the underlying Rails bug has been fixed.
+  
 ### 2.1.0
 * Rails 5.2 support.
 

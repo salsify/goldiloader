@@ -169,7 +169,7 @@ Associations with any of the following options cannot be eager loaded:
 * `offset`
 * `finder_sql`
 * `group` (due to a [Rails bug](https://github.com/rails/rails/issues/15854))
-* `from` (due to a Rails bug)
+* `from` (only applies to Rails < 5.0.7 and Rails 5.1.x < 5.1.5 due to a Rails bug)
 
 Goldiloader detects associations with any of these options and disables automatic eager loading on them.
 
