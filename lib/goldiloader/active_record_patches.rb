@@ -159,7 +159,7 @@ module Goldiloader
     def auto_include?
       # Only auto include through associations if the target association is auto-loadable
       through_association = owner.association(through_reflection.name)
-      through_association.auto_include? && super
+      (through_association.loaded? || through_association.auto_include?) && super
     end
   end
   ::ActiveRecord::Associations::HasManyThroughAssociation.prepend(::Goldiloader::ThroughAssociationPatch)
