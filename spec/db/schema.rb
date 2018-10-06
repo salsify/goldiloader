@@ -75,6 +75,8 @@ class Blog < ActiveRecord::Base
   has_many :authors, through: :posts
   has_many :addresses, through: :authors
 
+  has_one :post_with_order, -> { order(:id) }, class_name: 'Post'
+
   def posts_overridden
     'boom'
   end

@@ -9,6 +9,10 @@ module Goldiloader
 
     delegate :association_scope, :reflection, to: :@association
 
+    def has_one?
+      reflection.has_one?
+    end
+
     def offset?
       association_scope && association_scope.offset_value.present?
     end
@@ -31,6 +35,10 @@ module Goldiloader
 
     def group?
       association_scope && association_scope.group_values.present?
+    end
+
+    def order?
+      association_scope && association_scope.order_values.present?
     end
 
     def instance_dependent?
