@@ -437,6 +437,18 @@ describe Goldiloader do
 
       it_behaves_like "it doesn't auto eager load the association", :instance_dependent_posts
     end
+
+    context "has_one associations with an order" do
+      before do
+        blogs.first.post_with_order
+      end
+
+      it "applies the scope correctly" do
+        expect(blogs.first.post_with_order).to eq(blogs.first.posts.order(:id).first)
+      end
+
+      it_behaves_like "it doesn't auto eager load the association", :post_with_order
+    end
   end
 
   context "associations with a uniq" do

@@ -100,6 +100,7 @@ module Goldiloader
       association_info = Goldiloader::AssociationInfo.new(self)
       !association_info.limit? &&
         !association_info.offset? &&
+        (!association_info.has_one? || !association_info.order?) &&
         (!association_info.group? || ::Goldiloader::Compatibility.group_eager_loadable?) &&
         (!association_info.from? || ::Goldiloader::Compatibility.from_eager_loadable?) &&
         !association_info.instance_dependent? &&
