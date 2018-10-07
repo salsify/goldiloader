@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.1.2 
+* Fix [issue 61](https://github.com/salsify/goldiloader/issues/61) - don't eager load has_one associations with an order.
+  **Thanks @sobrinho**
+
 ### 2.1.1
 * Enable eager loading of associations with a `from` or `group` in Rails 5.0.x >= 5.0.7 and Rails >= 5.1.5 because
   the underlying Rails bug has been fixed.
