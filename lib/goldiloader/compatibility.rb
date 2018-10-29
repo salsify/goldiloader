@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Goldiloader
   module Compatibility
     ACTIVE_RECORD_VERSION = ::Gem::Version.new(::ActiveRecord::VERSION::STRING)

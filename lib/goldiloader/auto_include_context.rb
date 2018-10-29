@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Goldiloader
   class AutoIncludeContext
     attr_reader :models

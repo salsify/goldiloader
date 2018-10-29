@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Goldiloader
   module AssociationOptions
     extend self
