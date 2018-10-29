@@ -12,7 +12,8 @@
 
 Wouldn't it be awesome if ActiveRecord didn't make you think about eager loading and it just did the "right" thing by default? With Goldiloader it can!
 
-**This branch only supports Rails 4.2+ with Ruby 2.1+. For older versions of Rails/Ruby use [1-x-stable](https://github.com/salsify/goldiloader/blob/1-x-stable/README.md).**
+**This branch only supports Rails 4.2+ with Ruby 2.3+. For older versions of Rails/Ruby use [2-x-stable](https://github.com/salsify/goldiloader/blob/2-x-stable/README.md)
+or [1-x-stable](https://github.com/salsify/goldiloader/blob/1-x-stable/README.md).**
 
 Consider the following models:
 
@@ -247,7 +248,7 @@ end
 
 ## Status
 
-This gem is tested with Rails 4.2, 5.0, 5.1 and 5.2 using MRI 2.1, 2.2, 2.3, 2.4 and 2.5 and JRuby 9000. 
+This gem is tested with Rails 4.2, 5.0, 5.1 and 5.2 using MRI 2.3, 2.4 and 2.5 and JRuby 9000. 
 
 Let us know if you find any issues or have any other feedback.
 
