@@ -21,8 +21,8 @@ ActiveRecord::Base.logger.level = Logger::DEBUG
 ActiveRecord::Migration.verbose = false
 
 db_adapter = ENV.fetch('ADAPTER', 'sqlite3')
-config = YAML.safe_load(File.read('spec/db/database.yml'))
-ActiveRecord::Base.establish_connection(config[db_adapter])
+db_config = YAML.safe_load(File.read('spec/db/database.yml'))
+ActiveRecord::Base.establish_connection(db_config[db_adapter])
 require 'db/schema'
 
 RSpec.configure do |config|

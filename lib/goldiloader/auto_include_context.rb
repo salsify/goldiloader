@@ -11,10 +11,16 @@ module Goldiloader
       auto_include_context.register_models(models)
 
       Array.wrap(included_associations).each do |included_association|
-        associations = included_association.is_a?(Hash) ?
-            included_association.keys : Array.wrap(included_association)
-        nested_associations = included_association.is_a?(Hash) ?
-            included_association : Hash.new([])
+        associations = if included_association.is_a?(Hash)
+                         included_association.keys
+                       else
+                         Array.wrap(included_association)
+                       end
+        nested_associations = if included_association.is_a?(Hash)
+                                included_association
+                              else
+                                Hash.new([])
+                              end
 
         associations.each do |association|
           nested_models = models.flat_map do |model|

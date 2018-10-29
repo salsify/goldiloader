@@ -22,8 +22,6 @@ module Goldiloader
         ActiveRecord::Associations::Builder::Association.valid_options.concat(OPTIONS)
       end
     end
-
-    private
   end
 end
 

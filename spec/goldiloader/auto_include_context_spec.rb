@@ -146,7 +146,7 @@ describe Goldiloader::AutoIncludeContext do
     end
 
     def create_mock_models(num)
-      num.times.map { create_mock_model }
+      Array.new(num) { create_mock_model }
     end
 
     def create_mock_model(associations = {})

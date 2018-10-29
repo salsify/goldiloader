@@ -7,7 +7,7 @@ module Goldiloader
 
     delegate :association_scope, :reflection, to: :@association
 
-    def has_one?
+    def has_one? # rubocop:disable Naming/PredicateName
       reflection.has_one?
     end
 

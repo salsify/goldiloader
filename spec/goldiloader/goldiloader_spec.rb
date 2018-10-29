@@ -165,8 +165,8 @@ describe Goldiloader do
     blog = Blog.find(blog1.id)
     blog.posts.to_a.first.author
 
-    blog.posts.each do |blog|
-      expect(blog.association(:author)).to be_loaded
+    blog.posts.each do |post|
+      expect(post.association(:author)).to be_loaded
     end
   end
 
@@ -716,12 +716,12 @@ describe Goldiloader do
     it "doesn't auto eager load belongs_to associations with auto include disabled" do
       posts = Post.order(:title).to_a
       # Force the first post's blog to load
-      post = posts.first
-      blog = post.blog_without_auto_include
-      expect(blog).to eq Blog.where(id: post.blog_id).first
+      post1 = posts.first
+      blog = post1.blog_without_auto_include
+      expect(blog).to eq Blog.where(id: post1.blog_id).first
 
-      posts.drop(1).each do |blog|
-        expect(blog.association(:blog_without_auto_include)).not_to be_loaded
+      posts.drop(1).each do |post|
+        expect(post.association(:blog_without_auto_include)).not_to be_loaded
       end
     end
 
