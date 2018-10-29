@@ -117,16 +117,16 @@ describe Goldiloader::AutoIncludeContext do
     context "when nested associations are nil" do
       let!(:roots) do
         [
-            create_mock_model(car: cars.first),
-            create_mock_model(car: nil),
-            create_mock_model(car: cars.last)
+          create_mock_model(car: cars.first),
+          create_mock_model(car: nil),
+          create_mock_model(car: cars.last)
         ]
       end
 
       let!(:cars) do
         [
-            create_mock_model,
-            create_mock_model
+          create_mock_model,
+          create_mock_model
         ]
       end
 

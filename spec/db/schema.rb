@@ -1,6 +1,4 @@
-# encoding: UTF-8
-
-ActiveRecord::Schema.define(:version => 0) do
+ActiveRecord::Schema.define(version: 0) do
 
   create_table(:blogs, force: true) do |t|
     t.string :name
@@ -117,7 +115,7 @@ end
 
 class ScopedAddress < ActiveRecord::Base
   self.table_name = 'addresses'
-  default_scope { where(city: ['Philadelphia'])}
+  default_scope { where(city: ['Philadelphia']) }
   belongs_to :user
 end
 

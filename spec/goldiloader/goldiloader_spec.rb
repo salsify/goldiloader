@@ -1,5 +1,3 @@
-# encoding: UTF-8
-
 require 'spec_helper'
 
 describe Goldiloader do
@@ -68,7 +66,7 @@ describe Goldiloader do
 
     # Sanity check that associations aren't loaded yet
     blogs.each do |blog|
-      expect(blog.association(:posts)).to_not be_loaded
+      expect(blog.association(:posts)).not_to be_loaded
     end
 
     # Force the first blogs first post to load
@@ -89,7 +87,7 @@ describe Goldiloader do
 
     # Sanity check that associations aren't loaded yet
     posts.each do |blog|
-      expect(blog.association(:blog)).to_not be_loaded
+      expect(blog.association(:blog)).not_to be_loaded
     end
 
     # Force the first post's blog to load
@@ -99,7 +97,7 @@ describe Goldiloader do
       expect(blog.association(:blog)).to be_loaded
     end
 
-    expect(posts.map(&:blog).map(&:name)).to eq(['blog1', 'blog1', 'blog2', 'blog2'])
+    expect(posts.map(&:blog).map(&:name)).to eq(%w[blog1 blog1 blog2 blog2])
     expect(Blog).to have_received(:find_by_sql).once
   end
 
@@ -108,7 +106,7 @@ describe Goldiloader do
 
     # Sanity check that associations aren't loaded yet
     users.each do |user|
-      expect(user.association(:address)).to_not be_loaded
+      expect(user.association(:address)).not_to be_loaded
     end
 
     # Force the first user's address to load
@@ -187,7 +185,7 @@ describe Goldiloader do
 
   it "auto eager loads associations of polymorphic associations" do
     tags = Tag.where('parent_id IS NOT NULL').order(:name).to_a
-    users = tags.map(&:owner).select {|owner| owner.is_a?(User) }.sort_by(&:name)
+    users = tags.map(&:owner).select { |owner| owner.is_a?(User) }.sort_by(&:name)
     users.first.posts.to_a
 
     users.each do |user|
@@ -233,7 +231,7 @@ describe Goldiloader do
     # Child tag owners should not be loaded
     child_tags = root_tags.flat_map(&:children)
     child_tags.each do |tag|
-      expect(tag.association(:owner)).to_not be_loaded
+      expect(tag.association(:owner)).not_to be_loaded
     end
   end
 
@@ -256,7 +254,7 @@ describe Goldiloader do
   it "doesn't mark auto eager loaded models as read only when the association is not read only" do
     blog = Blog.first!
     post = blog.posts.to_a.first
-    expect { post.save! }.to_not raise_error
+    expect { post.save! }.not_to raise_error
   end
 
   context "with manual eager loading" do
@@ -310,7 +308,7 @@ describe Goldiloader do
     shared_examples "it doesn't auto eager load the association" do |association_name|
       specify do
         blogs.drop(1).each do |blog|
-          expect(blog.association(association_name)).to_not be_loaded
+          expect(blog.association(association_name)).not_to be_loaded
         end
       end
     end
@@ -343,7 +341,7 @@ describe Goldiloader do
       it "applies the group correctly" do
         expect(blogs.first.grouped_posts.to_a.size).to eq 1
       end
-      
+
       if ::Goldiloader::Compatibility::ACTIVE_RECORD_VERSION >= ::Gem::Version.new('5.0.7')
         it_behaves_like "it auto eager loads the association", :grouped_posts
       else
@@ -554,7 +552,7 @@ describe Goldiloader do
 
     it "doesn't auto eager load peers when accessing the modified has_many association" do
       blog.posts.to_a
-      expect(other_blog.association(:posts)).to_not be_loaded
+      expect(other_blog.association(:posts)).not_to be_loaded
     end
 
     it "returns the correct models for the modified has_many association when accessing a peer" do
@@ -579,7 +577,7 @@ describe Goldiloader do
 
     it "doesn't auto eager load peers when accessing the modified has_many through association" do
       post.tags.to_a
-      expect(other_post.association(:tags)).to_not be_loaded
+      expect(other_post.association(:tags)).not_to be_loaded
     end
 
     it "returns the correct models for the modified has_many through association when accessing a peer" do
@@ -595,7 +593,7 @@ describe Goldiloader do
       blogs.first.posts.size
 
       blogs.each do |blog|
-        expect(blog.association(:posts)).to_not be_loaded
+        expect(blog.association(:posts)).not_to be_loaded
       end
     end
 
@@ -604,7 +602,7 @@ describe Goldiloader do
       blogs.first.posts.exists?
 
       blogs.each do |blog|
-        expect(blog.association(:posts)).to_not be_loaded
+        expect(blog.association(:posts)).not_to be_loaded
       end
     end
 
@@ -613,7 +611,7 @@ describe Goldiloader do
       blogs.first.posts.last
 
       blogs.each do |blog|
-        expect(blog.association(:posts)).to_not be_loaded
+        expect(blog.association(:posts)).not_to be_loaded
       end
     end
 
@@ -622,7 +620,7 @@ describe Goldiloader do
       blogs.first.post_ids
 
       blogs.each do |blog|
-        expect(blog.association(:posts)).to_not be_loaded
+        expect(blog.association(:posts)).not_to be_loaded
       end
     end
   end
@@ -652,7 +650,7 @@ describe Goldiloader do
       blogs.first.posts_fully_load.exists?(false)
 
       blogs.each do |blog|
-        expect(blog.association(:posts_fully_load)).to_not be_loaded
+        expect(blog.association(:posts_fully_load)).not_to be_loaded
       end
     end
 
@@ -686,7 +684,7 @@ describe Goldiloader do
       expect(posts).to match_array Post.where(blog_id: blogs.first.id)
 
       blogs.drop(1).each do |blog|
-        expect(blog.association(:posts)).to_not be_loaded
+        expect(blog.association(:posts)).not_to be_loaded
       end
     end
 
@@ -698,7 +696,7 @@ describe Goldiloader do
       expect(posts).to match_array Post.where(blog_id: blogs.first.id)
 
       blogs.drop(1).each do |blog|
-        expect(blog.association(:posts_without_auto_include)).to_not be_loaded
+        expect(blog.association(:posts_without_auto_include)).not_to be_loaded
       end
     end
 
@@ -711,7 +709,7 @@ describe Goldiloader do
       expect(address).to eq Address.where(user_id: user.id).first
 
       users.drop(1).each do |blog|
-        expect(blog.association(:address_without_auto_include)).to_not be_loaded
+        expect(blog.association(:address_without_auto_include)).not_to be_loaded
       end
     end
 
@@ -723,7 +721,7 @@ describe Goldiloader do
       expect(blog).to eq Blog.where(id: post.blog_id).first
 
       posts.drop(1).each do |blog|
-        expect(blog.association(:blog_without_auto_include)).to_not be_loaded
+        expect(blog.association(:blog_without_auto_include)).not_to be_loaded
       end
     end
 
@@ -734,7 +732,7 @@ describe Goldiloader do
       posts.first.tags_without_auto_include.to_a
 
       posts.drop(1).each do |post|
-        expect(post.association(:tags_without_auto_include)).to_not be_loaded
+        expect(post.association(:tags_without_auto_include)).not_to be_loaded
       end
     end
 
@@ -754,7 +752,7 @@ describe Goldiloader do
       end
 
       other_blog.posts.each do |post|
-        expect(post.association(:tags)).to_not be_loaded
+        expect(post.association(:tags)).not_to be_loaded
       end
     end
   end

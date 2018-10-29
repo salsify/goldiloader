@@ -1,5 +1,3 @@
-# encoding: UTF-8
-
 module Goldiloader
   class AutoIncludeContext
     attr_reader :models
