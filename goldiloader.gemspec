@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
 
   spec.files         = `git ls-files lib Readme.md LICENSE.txt`.split($/)
 
-  spec.required_ruby_version = '>= 2.1'
+  spec.required_ruby_version = '>= 2.3'
 
   spec.add_dependency 'activerecord', '>= 4.2', '< 5.3'
   spec.add_dependency 'activesupport', '>= 4.2', '< 5.3'
