@@ -1,5 +1,8 @@
 # Changelog
 
+### 3.0.0
+- Drop support for Ruby <= 2.2
+
 ### 2.1.2 
 * Fix [issue 61](https://github.com/salsify/goldiloader/issues/61) - don't eager load has_one associations with an order.
   **Thanks @sobrinho**
