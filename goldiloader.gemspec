@@ -33,6 +33,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rspec', '~> 3'
   spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'mime-types'
+  spec.add_development_dependency 'salsify_rubocop', '0.52.1.1'
 
   if RUBY_PLATFORM == 'java'
     spec.add_development_dependency 'jdbc-sqlite3'

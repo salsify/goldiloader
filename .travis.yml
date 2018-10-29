@@ -23,3 +23,6 @@ matrix:
       gemfile: gemfiles/rails_5.2.gemfile
     - rvm: jruby-9.1.16.0
       gemfile: gemfiles/rails_5.2.gemfile
+script:
+- bundle exec rake
+- bundle exec rubocop
