@@ -1,4 +1,4 @@
-# encoding: UTF-8
+# frozen_string_literal: true
 
 module Goldiloader
   module AssociationOptions
@@ -24,8 +24,6 @@ module Goldiloader
         ActiveRecord::Associations::Builder::Association.valid_options.concat(OPTIONS)
       end
     end
-
-    private
   end
 end
 

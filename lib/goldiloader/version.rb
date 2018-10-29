@@ -1,5 +1,5 @@
-# encoding: UTF-8
+# frozen_string_literal: true
 
 module Goldiloader
-  VERSION = '3.0.0'.freeze
+  VERSION = '3.0.0'
 end

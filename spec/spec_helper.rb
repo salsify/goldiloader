@@ -1,14 +1,14 @@
-# encoding: UTF-8
+# frozen_string_literal: true
 
 require 'simplecov'
 require 'coveralls'
 
-SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter.new([
-  SimpleCov::Formatter::HTMLFormatter,
-  Coveralls::SimpleCov::Formatter
-])
+SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter.new(
+  [SimpleCov::Formatter::HTMLFormatter, Coveralls::SimpleCov::Formatter]
+)
+
 SimpleCov.start do
- add_filter 'spec'
+  add_filter 'spec'
 end
 
 require 'logger'
@@ -23,8 +23,8 @@ ActiveRecord::Base.logger.level = Logger::DEBUG
 ActiveRecord::Migration.verbose = false
 
 db_adapter = ENV.fetch('ADAPTER', 'sqlite3')
-config = YAML.load(File.read('spec/db/database.yml'))
-ActiveRecord::Base.establish_connection(config[db_adapter])
+db_config = YAML.safe_load(File.read('spec/db/database.yml'))
+ActiveRecord::Base.establish_connection(db_config[db_adapter])
 require 'db/schema'
 
 RSpec.configure do |config|
@@ -34,15 +34,15 @@ RSpec.configure do |config|
     DatabaseCleaner.clean_with(:truncation)
   end
 
-  config.before(:each) do
+  config.before do
     DatabaseCleaner.strategy = :transaction
   end
 
-  config.before(:each) do
+  config.before do
     DatabaseCleaner.start
   end
 
-  config.after(:each) do
+  config.after do
     DatabaseCleaner.clean
   end
 end

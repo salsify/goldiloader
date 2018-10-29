@@ -1,4 +1,5 @@
-# encoding: UTF-8
+# frozen_string_literal: true
+
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'goldiloader/version'
@@ -15,11 +16,11 @@ Gem::Specification.new do |spec|
     'homepage_uri' => 'https://github.com/salsify/goldiloader',
     'changelog_uri' => 'https://github.com/salsify/goldiloader/blob/master/CHANGELOG.md',
     'source_code_uri' => 'https://github.com/salsify/goldiloader/',
-    'bug_tracker_uri' => 'https://github.com/salsify/goldiloader/issues',
+    'bug_tracker_uri' => 'https://github.com/salsify/goldiloader/issues'
   }
   spec.license       = 'MIT'
 
-  spec.files         = `git ls-files lib Readme.md LICENSE.txt`.split($/)
+  spec.files         = `git ls-files lib Readme.md LICENSE.txt`.split($INPUT_RECORD_SEPARATOR)
 
   spec.required_ruby_version = '>= 2.3'
 
@@ -29,16 +30,16 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'appraisal'
   spec.add_development_dependency 'coveralls'
   spec.add_development_dependency 'database_cleaner', '>= 1.2'
+  spec.add_development_dependency 'mime-types'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec', '~> 3'
+  spec.add_development_dependency 'salsify_rubocop', '0.52.1.1'
   spec.add_development_dependency 'simplecov'
-  spec.add_development_dependency 'mime-types'
 
   if RUBY_PLATFORM == 'java'
-    spec.add_development_dependency 'jdbc-sqlite3'
     spec.add_development_dependency 'activerecord-jdbcsqlite3-adapter'
+    spec.add_development_dependency 'jdbc-sqlite3'
   else
     spec.add_development_dependency 'sqlite3'
   end
 end
-

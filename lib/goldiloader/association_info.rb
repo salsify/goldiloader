@@ -1,4 +1,4 @@
-# encoding: UTF-8
+# frozen_string_literal: true
 
 module Goldiloader
   class AssociationInfo
@@ -9,7 +9,7 @@ module Goldiloader
 
     delegate :association_scope, :reflection, to: :@association
 
-    def has_one?
+    def has_one? # rubocop:disable Naming/PredicateName
       reflection.has_one?
     end
 

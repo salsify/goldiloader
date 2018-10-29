@@ -1,4 +1,4 @@
-# encoding: UTF-8
+# frozen_string_literal: true
 
 module Goldiloader
   module AssociationLoader
@@ -35,7 +35,7 @@ module Goldiloader
         model.association(association_name).auto_include?
     end
 
-    def has_association?(model, association_name)
+    def has_association?(model, association_name) # rubocop:disable Naming/PredicateName
       model.class.reflect_on_association(association_name).present?
     end
   end
