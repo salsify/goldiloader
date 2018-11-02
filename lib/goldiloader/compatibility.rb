@@ -3,6 +3,7 @@
 module Goldiloader
   module Compatibility
     ACTIVE_RECORD_VERSION = ::Gem::Version.new(::ActiveRecord::VERSION::STRING)
+    RAILS_5_2_0 = ACTIVE_RECORD_VERSION == ::Gem::Version.new('5.2.0')
     PRE_RAILS_5_2 = ACTIVE_RECORD_VERSION < ::Gem::Version.new('5.2.0')
     POST_RAILS_5_1_4 = ACTIVE_RECORD_VERSION > ::Gem::Version.new('5.1.5')
     PRE_RAILS_5_1_5 = ACTIVE_RECORD_VERSION < ::Gem::Version.new('5.1.5')
@@ -20,7 +21,7 @@ module Goldiloader
 
     # See https://github.com/rails/rails/pull/32375
     def self.destroyed_model_associations_eager_loadable?
-      PRE_RAILS_5_2
+      RAILS_5_2_0
     end
 
     def self.from_eager_loadable?
