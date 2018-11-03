@@ -98,14 +98,14 @@ module Goldiloader
 
     def eager_loadable?
       association_info = Goldiloader::AssociationInfo.new(self)
-      !association_info.limit? &&
+      association_info.auto_include? &&
+        !association_info.limit? &&
         !association_info.offset? &&
         (!association_info.has_one? || !association_info.order?) &&
-        (!association_info.group? || ::Goldiloader::Compatibility.group_eager_loadable?) &&
-        (!association_info.from? || ::Goldiloader::Compatibility.from_eager_loadable?) &&
-        !association_info.instance_dependent? &&
-        association_info.auto_include? &&
-        (!owner.destroyed? || ::Goldiloader::Compatibility.destroyed_model_associations_eager_loadable?)
+        (::Goldiloader::Compatibility.group_eager_loadable? || !association_info.group?) &&
+        (::Goldiloader::Compatibility.from_eager_loadable? || !association_info.from?) &&
+        (::Goldiloader::Compatibility.destroyed_model_associations_eager_loadable? || !owner.destroyed?) &&
+        !association_info.instance_dependent?
     end
 
     def load_with_auto_include
