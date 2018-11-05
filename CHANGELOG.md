@@ -3,6 +3,7 @@
 ### 3.0.1
 - Enable eager loading of associations on destroyed models in all versions of Rails except 5.2.0 since
   Rails issue [32375](https://github.com/rails/rails/pull/32375) has been fixed.
+- Optimize checks to see if an association is eager loadable.
 
 ### 3.0.0
 * Drop support for Ruby <= 2.2.
