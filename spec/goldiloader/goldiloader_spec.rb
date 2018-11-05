@@ -528,14 +528,8 @@ describe Goldiloader do
       expect(@blog_after_destroy).to eq blog1
     end
 
-    if ::Goldiloader::Compatibility.destroyed_model_associations_eager_loadable?
-      it "auto eager loads the associations on other models" do
-        expect(other_post.association(:blog)).to be_loaded
-      end
-    else
-      it "doesn't auto eager loads associations on other models" do
-        expect(other_post.association(:blog)).not_to be_loaded
-      end
+    it "auto eager loads the associations on other models" do
+      expect(other_post.association(:blog)).to be_loaded
     end
   end
 
