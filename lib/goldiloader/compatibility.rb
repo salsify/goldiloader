@@ -21,7 +21,7 @@ module Goldiloader
 
     # See https://github.com/rails/rails/pull/32375
     def self.destroyed_model_associations_eager_loadable?
-      RAILS_5_2_0
+      !RAILS_5_2_0
     end
 
     def self.from_eager_loadable?
