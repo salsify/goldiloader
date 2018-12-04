@@ -97,15 +97,19 @@ module Goldiloader
     private
 
     def eager_loadable?
-      association_info = Goldiloader::AssociationInfo.new(self)
-      association_info.auto_include? &&
-        !association_info.limit? &&
-        !association_info.offset? &&
-        (!association_info.has_one? || !association_info.order?) &&
-        (::Goldiloader::Compatibility.group_eager_loadable? || !association_info.group?) &&
-        (::Goldiloader::Compatibility.from_eager_loadable? || !association_info.from?) &&
-        (::Goldiloader::Compatibility.destroyed_model_associations_eager_loadable? || !owner.destroyed?) &&
-        !association_info.instance_dependent?
+      reflection_eager_loadable = reflection.instance_variable_get(:@goldiloader_eager_loadable)
+      if reflection_eager_loadable.nil?
+        association_info = Goldiloader::AssociationInfo.new(self)
+        reflection_eager_loadable = association_info.auto_include? &&
+          !association_info.limit? &&
+          !association_info.offset? &&
+          (!association_info.has_one? || !association_info.order?) &&
+          (::Goldiloader::Compatibility.group_eager_loadable? || !association_info.group?) &&
+          (::Goldiloader::Compatibility.from_eager_loadable? || !association_info.from?) &&
+          !association_info.instance_dependent?
+        reflection.instance_variable_set(:@goldiloader_eager_loadable, reflection_eager_loadable)
+      end
+      reflection_eager_loadable && (::Goldiloader::Compatibility.destroyed_model_associations_eager_loadable? || !owner.destroyed?)
     end
 
     def load_with_auto_include
