@@ -18,10 +18,10 @@ module Goldiloader
     end
 
     def register
-      if ::ActiveRecord::VERSION::MAJOR >= 5
-        ActiveRecord::Associations::Builder::Association.extensions << AssociationBuilderExtension
-      else
+      if Goldiloader::Compatibility.rails_4?
         ActiveRecord::Associations::Builder::Association.valid_options.concat(OPTIONS)
+      else
+        ActiveRecord::Associations::Builder::Association.extensions << AssociationBuilderExtension
       end
     end
   end

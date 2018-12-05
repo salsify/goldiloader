@@ -21,10 +21,10 @@ module Goldiloader
     end
 
     def from?
-      if ActiveRecord::VERSION::MAJOR >= 5
-        scope.from_clause.present?
-      else
+      if Goldiloader::Compatibility.rails_4?
         scope.from_value.present?
+      else
+        scope.from_clause.present?
       end
     end
 
