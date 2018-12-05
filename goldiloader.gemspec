@@ -28,6 +28,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'activesupport', '>= 4.2', '< 5.3'
 
   spec.add_development_dependency 'appraisal'
+  spec.add_development_dependency 'benchmark-ips'
   spec.add_development_dependency 'coveralls'
   spec.add_development_dependency 'database_cleaner', '>= 1.2'
   spec.add_development_dependency 'mime-types'
