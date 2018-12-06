@@ -1,13 +1,14 @@
 # frozen_string_literal: true
 
-require_relative 'benchmark_server'
+require_relative 'experiment_server'
 require 'benchmark/ips'
 require 'forwardable'
 
 module ForkingBenchmark
   extend self
 
-  class BenchmarkProxy
+  # Wraps the Benchmark in an adapter runs the test block in a forked process
+  class BenchmarkAdapter
     extend Forwardable
 
     def_delegators :@benchmark, :time=, :warmup=, :config, :compare!
@@ -15,7 +16,7 @@ module ForkingBenchmark
     def initialize(benchmark)
       @benchmark = benchmark
       @setups = []
-      @servers = []
+      @experiement_servers = []
     end
 
     def report(label, setup: nil, &step)
@@ -24,10 +25,10 @@ module ForkingBenchmark
       wrapped_setup = Proc.new do
         setups.each(&:call)
       end
-      server = BenchmarkServer.start(setup: wrapped_setup, step: step)
-      @servers << server
+      experiement_server = ExperimentServer.start(setup: wrapped_setup, step: step)
+      @experiement_servers << experiement_server
       @benchmark.report(label) do |iterations|
-        server.step(iterations)
+        experiement_server.step(iterations)
       end
     end
 
@@ -38,18 +39,18 @@ module ForkingBenchmark
     end
 
     def shutdown
-      @servers.each(&:shutdown)
+      @experiement_servers.each(&:shutdown)
       nil
     end
   end
 
   def ips
-    proxy = nil
+    adapter = nil
     Benchmark.ips do |benchmark|
-      proxy = BenchmarkProxy.new(benchmark)
-      yield(proxy)
+      adapter = BenchmarkAdapter.new(benchmark)
+      yield(adapter)
     end
   ensure
-    proxy.shutdown if proxy
+    adapter.shutdown if adapter
   end
 end
