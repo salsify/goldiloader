@@ -1,5 +1,8 @@
 # Changelog
 
+### 3.0.3
+- Optimize association eager loadable checks by caching information on the association's reflection.
+
 ### 3.0.2
 - Fix destroyed model eager loading which accidentally broke in [#74](https://github.com/salsify/goldiloader/pull/74).
 

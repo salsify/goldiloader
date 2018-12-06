@@ -76,6 +76,35 @@ module Goldiloader
   end
   ActiveRecord::Relation::Merger.prepend(::Goldiloader::MergerPatch)
 
+  module AssociationReflectionPatch
+    def eager_loadable?
+      return @eager_loadable if instance_variable_defined?(:@eager_loadable)
+
+      @eager_loadable = if scope.nil?
+                          # Associations without any scoping options are eager loadable
+                          true
+                        elsif scope.arity > 0
+                          # The scope will be evaluated for every model instance so it can't
+                          # be eager loaded
+                          false
+                        else
+                          scope_info = if Goldiloader::Compatibility.rails_4?
+                                         Goldiloader::ScopeInfo.new(klass.unscoped.instance_exec(&scope) || klass.unscoped)
+                                       else
+                                         Goldiloader::ScopeInfo.new(scope_for(klass.unscoped))
+                                       end
+                          scope_info.auto_include? &&
+                            !scope_info.limit? &&
+                            !scope_info.offset? &&
+                            (!has_one? || !scope_info.order?) &&
+                            (::Goldiloader::Compatibility.group_eager_loadable? || !scope_info.group?) &&
+                            (::Goldiloader::Compatibility.from_eager_loadable? || !scope_info.from?)
+                        end
+    end
+  end
+  ActiveRecord::Reflection::AssociationReflection.include(::Goldiloader::AssociationReflectionPatch)
+  ActiveRecord::Reflection::ThroughReflection.include(::Goldiloader::AssociationReflectionPatch)
+
   module AssociationPatch
     extend ActiveSupport::Concern
 
@@ -97,15 +126,8 @@ module Goldiloader
     private
 
     def eager_loadable?
-      association_info = Goldiloader::AssociationInfo.new(self)
-      association_info.auto_include? &&
-        !association_info.limit? &&
-        !association_info.offset? &&
-        (!association_info.has_one? || !association_info.order?) &&
-        (::Goldiloader::Compatibility.group_eager_loadable? || !association_info.group?) &&
-        (::Goldiloader::Compatibility.from_eager_loadable? || !association_info.from?) &&
-        (::Goldiloader::Compatibility.destroyed_model_associations_eager_loadable? || !owner.destroyed?) &&
-        !association_info.instance_dependent?
+      reflection.eager_loadable? &&
+        (::Goldiloader::Compatibility.destroyed_model_associations_eager_loadable? || !owner.destroyed?)
     end
 
     def load_with_auto_include
