@@ -4,6 +4,8 @@ module Goldiloader
   class AutoIncludeContext
     attr_reader :models
 
+    delegate :size, to: :models
+
     def initialize
       @models = []
     end
