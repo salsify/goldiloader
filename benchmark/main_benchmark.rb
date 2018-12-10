@@ -3,9 +3,6 @@
 require_relative 'performance_helper'
 
 ForkingBenchmark.ips do |x|
-  x.time = 5
-  x.warmup = 2
-
   x.setup do
     setup_database
 
