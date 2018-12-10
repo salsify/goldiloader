@@ -1,23 +1,10 @@
 # frozen_string_literal: true
 
-$LOAD_PATH.push(File.expand_path('../lib', __dir__))
-
-require_relative 'lib/forking_benchmark'
-require 'active_record'
-
-ActiveRecord::Migration.verbose = false
+require_relative 'performance_helper'
 
 ForkingBenchmark.ips do |x|
-  x.time = 5
-  x.warmup = 2
-
   x.setup do
-    ActiveRecord::Base.establish_connection(
-      adapter: 'sqlite3',
-      database: ':memory:'
-    )
-
-    require_relative './db/schema.rb'
+    setup_database
 
     # Setup data
     blog_1 = Blog.create!

@@ -133,11 +133,19 @@ module Goldiloader
     def load_with_auto_include
       if loaded? && !stale_target?
         target
-      elsif auto_include?
+      elsif !auto_include?
+        yield
+      elsif owner.auto_include_context.size == 1
+        # Bypassing the preloader for a single model reduces object allocations by ~5% in benchmarks
+        result = yield
+        # As of https://github.com/rails/rails/commit/bd3b28f7f181dce53e872daa23dda101498b8fb4
+        # ActiveRecord does not use ActiveRecord::Relation#exec_queries to resolve association
+        # queries
+        Goldiloader::AutoIncludeContext.register_models(result)
+        result
+      else
         Goldiloader::AssociationLoader.load(owner, reflection.name)
         target
-      else
-        yield
       end
     end
   end
