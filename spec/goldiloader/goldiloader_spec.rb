@@ -409,9 +409,9 @@ describe Goldiloader do
       let(:authors) { User.order(:id).to_a }
 
       before do
-        author1.address.update_attributes!(city: 'Boston')
-        author2.address.update_attributes!(city: 'Philadelphia')
-        author3.address.update_attributes!(city: 'Philadelphia')
+        author1.address.update!(city: 'Boston')
+        author2.address.update!(city: 'Philadelphia')
+        author3.address.update!(city: 'Philadelphia')
         authors.first.scoped_address_with_default_scope_remove
       end
 

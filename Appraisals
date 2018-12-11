@@ -19,6 +19,11 @@ appraise 'rails-5.1' do
 end
 
 appraise 'rails-5.2' do
-  gem 'activerecord', '5.2.1 '
-  gem 'activesupport', '5.2.1 '
+  gem 'activerecord', '5.2.2 '
+  gem 'activesupport', '5.2.2 '
+end
+
+appraise 'rails-edge' do
+  gem 'activerecord', github: 'rails/rails'
+  gem 'activesupport', github: 'rails/rails'
 end
