@@ -1,5 +1,8 @@
 # Changelog
 
+### 3.1.0
+- Initial support for Rails 6.0.
+
 ### 3.0.3
 - Optimize association eager loadable checks by caching information on the association's reflection.
 - Optimize association eager loading if we're only eager loading associations for a single model.
