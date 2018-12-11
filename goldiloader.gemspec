@@ -24,8 +24,8 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 2.3'
 
-  spec.add_dependency 'activerecord', '>= 4.2', '< 5.3'
-  spec.add_dependency 'activesupport', '>= 4.2', '< 5.3'
+  spec.add_dependency 'activerecord', '>= 4.2', '< 6.1'
+  spec.add_dependency 'activesupport', '>= 4.2', '< 6.1'
 
   spec.add_development_dependency 'appraisal'
   spec.add_development_dependency 'benchmark-ips'
@@ -36,11 +36,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rspec', '~> 3'
   spec.add_development_dependency 'salsify_rubocop', '0.52.1.1'
   spec.add_development_dependency 'simplecov'
-
-  if RUBY_PLATFORM == 'java'
-    spec.add_development_dependency 'activerecord-jdbcsqlite3-adapter'
-    spec.add_development_dependency 'jdbc-sqlite3'
-  else
-    spec.add_development_dependency 'sqlite3'
-  end
+  spec.add_development_dependency 'sqlite3'
 end
