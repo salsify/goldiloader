@@ -1,8 +1,5 @@
 language: ruby
 sudo: false
-env:
-  global:
-    - JRUBY_OPTS="$JRUBY_OPTS --debug"
 gemfile:
   - gemfiles/rails_4.2.gemfile
   - gemfiles/rails_5.0.gemfile
@@ -13,7 +10,6 @@ rvm:
   - 2.3.7
   - 2.4.4
   - 2.5.1
-  - jruby-9.1.17.0
 script:
 - bundle exec rspec
 - bundle exec rubocop
