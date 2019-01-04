@@ -7,13 +7,16 @@ gemfile:
   - gemfiles/rails_5.2.gemfile
   - gemfiles/rails_edge.gemfile
 rvm:
-  - 2.3.7
-  - 2.4.4
-  - 2.5.1
+  - 2.3.8
+  - 2.4.5
+  - 2.5.3
+  - 2.6.0
 script:
 - bundle exec rspec
 - bundle exec rubocop
 matrix:
   exclude:
-  - rvm: 2.3.7
+  - rvm: 2.3.8
+    gemfile: gemfiles/rails_edge.gemfile
+  - rvm: 2.4.5
     gemfile: gemfiles/rails_edge.gemfile

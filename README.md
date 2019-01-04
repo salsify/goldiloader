@@ -248,7 +248,7 @@ end
 
 ## Status
 
-This gem is tested with Rails 4.2, 5.0, 5.1 and 5.2 using MRI 2.3, 2.4 and 2.5 and JRuby 9000. 
+This gem is tested with Rails 4.2, 5.0, 5.1, 5.2 and Edge using MRI 2.3, 2.4, 2.5 and 2.6. 
 
 Let us know if you find any issues or have any other feedback.
 
