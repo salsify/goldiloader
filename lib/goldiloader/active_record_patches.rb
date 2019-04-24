@@ -47,7 +47,6 @@ module Goldiloader
     end
 
     def auto_include_value
-      # Note: Don't use get_value because that doesn't work properly with defaulting boolean values
       @values.fetch(:auto_include, true)
     end
 
@@ -55,13 +54,11 @@ module Goldiloader
       if Goldiloader::Compatibility.rails_4?
         raise ::ActiveRecord::Relation::ImmutableRelation if @loaded
         check_cached_relation
-        @values[:auto_include] = value
-      elsif Goldiloader::Compatibility.rails_5_0?
-        assert_mutability!
-        @values[:auto_include] = value
       else
-        set_value(:auto_include, value)
+        assert_mutability!
       end
+
+      @values[:auto_include] = value
     end
   end
   ::ActiveRecord::Relation.prepend(::Goldiloader::RelationPatch)
