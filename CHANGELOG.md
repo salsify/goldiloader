@@ -1,5 +1,8 @@
 # Changelog
 
+### 3.1.1
+- Fix to support Rails 6.0 beta 3.
+
 ### 3.1.0
 - Initial support for Rails 6.0.
 
