@@ -766,4 +766,12 @@ describe Goldiloader do
       expect(Tag.new.children).not_to exist
     end
   end
+
+  describe "active storage" do
+    specify do
+      User.first!.avatar.attach(io: File.open('README.md'), filename: 'profile.jpeg', content_type: 'application/octet-stream')
+      User.last!.avatar.attach(io: File.open('README.md'), filename: 'profile.jpeg', content_type: 'application/octet-stream')
+      User.all.map(&:avatar)
+    end
+  end
 end

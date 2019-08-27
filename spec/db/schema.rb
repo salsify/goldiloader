@@ -38,6 +38,29 @@ ActiveRecord::Schema.define(version: 0) do
     t.integer :post_id
     t.integer :tag_id
   end
+
+  create_table(:active_storage_blobs) do |t|
+    t.string :key, null: false
+    t.string :filename, null: false
+    t.string :content_type
+    t.text :metadata
+    t.bigint :byte_size, null: false
+    t.string :checksum, null: false
+    t.datetime :created_at, null: false
+
+    t.index [:key], unique: true
+  end
+
+  create_table(:active_storage_attachments) do |t|
+    t.string :name, null: false
+    t.references :record, null: false, polymorphic: true, index: false
+    t.references :blob, null: false
+
+    t.datetime :created_at, null: false
+
+    t.index [:record_type, :record_id, :name, :blob_id], name: "index_active_storage_attachments_uniqueness", unique: true
+    t.foreign_key :active_storage_blobs, column: :blob_id
+  end
 end
 
 class Tag < ActiveRecord::Base
@@ -95,6 +118,8 @@ class Post < ActiveRecord::Base
 
   has_and_belongs_to_many :tags_without_auto_include, -> { auto_include(false) }, join_table: :post_tags, class_name: 'Tag'
 
+  has_many_attached :images if defined?(ActiveStorage)
+
   after_destroy :after_post_destroy
 
   def after_post_destroy
@@ -109,6 +134,8 @@ class User < ActiveRecord::Base
   has_one :address_without_auto_include, -> { auto_include(false) }, class_name: 'Address'
 
   has_one :scoped_address_with_default_scope_remove, -> { unscope(where: :city) }, class_name: 'ScopedAddress'
+
+  has_one_attached :avatar if defined?(ActiveStorage)
 end
 
 class Address < ActiveRecord::Base

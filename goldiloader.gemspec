@@ -27,6 +27,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'activerecord', '>= 4.2', '< 6.1'
   spec.add_dependency 'activesupport', '>= 4.2', '< 6.1'
 
+  spec.add_development_dependency 'activestorage', '>= 4.2', '< 6.1'
   spec.add_development_dependency 'appraisal'
   spec.add_development_dependency 'benchmark-ips'
   spec.add_development_dependency 'coveralls'
