@@ -26,3 +26,5 @@ matrix:
     gemfile: gemfiles/rails_edge.gemfile
   - rvm: 2.4.5
     gemfile: gemfiles/rails_edge.gemfile
+notifications:
+  webhooks: https://coveralls.io/webhook
