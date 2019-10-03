@@ -8,6 +8,8 @@ SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter.new(
 )
 
 SimpleCov.start do
+  add_filter 'benchmark'
+  add_filter 'gemfiles'
   add_filter 'spec'
 end
 

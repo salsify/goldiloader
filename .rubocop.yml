@@ -3,6 +3,9 @@ inherit_gem:
 
 AllCops:
   TargetRubyVersion: 2.3
+  Exclude:
+    - 'vendor/**/*'
+    - 'gemfiles/vendor/**/*'
 
 Style/FrozenStringLiteralComment:
   Enabled: true
