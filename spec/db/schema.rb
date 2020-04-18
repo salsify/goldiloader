@@ -58,7 +58,7 @@ ActiveRecord::Schema.define(version: 0) do
 
     t.datetime :created_at, null: false
 
-    t.index [:record_type, :record_id, :name, :blob_id], name: "index_active_storage_attachments_uniqueness", unique: true
+    t.index [:record_type, :record_id, :name, :blob_id], name: 'index_active_storage_attachments_uniqueness', unique: true
     t.foreign_key :active_storage_blobs, column: :blob_id
   end
 end

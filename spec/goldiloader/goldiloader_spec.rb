@@ -767,11 +767,20 @@ describe Goldiloader do
     end
   end
 
-  describe "active storage" do
-    specify do
-      User.first!.avatar.attach(io: File.open('README.md'), filename: 'profile.jpeg', content_type: 'application/octet-stream')
-      User.last!.avatar.attach(io: File.open('README.md'), filename: 'profile.jpeg', content_type: 'application/octet-stream')
-      User.all.map(&:avatar)
+  if defined?(ActiveStorage)
+    describe "active storage" do
+      it "works for has_one_attached associations" do
+        User.first!.avatar.attach(io: File.open('README.md'), filename: 'profile.jpeg', content_type: 'application/octet-stream')
+        User.last!.avatar.attach(io: File.open('README.md'), filename: 'profile.jpeg', content_type: 'application/octet-stream')
+        User.all.map(&:avatar).map(&:download)
+      end
+
+      it "works for has_many_attached associations" do
+        Post.find_each do |post|
+          post.images.attach(io: File.open('README.md'), filename: 'profile.jpeg', content_type: 'application/octet-stream')
+        end
+        Post.all.map(&:images).flat_map(&:to_a).map(&:download)
+      end
     end
   end
 end

@@ -12,6 +12,14 @@ module Goldiloader
       ::ActiveRecord::VERSION::MAJOR == 4
     end
 
+    def self.rails_5_2?
+      ::ActiveRecord::VERSION::MAJOR == 5 && ::ActiveRecord::VERSION::MINOR == 2
+    end
+
+    def self.rails_5_2_or_greater?
+      ::ActiveRecord::VERSION::MAJOR >= 6 || rails_5_2?
+    end
+
     # See https://github.com/rails/rails/pull/32375
     def self.destroyed_model_associations_eager_loadable?
       !RAILS_5_2_0
