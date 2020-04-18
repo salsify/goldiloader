@@ -770,16 +770,39 @@ describe Goldiloader do
   if defined?(ActiveStorage)
     describe "active storage" do
       it "works for has_one_attached associations" do
-        User.first!.avatar.attach(io: File.open('README.md'), filename: 'profile.jpeg', content_type: 'application/octet-stream')
-        User.last!.avatar.attach(io: File.open('README.md'), filename: 'profile.jpeg', content_type: 'application/octet-stream')
-        User.all.map(&:avatar).map(&:download)
+        User.find_each do |user|
+          create_attachment(owner: user, name: :avatar)
+        end
+        blobs = User.all.map(&:avatar).map(&:download)
+        expect(blobs.compact.size).to eq(User.count)
       end
 
       it "works for has_many_attached associations" do
         Post.find_each do |post|
-          post.images.attach(io: File.open('README.md'), filename: 'profile.jpeg', content_type: 'application/octet-stream')
+          create_attachment(owner: post, name: :images)
+          create_attachment(owner: post, name: :images)
         end
-        Post.all.map(&:images).flat_map(&:to_a).map(&:download)
+        blobs = Post.all.map(&:images).flat_map(&:to_a).map(&:download)
+        expect(blobs.compact.size).to eq(Post.count * 2)
+      end
+
+      def create_attachment(owner:, name:)
+        key = SecureRandom.hex
+
+        ActiveStorage::Blob.service.upload(key, StringIO.open('hello world'))
+        
+        blob = ActiveStorage::Blob.create!(
+          key: key,
+          filename: "#{owner.class}/#{owner.id}.file",
+          byte_size: 128,
+          checksum: 'abc'
+        )
+
+        ActiveStorage::Attachment.create!(
+          name: name,
+          record: owner,
+          blob: blob
+        )
       end
     end
   end
