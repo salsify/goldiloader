@@ -9,20 +9,13 @@ gemfile:
   - gemfiles/rails_6.0.gemfile
   - gemfiles/rails_edge.gemfile
 rvm:
-  - 2.3.8
-  - 2.4.5
-  - 2.5.3
-  - 2.6.0
+  - 2.5.8
+  - 2.6.6
+  - 2.7.1
 script:
 - bundle exec rspec
 - bundle exec rubocop
 matrix:
   exclude:
-  - rvm: 2.3.8
-    gemfile: gemfiles/rails_6.0.gemfile
-  - rvm: 2.4.5
-    gemfile: gemfiles/rails_6.0.gemfile
-  - rvm: 2.3.8
-    gemfile: gemfiles/rails_edge.gemfile
-  - rvm: 2.4.5
-    gemfile: gemfiles/rails_edge.gemfile
+  - rvm: 2.7.1
+    gemfile: gemfiles/rails_4.2.gemfile
