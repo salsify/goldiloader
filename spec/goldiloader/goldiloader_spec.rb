@@ -773,7 +773,7 @@ describe Goldiloader do
         User.find_each do |user|
           create_attachment(owner: user, name: :avatar)
         end
-        blobs = User.all.map(&:avatar).map(&:download)
+        blobs = User.all.map(&:avatar).map(&:blob).map(&:service_url)
         expect(blobs.compact.size).to eq(User.count)
       end
 
@@ -782,7 +782,7 @@ describe Goldiloader do
           create_attachment(owner: post, name: :images)
           create_attachment(owner: post, name: :images)
         end
-        blobs = Post.all.map(&:images).flat_map(&:to_a).map(&:download)
+        blobs = Post.all.map(&:images).flat_map(&:to_a).map(&:blob).map(&:service_url)
         expect(blobs.compact.size).to eq(Post.count * 2)
       end
 
@@ -790,7 +790,7 @@ describe Goldiloader do
         key = SecureRandom.hex
 
         ActiveStorage::Blob.service.upload(key, StringIO.open('hello world'))
-        
+
         blob = ActiveStorage::Blob.create!(
           key: key,
           filename: "#{owner.class}/#{owner.id}.file",

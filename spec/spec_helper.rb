@@ -32,6 +32,12 @@ if Goldiloader::Compatibility.rails_5_2_or_greater?
 
   ActiveStorage.logger = ActiveRecord::Base.logger
 
+  ActiveStorage::Service::DiskService.class_eval do
+    def url(key, **)
+      "http://localhost/#{key}"
+    end
+  end
+
   # Stub ActiveStorage::AnalyzeJob to avoid a dependency on ActiveJob
   module ActiveStorage
     class AnalyzeJob
@@ -55,11 +61,26 @@ if Goldiloader::Compatibility.rails_5_2_or_greater?
   active_storage_version_file = Gem.find_files('active_storage/version.rb').first
   $LOAD_PATH.unshift(File.expand_path('../../../app/models', active_storage_version_file))
 
+  module Rails
+    module Autoloaders
+      def self.zeitwerk_enabled?
+        false
+      end
+    end
+
+    def self.autoloaders
+      Autoloaders
+    end
+  end
+
   require 'active_storage/attachment'
   require 'active_storage/blob'
+  # require 'active_storage/current'
   require 'active_storage/filename'
 
   ActiveStorage::Blob.service = ActiveStorage::Service::DiskService.new(root: Pathname('tmp/storage'))
+  # ActiveStorage.verifier = ActiveSupport::MessageVerifier.new("Testing")
+  # ActiveStorage::Current.host = 'localhost'
 end
 
 db_adapter = ENV.fetch('ADAPTER', 'sqlite3')
