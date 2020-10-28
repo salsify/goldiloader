@@ -24,7 +24,7 @@ describe Goldiloader::AutoIncludeContext do
         expect(roots.first.auto_include_context.models).to match_array(roots)
       end
 
-      it "sets the AutoIncludeContext for singluar nested associations" do
+      it "sets the AutoIncludeContext for singular nested associations" do
         expect(fruits.map(&:auto_include_context).uniq.size).to eq 1
         expect(fruits.first.auto_include_context.models).to match_array(fruits)
       end
