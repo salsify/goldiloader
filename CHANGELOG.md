@@ -1,5 +1,8 @@
 # Changelog
 
+### 3.2.0
+- Rails 6.1 support.
+
 ### 3.1.1
 - Fix to support Rails 6.0 beta 3.
 
