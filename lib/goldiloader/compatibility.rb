@@ -2,7 +2,8 @@
 
 module Goldiloader
   module Compatibility
-    ACTIVE_RECORD_VERSION = ::Gem::Version.new(::ActiveRecord::VERSION::STRING)
+    ACTIVE_RECORD_VERSION = ::Gem::Version.new(::ActiveRecord::VERSION::STRING).release
+    PRE_RAILS_6_2 = ACTIVE_RECORD_VERSION < ::Gem::Version.new('6.2.0')
     RAILS_5_2_0 = ACTIVE_RECORD_VERSION == ::Gem::Version.new('5.2.0')
     FROM_EAGER_LOADABLE = ACTIVE_RECORD_VERSION >= ::Gem::Version.new('5.1.5') ||
       (ACTIVE_RECORD_VERSION >= ::Gem::Version.new('5.0.7') && ACTIVE_RECORD_VERSION < ::Gem::Version.new('5.1.0'))
@@ -10,6 +11,10 @@ module Goldiloader
 
     def self.rails_4?
       ::ActiveRecord::VERSION::MAJOR == 4
+    end
+
+    def self.pre_rails_6_2?
+      PRE_RAILS_6_2
     end
 
     # See https://github.com/rails/rails/pull/32375

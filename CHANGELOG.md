@@ -1,5 +1,8 @@
 # Changelog
 
+### 3.2.1 (Unreleased)
+- Fix Rails Edge for changes in `ActiveRecord::Associations::Preloader` API.
+
 ### 3.2.0
 - Rails 6.1 support.
 
