@@ -33,6 +33,6 @@ appraise 'rails-6.1' do
 end
 
 appraise 'rails-edge' do
-  gem 'activerecord', github: 'rails/rails'
-  gem 'activesupport', github: 'rails/rails'
+  gem 'activerecord', github: 'rails/rails', branch: 'main'
+  gem 'activesupport', github: 'rails/rails', branch: 'main'
 end
