@@ -344,11 +344,7 @@ describe Goldiloader do
         expect(blogs.first.grouped_posts.to_a.size).to eq 1
       end
 
-      if ::Goldiloader::Compatibility::ACTIVE_RECORD_VERSION >= ::Gem::Version.new('5.0.7')
-        it_behaves_like "it auto eager loads the association", :grouped_posts
-      else
-        it_behaves_like "it doesn't auto eager load the association", :grouped_posts
-      end
+      it_behaves_like "it auto eager loads the association", :grouped_posts
     end
 
     context "associations with an offset" do
@@ -372,11 +368,7 @@ describe Goldiloader do
         expect(blogs.first.from_posts.to_a.size).to eq 1
       end
 
-      if ::Goldiloader::Compatibility::ACTIVE_RECORD_VERSION >= ::Gem::Version.new('5.0.7')
-        it_behaves_like "it auto eager loads the association", :from_posts
-      else
-        it_behaves_like "it doesn't auto eager load the association", :from_posts
-      end
+      it_behaves_like "it auto eager loads the association", :from_posts
     end
 
     context "associations with a join" do

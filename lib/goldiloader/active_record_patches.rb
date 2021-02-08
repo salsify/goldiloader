@@ -51,13 +51,7 @@ module Goldiloader
     end
 
     def auto_include_value=(value)
-      if Goldiloader::Compatibility.rails_4?
-        raise ::ActiveRecord::Relation::ImmutableRelation if @loaded
-        check_cached_relation
-      else
-        assert_mutability!
-      end
-
+      assert_mutability!
       @values[:auto_include] = value
     end
   end
@@ -85,17 +79,11 @@ module Goldiloader
                           # be eager loaded
                           false
                         else
-                          scope_info = if Goldiloader::Compatibility.rails_4?
-                                         Goldiloader::ScopeInfo.new(klass.unscoped.instance_exec(&scope) || klass.unscoped)
-                                       else
-                                         Goldiloader::ScopeInfo.new(scope_for(klass.unscoped))
-                                       end
+                          scope_info = Goldiloader::ScopeInfo.new(scope_for(klass.unscoped))
                           scope_info.auto_include? &&
                             !scope_info.limit? &&
                             !scope_info.offset? &&
-                            (!has_one? || !scope_info.order?) &&
-                            (::Goldiloader::Compatibility.group_eager_loadable? || !scope_info.group?) &&
-                            (::Goldiloader::Compatibility.from_eager_loadable? || !scope_info.from?)
+                            (!has_one? || !scope_info.order?)
                         end
     end
   end
@@ -159,12 +147,7 @@ module Goldiloader
 
   module CollectionAssociationPatch
     # Force these methods to load the entire association for fully_load associations
-    association_methods = [:size, :ids_reader, :empty?]
-    if Goldiloader::Compatibility::ACTIVE_RECORD_VERSION < ::Gem::Version.new('5.1')
-      association_methods.concat([:first, :second, :third, :fourth, :fifth, :last])
-    end
-
-    association_methods.each do |method|
+    [:size, :ids_reader, :empty?].each do |method|
       define_method(method) do |*args, &block|
         load_target if fully_load?
         super(*args, &block)
@@ -175,10 +158,8 @@ module Goldiloader
       load_with_auto_include { super }
     end
 
-    if Goldiloader::Compatibility::ACTIVE_RECORD_VERSION >= ::Gem::Version.new('5.1')
-      def find_from_target?
-        fully_load? || super
-      end
+    def find_from_target?
+      fully_load? || super
     end
   end
   ::ActiveRecord::Associations::CollectionAssociation.prepend(::Goldiloader::CollectionAssociationPatch)
