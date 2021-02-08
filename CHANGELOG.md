@@ -1,6 +1,6 @@
 # Changelog
 
-### 4.0.0 (Unreleased)
+### 4.0.0
 - Fix Rails Edge for changes in `ActiveRecord::Associations::Preloader` API.
 - Add support for Ruby 3.0.  
 - Drop support for Rails < 5.2.
