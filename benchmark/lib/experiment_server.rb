@@ -24,7 +24,7 @@ class ExperimentServer
     new(read_pipe: read_pipe, write_pipe: write_pipe, pid: pid)
   end
 
-  def self.run(step:, setup: nil, read_pipe:, write_pipe:)
+  def self.run(step:, read_pipe:, write_pipe:, setup: nil)
     setup.call if setup
 
     write_pipe.puts(READY)
@@ -42,7 +42,7 @@ class ExperimentServer
         end
         write_pipe.puts(OK)
       else
-        STDERR.puts("Unexpected command: #{command}")
+        warn("Unexpected command: #{command}")
         exit(1)
       end
     end

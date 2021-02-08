@@ -99,7 +99,7 @@ describe Goldiloader do
       expect(blog.association(:blog)).to be_loaded
     end
 
-    expect(posts.map(&:blog).map(&:name)).to eq(%w[blog1 blog1 blog2 blog2])
+    expect(posts.map(&:blog).map(&:name)).to eq(['blog1', 'blog1', 'blog2', 'blog2'])
     expect(Blog).to have_received(:find_by_sql).once
   end
 
