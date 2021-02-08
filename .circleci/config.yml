@@ -87,10 +87,14 @@ workflows:
               ruby_version:
               - "2.5.8"
               - "2.6.6"
-              - "2.7.1"
+              - "2.7.2"
             exclude:
               - gemfile: "gemfiles/rails_4.2.gemfile"
-                ruby_version: "2.7.1"
+                ruby_version: "2.7.2"
+              - gemfile: "gemfiles/rails_edge.gemfile"
+                ruby_version: "2.5.8"
+              - gemfile: "gemfiles/rails_edge.gemfile"
+                ruby_version: "2.6.6"
   weekly_rails_edge:
     triggers:
       - schedule:
@@ -106,4 +110,4 @@ workflows:
               gemfile:
                 - "gemfiles/rails_edge.gemfile"
               ruby_version:
-                - "2.7.1"
+                - "2.7.2"
