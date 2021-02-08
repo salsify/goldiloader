@@ -34,6 +34,7 @@ module ForkingBenchmark
 
     def setup(&block)
       raise ArgumentError.new('No block given') unless block_given?
+
       @setups << block
       nil
     end

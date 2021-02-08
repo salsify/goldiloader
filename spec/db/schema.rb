@@ -93,7 +93,8 @@ class Post < ActiveRecord::Base
 
   has_many :unique_tags, -> { distinct }, through: :post_tags, source: :tag, class_name: 'Tag'
 
-  has_and_belongs_to_many :tags_without_auto_include, -> { auto_include(false) }, join_table: :post_tags, class_name: 'Tag'
+  has_and_belongs_to_many :tags_without_auto_include, -> { auto_include(false) }, join_table: :post_tags,
+                          class_name: 'Tag'
 
   after_destroy :after_post_destroy
 

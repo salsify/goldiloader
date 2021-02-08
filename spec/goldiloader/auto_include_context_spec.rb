@@ -3,6 +3,8 @@
 require 'spec_helper'
 require 'ostruct'
 
+AutoIncludeContextMockModel = Struct.new(:auto_include_context)
+
 describe Goldiloader::AutoIncludeContext do
   describe ".register_models" do
     context "when included_associations is an array of symbols" do
@@ -160,7 +162,5 @@ describe Goldiloader::AutoIncludeContext do
       end
       model
     end
-
-    AutoIncludeContextMockModel = Struct.new(:auto_include_context)
   end
 end

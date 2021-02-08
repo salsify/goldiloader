@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-lib = File.expand_path('../lib', __FILE__)
+lib = File.expand_path('lib', __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'goldiloader/version'
 
@@ -22,10 +22,10 @@ Gem::Specification.new do |spec|
 
   spec.files         = `git ls-files lib Readme.md LICENSE.txt`.split($INPUT_RECORD_SEPARATOR)
 
-  spec.required_ruby_version = '>= 2.3'
+  spec.required_ruby_version = '>= 2.6'
 
-  spec.add_dependency 'activerecord', '>= 4.2', '< 7.1'
-  spec.add_dependency 'activesupport', '>= 4.2', '< 7.1'
+  spec.add_dependency 'activerecord', '>= 5.2', '< 7.1'
+  spec.add_dependency 'activesupport', '>= 5.2', '< 7.1'
 
   spec.add_development_dependency 'appraisal'
   spec.add_development_dependency 'benchmark-ips'
@@ -35,7 +35,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec', '~> 3'
   spec.add_development_dependency 'rspec_junit_formatter'
-  spec.add_development_dependency 'salsify_rubocop', '0.52.1.1'
+  spec.add_development_dependency 'salsify_rubocop', '~> 1.0.1'
   spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'sqlite3', '~> 1.3'
 end
