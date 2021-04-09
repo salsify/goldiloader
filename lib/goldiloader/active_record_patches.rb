@@ -68,23 +68,26 @@ module Goldiloader
   ActiveRecord::Relation::Merger.prepend(::Goldiloader::MergerPatch)
 
   module AssociationReflectionPatch
-    def eager_loadable?
-      return @eager_loadable if instance_variable_defined?(:@eager_loadable)
-
-      @eager_loadable = if scope.nil?
-                          # Associations without any scoping options are eager loadable
-                          true
-                        elsif scope.arity > 0
-                          # The scope will be evaluated for every model instance so it can't
-                          # be eager loaded
-                          false
-                        else
-                          scope_info = Goldiloader::ScopeInfo.new(scope_for(klass.unscoped))
-                          scope_info.auto_include? &&
-                            !scope_info.limit? &&
-                            !scope_info.offset? &&
-                            (!has_one? || !scope_info.order?)
-                        end
+    # Note we need to pass the association's target class as an argument since it won't be known
+    # outside the context of an association instance for polymorphic associations.
+    def eager_loadable?(target_klass)
+      @eager_loadable_cache ||= Hash.new do |cache, target_klass_key|
+        cache[target_klass_key] = if scope.nil?
+                                    # Associations without any scoping options are eager loadable
+                                    true
+                                  elsif scope.arity > 0
+                                    # The scope will be evaluated for every model instance so it can't
+                                    # be eager loaded
+                                    false
+                                  else
+                                    scope_info = Goldiloader::ScopeInfo.new(scope_for(target_klass_key.unscoped))
+                                    scope_info.auto_include? &&
+                                      !scope_info.limit? &&
+                                      !scope_info.offset? &&
+                                      (!has_one? || !scope_info.order?)
+                                  end
+      end
+      @eager_loadable_cache[target_klass]
     end
   end
   ActiveRecord::Reflection::AssociationReflection.include(::Goldiloader::AssociationReflectionPatch)
@@ -111,7 +114,7 @@ module Goldiloader
     private
 
     def eager_loadable?
-      reflection.eager_loadable? &&
+      klass && reflection.eager_loadable?(klass) &&
         (::Goldiloader::Compatibility.destroyed_model_associations_eager_loadable? || !owner.destroyed?)
     end
 

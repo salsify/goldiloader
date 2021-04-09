@@ -45,6 +45,8 @@ class Tag < ActiveRecord::Base
   has_many :children, class_name: 'Tag', foreign_key: :parent_id
 
   belongs_to :owner, polymorphic: true
+  belongs_to :scoped_owner, -> { where("name like 'author%'") }, polymorphic: true,
+             foreign_key: :owner_id, foreign_type: :owner_type
   has_many :post_tags
   has_many :posts, through: :post_tags
 end

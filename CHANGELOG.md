@@ -1,5 +1,8 @@
 # Changelog
 
+### 4.0.1
+- Fix issue [105](https://github.com/salsify/goldiloader/issues/105) - Handle polymorphic associations with scopes.
+
 ### 4.0.0
 - Fix Rails Edge for changes in `ActiveRecord::Associations::Preloader` API.
 - Add support for Ruby 3.0.  
