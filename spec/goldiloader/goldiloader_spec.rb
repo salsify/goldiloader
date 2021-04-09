@@ -202,6 +202,21 @@ describe Goldiloader do
     expect(users.second.posts).to eq Post.where(author_id: author2.id)
   end
 
+  it "auto eager loads polymorphic associations with scopes" do
+    hidden_user = User.create!(name: 'oddball')
+    Tag.where(owner: group1).update_all(owner_type: 'User', owner_id: hidden_user.id)
+    tags = Tag.where('parent_id IS NOT NULL').order(:name).to_a
+    tags.first.scoped_owner
+
+    tags.each do |tag|
+      expect(tag.association(:scoped_owner)).to be_loaded
+    end
+
+    expect(tags.first.scoped_owner).to eq author1
+    expect(tags.second.scoped_owner).to be_nil
+    expect(tags.third.scoped_owner).to eq author2
+  end
+
   it "sets inverse associations properly" do
     blogs = Blog.order(:name).to_a
 
