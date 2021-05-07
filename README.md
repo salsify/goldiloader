@@ -82,6 +82,8 @@ You can disable automatic eager loading with `auto_include` query scope method:
 Blog.order(:name).auto_include(false)
 ```
 
+It will disable automatic eager loading for the scope associations but it will not apply to nested relations.
+
 This can also be used to disable automatic eager loading for associations:
 
 ```ruby
@@ -89,6 +91,41 @@ class Blog < ActiveRecord::Base
   has_many :posts, -> { auto_include(false) }
 end
 ```
+
+You can also disable automatic eager loading completely through configuration:
+
+```ruby
+Goldiloader.globally_enabled = false
+```
+
+This will disable goldiloader globally, for all threads. This method is meant to be invoked only once if desired at application
+startup.
+
+Then you can use it selectively with a block:
+
+```ruby
+Goldiloader.enabled do
+  # here, goldiloader is active
+end
+```
+
+Similarly, you can selectively disable goldiloader for a block with:
+
+```ruby
+Goldiloader.disabled do
+  # Here, goldiloader is inactive
+end
+```
+
+Alternatively, you can toggle the activation state with `Goldiloader.enabled`:
+
+```ruby
+before { Goldiloader.enabled = true }
+after { Goldiloader.enabled = false }
+```
+
+These methods are thread-isolated. This means that on multi-threaded servers (like puma), one thread will not interfere
+with the others.
 
 ### Association Options
 
