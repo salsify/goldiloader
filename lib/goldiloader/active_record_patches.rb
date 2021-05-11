@@ -119,6 +119,8 @@ module Goldiloader
     end
 
     def load_with_auto_include
+      return yield unless Goldiloader.enabled?
+
       if loaded? && !stale_target?
         target
       elsif !auto_include?

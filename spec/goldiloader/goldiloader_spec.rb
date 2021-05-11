@@ -59,6 +59,12 @@ describe Goldiloader do
     ActiveRecord::Base.logger.info('Test setup complete')
   end
 
+  after do
+    # Always reset enablement status to a known-good state
+    Goldiloader.globally_enabled = true
+    Goldiloader.enabled = nil
+  end
+
   it "auto eager loads has_many associations" do
     blogs = Blog.order(:name).to_a
 
@@ -759,6 +765,241 @@ describe Goldiloader do
 
       other_blog.posts.each do |post|
         expect(post.association(:tags)).not_to be_loaded
+      end
+    end
+  end
+
+  context "with auto_loading disabled by default" do
+    before do
+      Goldiloader.enabled = false
+    end
+
+    it "doesn't auto eager load has_many associations" do
+      blogs = Blog.order(:name).to_a
+
+      # Force the first blogs first post to load
+      posts = blogs.first.posts.to_a
+      expect(posts).to match_array Post.where(blog_id: blogs.first.id)
+
+      blogs.drop(1).each do |blog|
+        expect(blog.association(:posts)).not_to be_loaded
+      end
+    end
+
+    it "doesn't auto eager load has_one associations" do
+      users = User.order(:name).to_a
+
+      # Force the first user's address to load
+      user = users.first
+      address = user.address
+      expect(address).to eq Address.where(user_id: user.id).first
+
+      users.drop(1).each do |blog|
+        expect(blog.association(:address)).not_to be_loaded
+      end
+    end
+
+    it "doesn't auto eager load belongs_to associations" do
+      posts = Post.order(:title).to_a
+      # Force the first post's blog to load
+      post1 = posts.first
+      blog = post1.blog
+      expect(blog).to eq Blog.where(id: post1.blog_id).first
+
+      posts.drop(1).each do |post|
+        expect(post.association(:blog)).not_to be_loaded
+      end
+    end
+
+    it "doesn't auto eager load has_and_belongs_to_many associations" do
+      posts = Post.all.to_a
+
+      # Force the first post's tags to load
+      posts.first.tags.to_a
+
+      posts.drop(1).each do |post|
+        expect(post.association(:tags)).not_to be_loaded
+      end
+    end
+
+    it "doesn't auto eager loads nested associations" do
+      posts = Post.order(:title).to_a
+      # Force the first post's blog to load
+      blog = posts.first.blog
+
+      # Load another blogs posts
+      other_blog = posts.last.blog
+      other_blog_post = other_blog.posts.to_a.first
+
+      blog.posts.to_a.first.tags.to_a
+
+      expect(other_blog_post.association(:tags)).not_to be_loaded
+
+      other_blog.posts.each do |post|
+        expect(post.association(:tags)).not_to be_loaded
+      end
+    end
+
+    context "using enabled block" do
+      shared_examples "it auto eager loads association" do |subject, association|
+        specify do
+          Goldiloader.enabled do
+            items = send(subject)
+            # Sanity check that associations aren't loaded yet
+            items.each do |item|
+              expect(item.association(association)).not_to be_loaded
+            end
+
+            relation = items.first.association(association)
+            queries = { relation.klass => 1 }
+
+            if relation.options[:through]
+              through = items.first.association(relation.options[:through])
+              queries[through.klass] = 1
+            end
+
+            expect do
+              # Force load via auto include
+              rel = items.to_a.first.association(association)
+              # handle single and multi relations
+              rel.load_target
+
+              # Check that associations are loaded
+              items.each do |blog|
+                expect(blog.association(association)).to be_loaded
+              end
+            end.to execute_queries(queries)
+          end
+        end
+      end
+
+      let(:blogs) { Blog.order(:name).to_a }
+      let(:posts) { Post.order(:title).to_a }
+      let(:users) { User.order(:name).to_a }
+      let(:posts_through_blogs) { blogs.flat_map(&:posts) }
+      let(:tags) { Tag.where('parent_id IS NOT NULL').order(:name).to_a }
+      let(:users_through_tags) { tags.map(&:owner).select { |o| o.is_a?(User) } }
+
+      it_behaves_like "it auto eager loads association", :blogs, :posts
+      it_behaves_like "it auto eager loads association", :blogs, :authors
+      it_behaves_like "it auto eager loads association", :blogs, :posts_overridden
+      it_behaves_like "it auto eager loads association", :posts, :blog
+      it_behaves_like "it auto eager loads association", :users, :address
+      it_behaves_like "it auto eager loads association", :posts_through_blogs, :author
+      it_behaves_like "it auto eager loads association", :tags, :parent
+      it_behaves_like "it auto eager loads association", :users_through_tags, :posts
+
+      it "auto eager loads associations when the model is loaded via find" do
+        Goldiloader.enabled do
+          blog = Blog.find(blog1.id)
+
+          blog.posts.to_a.first.author
+          blog.posts.each do |post|
+            expect(post.association(:author)).to be_loaded
+          end
+        end
+      end
+
+      it "doesn't auto eager loads associations outside the block" do
+        blog = nil
+        Goldiloader.enabled do
+          blog = Blog.find(blog1.id)
+        end
+
+        arr = blog.posts.to_a
+        arr.first.author
+        arr.drop(1).each do |post|
+          expect(post.association(:author)).not_to be_loaded
+        end
+      end
+    end
+  end
+
+  context "using disabled block" do
+    shared_examples "it does not auto eager loads association" do |subject, association|
+      specify do
+        Goldiloader.disabled do
+          items = send(subject)
+          # Sanity check that associations aren't loaded yet
+          items.each do |item|
+            expect(item.association(association)).not_to be_loaded
+          end
+
+          # Force load
+          rel = items.to_a.first.association(association)
+          # handle single and multi relations
+          rel.load_target
+
+          # Check that associations are loaded
+          items.drop(1).each do |blog|
+            expect(blog.association(association)).not_to be_loaded
+          end
+        end
+      end
+    end
+
+    let(:blogs) { Blog.order(:name).to_a }
+    let(:posts) { Post.order(:title).to_a }
+    let(:users) { User.order(:name).to_a }
+    let(:posts_through_blogs) { blogs.flat_map(&:posts) }
+    let(:tags) { Tag.where('parent_id IS NOT NULL').order(:name).to_a }
+    let(:users_through_tags) { tags.map(&:owner).select { |o| o.is_a?(User) } }
+
+    it_behaves_like "it does not auto eager loads association", :blogs, :posts
+    it_behaves_like "it does not auto eager loads association", :blogs, :authors
+    it_behaves_like "it does not auto eager loads association", :blogs, :posts_overridden
+    it_behaves_like "it does not auto eager loads association", :posts, :blog
+    it_behaves_like "it does not auto eager loads association", :users, :address
+    it_behaves_like "it does not auto eager loads association", :posts_through_blogs, :author
+    it_behaves_like "it does not auto eager loads association", :tags, :parent
+    it_behaves_like "it does not auto eager loads association", :users_through_tags, :posts
+
+    it "does not auto eager loads associations when the model is loaded via find" do
+      Goldiloader.disabled do
+        blog = Blog.find(blog1.id)
+
+        blog.posts.to_a.first.author
+        blog.posts.drop(1).each do |post|
+          expect(post.association(:author)).not_to be_loaded
+        end
+      end
+    end
+
+    it "does not auto eager loads associations for models outside the block" do
+      blog = Blog.find(blog1.id)
+
+      arr = blog.posts.to_a
+      Goldiloader.disabled do
+        arr.first.author
+      end
+      arr.drop(1).each do |post|
+        expect(post.association(:author)).not_to be_loaded
+      end
+    end
+  end
+
+  describe "#globally_enabled" do
+    context "enabled" do
+      it "allows setting per thread" do
+        Goldiloader.globally_enabled = true
+
+        expect(Goldiloader.enabled?).to be true
+        Goldiloader.enabled = false
+        expect(Goldiloader.enabled?).to be false
+
+        Thread.new { expect(Goldiloader.enabled?).to be true }.join
+      end
+    end
+
+    context "disabled" do
+      it "allows setting per thread" do
+        Goldiloader.globally_enabled = false
+
+        expect(Goldiloader.enabled?).to be false
+        Goldiloader.enabled = true
+        expect(Goldiloader.enabled?).to be true
+
+        Thread.new { expect(Goldiloader.enabled?).to be false }.join
       end
     end
   end
