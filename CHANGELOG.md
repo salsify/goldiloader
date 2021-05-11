@@ -1,5 +1,10 @@
 # Changelog
 
+### 4.1.0
+- Add support for selectively enabling/disabling Goldiloader for sections of code. See 
+  [106](https://github.com/salsify/goldiloader/pull/106) for details. 
+  **Thanks [@fsateler](https://github.com/fsateler)**
+
 ### 4.0.1
 - Fix issue [105](https://github.com/salsify/goldiloader/issues/105) - Handle polymorphic associations with scopes.
 

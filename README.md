@@ -82,9 +82,9 @@ You can disable automatic eager loading with `auto_include` query scope method:
 Blog.order(:name).auto_include(false)
 ```
 
-It will disable automatic eager loading for the scope associations but it will not apply to nested relations.
+Note this will not disable automatic eager loading for nested associations.
 
-This can also be used to disable automatic eager loading for associations:
+Automatic eager loading can be disabled for specific associations by customizing the association's scope:
 
 ```ruby
 class Blog < ActiveRecord::Base
@@ -92,40 +92,47 @@ class Blog < ActiveRecord::Base
 end
 ```
 
-You can also disable automatic eager loading completely through configuration:
+Automatic eager loading can be disabled globally disabled for all threads:
 
 ```ruby
+# config/initializers/goldiloader.rb
 Goldiloader.globally_enabled = false
 ```
 
-This will disable goldiloader globally, for all threads. This method is meant to be invoked only once if desired at application
-startup.
-
-Then you can use it selectively with a block:
+Automatic eager loading can then be selectively enabled for particular sections of code:
 
 ```ruby
+# Using a non-block form
 Goldiloader.enabled do
-  # here, goldiloader is active
+  # Automatic eager loading is enabled for the current thread
+  # ...
 end
+
+# Using a non-block form
+Goldiloader.enabled = true
+# Automatic eager loading is enabled for the current thread
+# ...
+Goldiloader.enabled = false
 ```
 
-Similarly, you can selectively disable goldiloader for a block with:
+Similarly, you can selectively disable automatic eager loading for particular sections of code in a thread local manner:
 
 ```ruby
+# Using a non-block form
 Goldiloader.disabled do
-  # Here, goldiloader is inactive
+  # Automatic eager loading is disabled for the current thread
+  # ...
 end
+
+# Using a non-block form
+Goldiloader.enabled = false
+# Automatic eager loading is disabled for the current thread
+# ...
+Goldiloader.enabled = true
 ```
 
-Alternatively, you can toggle the activation state with `Goldiloader.enabled`:
-
-```ruby
-before { Goldiloader.enabled = true }
-after { Goldiloader.enabled = false }
-```
-
-These methods are thread-isolated. This means that on multi-threaded servers (like puma), one thread will not interfere
-with the others.
+Note `Goldiloader.enabled=`, `Goldiloader.enabled`, and `Goldiloader.disabled` are thread local to ensure
+proper thread isolation in multi-threaded servers like Puma.
 
 ### Association Options
 
