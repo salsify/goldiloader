@@ -31,7 +31,7 @@ end
 Here are some sample queries without the Goldiloader:
 
 ```ruby
-> blogs = Blogs.limit(5).to_a
+> blogs = Blog.limit(5).to_a
 # SELECT * FROM blogs LIMIT 5
 
 > blogs.each { |blog| blog.posts.to_a }
@@ -45,7 +45,7 @@ Here are some sample queries without the Goldiloader:
 Here are the same queries with the Goldiloader:
 
 ```ruby
-> blogs = Blogs.limit(5).to_a
+> blogs = Blog.limit(5).to_a
 # SELECT * FROM blogs LIMIT 5
 
 > blogs.each { |blog| blog.posts.to_a }
@@ -157,7 +157,7 @@ There are several association methods that ActiveRecord can either execute on in
 This can cause problems for certain usage patterns if we're no longer specifying eager loads:
 
 ```ruby
-> blogs = Blogs.limit(5).to_a
+> blogs = Blog.limit(5).to_a
 # SELECT * FROM blogs LIMIT 5
 
 > blogs.each do |blog|
