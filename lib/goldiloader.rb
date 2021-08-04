@@ -24,7 +24,7 @@ module Goldiloader
     end
 
     def enabled
-      old_enabled = enabled?
+      old_enabled = Thread.current[:goldiloader_enabled]
       self.enabled = true
       yield
     ensure
@@ -32,7 +32,7 @@ module Goldiloader
     end
 
     def disabled
-      old_enabled = enabled?
+      old_enabled = Thread.current[:goldiloader_enabled]
       self.enabled = false
       yield
     ensure

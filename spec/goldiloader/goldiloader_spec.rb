@@ -1002,6 +1002,24 @@ describe Goldiloader do
         Thread.new { expect(Goldiloader.enabled?).to be false }.join
       end
     end
+
+    it "doesn't persist the global value on the thread when using a block" do
+      Thread.current[:goldiloader_enabled] = nil
+
+      Goldiloader.globally_enabled = true
+      Goldiloader.disabled do
+        expect(Goldiloader.enabled?).to be false
+      end
+      expect(Goldiloader.enabled?).to be true
+      expect(Thread.current[:goldiloader_enabled]).to eq nil
+
+      Goldiloader.globally_enabled = false
+      Goldiloader.enabled do
+        expect(Goldiloader.enabled?).to be true
+      end
+      expect(Goldiloader.enabled?).to be false
+      expect(Thread.current[:goldiloader_enabled]).to eq nil
+    end
   end
 
   describe "CollectionProxy#exists?" do
