@@ -1,5 +1,10 @@
 # Changelog
 
+### 4.1.1
+- Fix an issue where changes to `Goldiloader.globally_enabled` wouldn't propagate to threads 
+  that had already invoked `Goldiloader.enabled` or `Goldiloader.disabled`. 
+  **Thanks [@bdurand](https://github.com/bdurand)**
+
 ### 4.1.0
 - Add support for selectively enabling/disabling Goldiloader for sections of code. See 
   [106](https://github.com/salsify/goldiloader/pull/106) for details. 
