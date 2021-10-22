@@ -47,6 +47,7 @@ ActiveRecord::Schema.define(version: 0) do
     t.bigint :byte_size, null: false
     t.string :checksum, null: false
     t.datetime :created_at, null: false
+    t.string :service_name
 
     t.index [:key], unique: true
   end

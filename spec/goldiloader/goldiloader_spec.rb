@@ -1042,8 +1042,12 @@ describe Goldiloader do
         User.find_each do |user|
           create_attachment(owner: user, name: :avatar)
         end
-        blobs = User.all.map(&:avatar).map(&:blob).map(&:service_url)
-        expect(blobs.compact.size).to eq(User.count)
+
+        users = User.all.to_a
+        users.first.avatar_blob
+        users.each do |user|
+          expect(user.association(:avatar_blob)).to be_loaded
+        end
       end
 
       it "works for has_many_attached associations" do
@@ -1051,8 +1055,12 @@ describe Goldiloader do
           create_attachment(owner: post, name: :images)
           create_attachment(owner: post, name: :images)
         end
-        blobs = Post.all.map(&:images).flat_map(&:to_a).map(&:blob).map(&:service_url)
-        expect(blobs.compact.size).to eq(Post.count * 2)
+
+        posts = Post.all.to_a
+        posts.first.images_blobs.to_a
+        posts.each do |post|
+          expect(post.association(:images_blobs)).to be_loaded
+        end
       end
 
       it "works when accessing the attachment directly" do
