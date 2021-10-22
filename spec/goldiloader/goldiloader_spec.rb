@@ -1055,6 +1055,12 @@ describe Goldiloader do
         expect(blobs.compact.size).to eq(Post.count * 2)
       end
 
+      it "works when accessing the attachment directly" do
+        attachment = create_attachment(owner: User.first, name: :avatar)
+        file = ActiveStorage::Attachment.find(attachment.id)
+        file.purge
+      end
+
       def create_attachment(owner:, name:)
         key = SecureRandom.hex
 
