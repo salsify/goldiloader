@@ -108,4 +108,32 @@ RSpec.configure do |config|
   end
 end
 
+# Takes a hash from model class to the number of expected queries executed for that model e.g.
+# expect {  }.to execute_queries(Post => 2, User => 1)
+RSpec::Matchers.define(:execute_queries) do |expected_counts|
+  match(notify_expectation_failures: true) do |actual|
+    @actual_queries = []
+    listener = lambda do |_name, _start, _finish, _message_id, values|
+      @actual_queries << values[:sql]
+    end
+
+    ActiveSupport::Notifications.subscribed(listener, 'sql.active_record', &actual)
+
+    expected_counts_by_table = expected_counts.transform_keys(&:table_name)
+
+    table_extractor = /SELECT .* FROM "(.+)" WHERE/
+    actual_counts_by_table = @actual_queries.group_by do |query|
+      table_extractor.match(query)[1]
+    end.transform_values(&:size)
+
+    actual_counts_by_table == expected_counts_by_table
+  end
+
+  failure_message do |_actual|
+    "expected #{expected_counts.transform_keys(&:name)} queries but ran:\n#{@actual_queries.join("\n")}"
+  end
+
+  supports_block_expectations
+end
+
 puts "Testing with ActiveRecord #{ActiveRecord::VERSION::STRING}"

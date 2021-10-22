@@ -1,18 +1,19 @@
 # Goldiloader
 
 [![Gem Version](https://badge.fury.io/rb/goldiloader.svg)][gem]
-[![Build Status](https://secure.travis-ci.org/salsify/goldiloader.svg?branch=master)][travis]
+[![Build Status](https://circleci.com/gh/salsify/goldiloader.svg?style=svg)][circleci]
 [![Code Climate](https://codeclimate.com/github/salsify/goldiloader.svg)][codeclimate]
 [![Coverage Status](https://coveralls.io/repos/salsify/goldiloader/badge.svg)][coveralls]
 
 [gem]: https://rubygems.org/gems/goldiloader
-[travis]: http://travis-ci.org/salsify/goldiloader
+[circleci]: https://circleci.com/gh/salsify/goldiloader
 [codeclimate]: https://codeclimate.com/github/salsify/goldiloader
 [coveralls]: https://coveralls.io/r/salsify/goldiloader
 
 Wouldn't it be awesome if ActiveRecord didn't make you think about eager loading and it just did the "right" thing by default? With Goldiloader it can!
 
-**This branch only supports Rails 4.2+ with Ruby 2.3+. For older versions of Rails/Ruby use [2-x-stable](https://github.com/salsify/goldiloader/blob/2-x-stable/README.md)
+**This branch only supports Rails 5.2+ with Ruby 2.6+. For older versions of Rails/Ruby use [3-x-stable](https://github.com/salsify/goldiloader/blob/3-x-stable/README.md),
+[2-x-stable](https://github.com/salsify/goldiloader/blob/2-x-stable/README.md)
 or [1-x-stable](https://github.com/salsify/goldiloader/blob/1-x-stable/README.md).**
 
 Consider the following models:
@@ -30,7 +31,7 @@ end
 Here are some sample queries without the Goldiloader:
 
 ```ruby
-> blogs = Blogs.limit(5).to_a
+> blogs = Blog.limit(5).to_a
 # SELECT * FROM blogs LIMIT 5
 
 > blogs.each { |blog| blog.posts.to_a }
@@ -44,7 +45,7 @@ Here are some sample queries without the Goldiloader:
 Here are the same queries with the Goldiloader:
 
 ```ruby
-> blogs = Blogs.limit(5).to_a
+> blogs = Blog.limit(5).to_a
 # SELECT * FROM blogs LIMIT 5
 
 > blogs.each { |blog| blog.posts.to_a }
@@ -81,13 +82,57 @@ You can disable automatic eager loading with `auto_include` query scope method:
 Blog.order(:name).auto_include(false)
 ```
 
-This can also be used to disable automatic eager loading for associations:
+Note this will not disable automatic eager loading for nested associations.
+
+Automatic eager loading can be disabled for specific associations by customizing the association's scope:
 
 ```ruby
 class Blog < ActiveRecord::Base
   has_many :posts, -> { auto_include(false) }
 end
 ```
+
+Automatic eager loading can be disabled globally disabled for all threads:
+
+```ruby
+# config/initializers/goldiloader.rb
+Goldiloader.globally_enabled = false
+```
+
+Automatic eager loading can then be selectively enabled for particular sections of code:
+
+```ruby
+# Using a non-block form
+Goldiloader.enabled do
+  # Automatic eager loading is enabled for the current thread
+  # ...
+end
+
+# Using a non-block form
+Goldiloader.enabled = true
+# Automatic eager loading is enabled for the current thread
+# ...
+Goldiloader.enabled = false
+```
+
+Similarly, you can selectively disable automatic eager loading for particular sections of code in a thread local manner:
+
+```ruby
+# Using a non-block form
+Goldiloader.disabled do
+  # Automatic eager loading is disabled for the current thread
+  # ...
+end
+
+# Using a non-block form
+Goldiloader.enabled = false
+# Automatic eager loading is disabled for the current thread
+# ...
+Goldiloader.enabled = true
+```
+
+Note `Goldiloader.enabled=`, `Goldiloader.enabled`, and `Goldiloader.disabled` are thread local to ensure
+proper thread isolation in multi-threaded servers like Puma.
 
 ### Association Options
 
@@ -112,7 +157,7 @@ There are several association methods that ActiveRecord can either execute on in
 This can cause problems for certain usage patterns if we're no longer specifying eager loads:
 
 ```ruby
-> blogs = Blogs.limit(5).to_a
+> blogs = Blog.limit(5).to_a
 # SELECT * FROM blogs LIMIT 5
 
 > blogs.each do |blog|
@@ -248,7 +293,7 @@ end
 
 ## Status
 
-This gem is tested with Rails 4.2, 5.0, 5.1, 5.2 and Edge using MRI 2.3, 2.4, 2.5 and 2.6. 
+This gem is tested with Rails 5.2, 6.0, 6.1 and Edge using MRI 2.6, 2.7 and 3.0. 
 
 Let us know if you find any issues or have any other feedback.
 

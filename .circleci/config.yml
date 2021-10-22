@@ -1,0 +1,110 @@
+version: 2.1
+jobs:
+  lint:
+    docker:
+      - image: salsify/ruby_ci:2.6.6
+    working_directory: ~/goldiloader
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-gems-ruby-2.6.6-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
+            - v1-gems-ruby-2.6.6-
+      - run:
+          name: Install Gems
+          command: |
+            if ! bundle check --path=vendor/bundle; then
+              bundle install --path=vendor/bundle --jobs=4 --retry=3
+              bundle clean
+            fi
+      - save_cache:
+          key: v1-gems-ruby-2.6.6-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
+          paths:
+            - "vendor/bundle"
+            - "gemfiles/vendor/bundle"
+      - run:
+          name: Run Rubocop
+          command: bundle exec rubocop
+  test:
+    parameters:
+      gemfile:
+        type: string
+      ruby_version:
+        type: string
+    docker:
+      - image: salsify/ruby_ci:<< parameters.ruby_version >>
+    environment:
+      CIRCLE_TEST_REPORTS: "test-results"
+      BUNDLE_GEMFILE: << parameters.gemfile >>
+    working_directory: ~/goldiloader
+    steps:
+      - checkout
+      - unless:
+          condition:
+            equal: ["gemfiles/rails_edge.gemfile", << parameters.gemfile >>]
+          steps:
+          - restore_cache:
+              keys:
+                - v1-gems-ruby-<< parameters.ruby_version >>-{{ checksum "goldiloader.gemspec" }}-{{ checksum "<< parameters.gemfile >>" }}
+                - v1-gems-ruby-<< parameters.ruby_version >>-
+      - run:
+          name: Install Gems
+          command: |
+            if ! bundle check --path=vendor/bundle; then
+              bundle install --path=vendor/bundle --jobs=4 --retry=3
+              bundle clean
+            fi
+      - unless:
+          condition:
+            equal: [ "gemfiles/rails_edge.gemfile", << parameters.gemfile >> ]
+          steps:
+          - save_cache:
+              key: v1-gems-ruby-<< parameters.ruby_version >>-{{ checksum "goldiloader.gemspec" }}-{{ checksum "<< parameters.gemfile >>" }}
+              paths:
+                - "vendor/bundle"
+                - "gemfiles/vendor/bundle"
+      - run:
+          name: Run Tests
+          command: |
+            bundle exec rspec --format RspecJunitFormatter --out $CIRCLE_TEST_REPORTS/rspec/junit.xml --format progress spec
+      - store_test_results:
+          path: "test-results"
+workflows:
+  build:
+    jobs:
+      - lint
+      - test:
+          matrix:
+            parameters:
+              gemfile:
+              - "gemfiles/rails_5.2.gemfile"
+              - "gemfiles/rails_6.0.gemfile"
+              - "gemfiles/rails_6.1.gemfile"
+              - "gemfiles/rails_edge.gemfile"
+              ruby_version:
+              - "2.6.6"
+              - "2.7.2"
+              - "3.0.0"
+            exclude:
+              - gemfile: "gemfiles/rails_5.2.gemfile"
+                ruby_version: "3.0.0"
+              - gemfile: "gemfiles/rails_6.0.gemfile"
+                ruby_version: "3.0.0"
+              - gemfile: "gemfiles/rails_edge.gemfile"
+                ruby_version: "2.6.6"
+  weekly_rails_edge:
+    triggers:
+      - schedule:
+          cron: "0 0 * * 0"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - test:
+          matrix:
+            parameters:
+              gemfile:
+                - "gemfiles/rails_edge.gemfile"
+              ruby_version:
+                - "2.7.2"

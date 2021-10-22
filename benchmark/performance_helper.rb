@@ -13,5 +13,5 @@ def setup_database
     database: ':memory:'
   )
 
-  require_relative './db/schema.rb'
+  require_relative './db/schema'
 end

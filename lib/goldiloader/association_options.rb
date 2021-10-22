@@ -18,11 +18,7 @@ module Goldiloader
     end
 
     def register
-      if Goldiloader::Compatibility.rails_4?
-        ActiveRecord::Associations::Builder::Association.valid_options.concat(OPTIONS)
-      else
-        ActiveRecord::Associations::Builder::Association.extensions << AssociationBuilderExtension
-      end
+      ActiveRecord::Associations::Builder::Association.extensions << AssociationBuilderExtension
     end
   end
 end

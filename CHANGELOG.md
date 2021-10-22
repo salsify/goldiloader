@@ -1,5 +1,27 @@
 # Changelog
 
+### 4.1.1
+- Fix an issue where changes to `Goldiloader.globally_enabled` wouldn't propagate to threads 
+  that had already invoked `Goldiloader.enabled` or `Goldiloader.disabled`. 
+  **Thanks [@bdurand](https://github.com/bdurand)**
+
+### 4.1.0
+- Add support for selectively enabling/disabling Goldiloader for sections of code. See 
+  [106](https://github.com/salsify/goldiloader/pull/106) for details. 
+  **Thanks [@fsateler](https://github.com/fsateler)**
+
+### 4.0.1
+- Fix issue [105](https://github.com/salsify/goldiloader/issues/105) - Handle polymorphic associations with scopes.
+
+### 4.0.0
+- Fix Rails Edge for changes in `ActiveRecord::Associations::Preloader` API.
+- Add support for Ruby 3.0.  
+- Drop support for Rails < 5.2.
+- Drop support for Ruby < 2.6.
+
+### 3.2.0
+- Rails 6.1 support.
+
 ### 3.1.1
 - Fix to support Rails 6.0 beta 3.
 

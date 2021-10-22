@@ -3,6 +3,8 @@
 require 'spec_helper'
 require 'ostruct'
 
+AutoIncludeContextMockModel = Struct.new(:auto_include_context)
+
 describe Goldiloader::AutoIncludeContext do
   describe ".register_models" do
     context "when included_associations is an array of symbols" do
@@ -24,7 +26,7 @@ describe Goldiloader::AutoIncludeContext do
         expect(roots.first.auto_include_context.models).to match_array(roots)
       end
 
-      it "sets the AutoIncludeContext for singluar nested associations" do
+      it "sets the AutoIncludeContext for singular nested associations" do
         expect(fruits.map(&:auto_include_context).uniq.size).to eq 1
         expect(fruits.first.auto_include_context.models).to match_array(fruits)
       end
@@ -160,7 +162,5 @@ describe Goldiloader::AutoIncludeContext do
       end
       model
     end
-
-    AutoIncludeContextMockModel = Struct.new(:auto_include_context)
   end
 end

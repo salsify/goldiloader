@@ -68,6 +68,8 @@ class Tag < ActiveRecord::Base
   has_many :children, class_name: 'Tag', foreign_key: :parent_id
 
   belongs_to :owner, polymorphic: true
+  belongs_to :scoped_owner, -> { where("name like 'author%'") }, polymorphic: true,
+             foreign_key: :owner_id, foreign_type: :owner_type
   has_many :post_tags
   has_many :posts, through: :post_tags
 end
@@ -116,7 +118,8 @@ class Post < ActiveRecord::Base
 
   has_many :unique_tags, -> { distinct }, through: :post_tags, source: :tag, class_name: 'Tag'
 
-  has_and_belongs_to_many :tags_without_auto_include, -> { auto_include(false) }, join_table: :post_tags, class_name: 'Tag'
+  has_and_belongs_to_many :tags_without_auto_include, -> { auto_include(false) }, join_table: :post_tags,
+                          class_name: 'Tag'
 
   has_many_attached :images if defined?(ActiveStorage)
 

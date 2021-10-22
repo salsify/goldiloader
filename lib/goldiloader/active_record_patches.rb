@@ -51,13 +51,7 @@ module Goldiloader
     end
 
     def auto_include_value=(value)
-      if Goldiloader::Compatibility.rails_4?
-        raise ::ActiveRecord::Relation::ImmutableRelation if @loaded
-        check_cached_relation
-      else
-        assert_mutability!
-      end
-
+      assert_mutability!
       @values[:auto_include] = value
     end
   end
@@ -74,29 +68,26 @@ module Goldiloader
   ActiveRecord::Relation::Merger.prepend(::Goldiloader::MergerPatch)
 
   module AssociationReflectionPatch
-    def eager_loadable?
-      return @eager_loadable if instance_variable_defined?(:@eager_loadable)
-
-      @eager_loadable = if scope.nil?
-                          # Associations without any scoping options are eager loadable
-                          true
-                        elsif scope.arity > 0
-                          # The scope will be evaluated for every model instance so it can't
-                          # be eager loaded
-                          false
-                        else
-                          scope_info = if Goldiloader::Compatibility.rails_4?
-                                         Goldiloader::ScopeInfo.new(klass.unscoped.instance_exec(&scope) || klass.unscoped)
-                                       else
-                                         Goldiloader::ScopeInfo.new(scope_for(klass.unscoped))
-                                       end
-                          scope_info.auto_include? &&
-                            !scope_info.limit? &&
-                            !scope_info.offset? &&
-                            (!has_one? || !scope_info.order?) &&
-                            (::Goldiloader::Compatibility.group_eager_loadable? || !scope_info.group?) &&
-                            (::Goldiloader::Compatibility.from_eager_loadable? || !scope_info.from?)
-                        end
+    # Note we need to pass the association's target class as an argument since it won't be known
+    # outside the context of an association instance for polymorphic associations.
+    def eager_loadable?(target_klass)
+      @eager_loadable_cache ||= Hash.new do |cache, target_klass_key|
+        cache[target_klass_key] = if scope.nil?
+                                    # Associations without any scoping options are eager loadable
+                                    true
+                                  elsif scope.arity > 0
+                                    # The scope will be evaluated for every model instance so it can't
+                                    # be eager loaded
+                                    false
+                                  else
+                                    scope_info = Goldiloader::ScopeInfo.new(scope_for(target_klass_key.unscoped))
+                                    scope_info.auto_include? &&
+                                      !scope_info.limit? &&
+                                      !scope_info.offset? &&
+                                      (!has_one? || !scope_info.order?)
+                                  end
+      end
+      @eager_loadable_cache[target_klass]
     end
   end
   ActiveRecord::Reflection::AssociationReflection.include(::Goldiloader::AssociationReflectionPatch)
@@ -123,11 +114,13 @@ module Goldiloader
     private
 
     def eager_loadable?
-      reflection.eager_loadable? &&
+      klass && reflection.eager_loadable?(klass) &&
         (::Goldiloader::Compatibility.destroyed_model_associations_eager_loadable? || !owner.destroyed?)
     end
 
     def load_with_auto_include
+      return yield unless Goldiloader.enabled?
+
       if loaded? && !stale_target?
         target
       elsif !auto_include?
@@ -159,12 +152,7 @@ module Goldiloader
 
   module CollectionAssociationPatch
     # Force these methods to load the entire association for fully_load associations
-    association_methods = [:size, :ids_reader, :empty?]
-    if Goldiloader::Compatibility::ACTIVE_RECORD_VERSION < ::Gem::Version.new('5.1')
-      association_methods.concat([:first, :second, :third, :fourth, :fifth, :last])
-    end
-
-    association_methods.each do |method|
+    [:size, :ids_reader, :empty?].each do |method|
       define_method(method) do |*args, &block|
         load_target if fully_load?
         super(*args, &block)
@@ -175,10 +163,8 @@ module Goldiloader
       load_with_auto_include { super }
     end
 
-    if Goldiloader::Compatibility::ACTIVE_RECORD_VERSION >= ::Gem::Version.new('5.1')
-      def find_from_target?
-        fully_load? || super
-      end
+    def find_from_target?
+      fully_load? || super
     end
   end
   ::ActiveRecord::Associations::CollectionAssociation.prepend(::Goldiloader::CollectionAssociationPatch)
