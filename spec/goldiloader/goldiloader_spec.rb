@@ -1078,7 +1078,8 @@ describe Goldiloader do
           key: key,
           filename: "#{owner.class}/#{owner.id}.file",
           byte_size: 128,
-          checksum: 'abc'
+          checksum: 'abc',
+          content_type: 'text'
         )
 
         ActiveStorage::Attachment.create!(

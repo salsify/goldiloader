@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copy initialization from activestorage/lib/active_storage/engine.rb
 # There's probably a cleaner way to do all of this...
 require 'active_storage'
@@ -50,7 +52,9 @@ end
 if Goldiloader::Compatibility.rails_6_1_or_greater?
   require 'active_storage/record'
   # TODO: Figure out how these circular requires should work
-  class ActiveStorage::Blob < ActiveStorage::Record ; end
+  module ActiveStorage
+    class Blob < ActiveStorage::Record; end
+  end
   require 'active_storage/blob/analyzable'
   require 'active_storage/blob/identifiable'
   require 'active_storage/blob/representable'
