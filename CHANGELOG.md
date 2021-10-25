@@ -1,5 +1,9 @@
 # Changelog
 
+### 4.1.2
+- Fix issue [88](https://github.com/salsify/goldiloader/issues/88) which resulted in a stack overflow when
+  navigating from an `ActiveStorage::Attachment` to its associated `ActiveStorage::Blob`.
+
 ### 4.1.1
 - Fix an issue where changes to `Goldiloader.globally_enabled` wouldn't propagate to threads 
   that had already invoked `Goldiloader.enabled` or `Goldiloader.disabled`. 

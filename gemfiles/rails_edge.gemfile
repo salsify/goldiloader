@@ -2,8 +2,8 @@
 
 source "https://rubygems.org"
 
-gem "activestorage", branch: "main", git: "https://github.com/rails/rails.git"
 gem "activerecord", branch: "main", git: "https://github.com/rails/rails.git"
 gem "activesupport", branch: "main", git: "https://github.com/rails/rails.git"
+gem "activestorage", branch: "main", git: "https://github.com/rails/rails.git"
 
 gemspec path: "../"

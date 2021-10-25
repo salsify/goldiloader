@@ -24,6 +24,19 @@ ActiveRecord::Base.logger = Logger.new('log/test.log')
 ActiveRecord::Base.logger.level = Logger::DEBUG
 ActiveRecord::Migration.verbose = false
 
+# Stub the dependency on Rails methods
+module Rails
+  module Autoloaders
+    def self.zeitwerk_enabled?
+      false
+    end
+  end
+
+  def self.autoloaders
+    Autoloaders
+  end
+end
+
 require 'active_storage_setup'
 
 db_adapter = ENV.fetch('ADAPTER', 'sqlite3')

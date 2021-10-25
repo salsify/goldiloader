@@ -124,7 +124,7 @@ class Post < ActiveRecord::Base
   has_and_belongs_to_many :tags_without_auto_include, -> { auto_include(false) }, join_table: :post_tags,
                           class_name: 'Tag'
 
-  has_many_attached :images if defined?(ActiveStorage)
+  has_many_attached :images
 
   after_destroy :after_post_destroy
 
@@ -141,7 +141,7 @@ class User < ActiveRecord::Base
 
   has_one :scoped_address_with_default_scope_remove, -> { unscope(where: :city) }, class_name: 'ScopedAddress'
 
-  has_one_attached :avatar if defined?(ActiveStorage)
+  has_one_attached :avatar
 end
 
 class Address < ActiveRecord::Base
