@@ -37,7 +37,13 @@ module Goldiloader
     end
 
     def register_models(models)
-      Array.wrap(models).each do |model|
+      # Don't use Array() or Array.wrap() because they will check respond_to?(:to_ary)
+      # which for ActiveStorage::Attachment will delegate to the blob association which
+      # triggers an infinite eager loading loop on the association
+      models = [models] unless models.is_a?(Array)
+      models.each do |model|
+        next if model.nil?
+
         model.auto_include_context = self
         self.models << model
       end

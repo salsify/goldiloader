@@ -1035,4 +1035,61 @@ describe Goldiloader do
       expect(Tag.new.children).not_to exist
     end
   end
+
+  describe "active storage associations" do
+    it "eager loads has_one_attached associations" do
+      User.find_each do |user|
+        create_attachment(owner: user, name: :avatar)
+      end
+
+      users = User.all.to_a
+      users.first.avatar_blob
+      users.each do |user|
+        expect(user.association(:avatar_blob)).to be_loaded
+      end
+    end
+
+    it "eager loads has_many_attached associations" do
+      Post.find_each do |post|
+        create_attachment(owner: post, name: :images)
+        create_attachment(owner: post, name: :images)
+      end
+
+      posts = Post.all.to_a
+      posts.first.images_blobs.to_a
+      posts.each do |post|
+        expect(post.association(:images_blobs)).to be_loaded
+      end
+    end
+
+    # See https://github.com/salsify/goldiloader/issues/88
+    it "doesn't block navigating from the attachment to the associated blob" do
+      attachment = create_attachment(owner: User.first, name: :avatar)
+      attachment_id = attachment.id
+      blob_id = attachment.blob_id
+
+      found_attachment = ActiveStorage::Attachment.find(attachment_id)
+      expect(found_attachment.blob).to eq(ActiveStorage::Blob.find(blob_id))
+    end
+
+    def create_attachment(owner:, name:)
+      key = SecureRandom.hex
+
+      ActiveStorage::Blob.service.upload(key, StringIO.open('hello world'))
+
+      blob = ActiveStorage::Blob.create!(
+        key: key,
+        filename: "#{owner.class}/#{owner.id}.file",
+        byte_size: 128,
+        checksum: 'abc',
+        content_type: 'text'
+      )
+
+      ActiveStorage::Attachment.create!(
+        name: name,
+        record: owner,
+        blob: blob
+      )
+    end
+  end
 end
