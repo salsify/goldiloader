@@ -1,5 +1,8 @@
 # Changelog
 
+## 4.2.0
+- Add support for Rails 7.0 and Ruby 3.1.
+
 ## 4.1.2
 - Fix issue [88](https://github.com/salsify/goldiloader/issues/88) which resulted in a stack overflow when
   navigating from an `ActiveStorage::Attachment` to its associated `ActiveStorage::Blob`.
