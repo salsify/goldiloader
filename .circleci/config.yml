@@ -2,14 +2,14 @@ version: 2.1
 jobs:
   lint:
     docker:
-      - image: salsify/ruby_ci:2.6.6
+      - image: salsify/ruby_ci:2.6.8
     working_directory: ~/goldiloader
     steps:
       - checkout
       - restore_cache:
           keys:
-            - v1-gems-ruby-2.6.6-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
-            - v1-gems-ruby-2.6.6-
+            - v1-gems-ruby-2.6.8-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
+            - v1-gems-ruby-2.6.8-
       - run:
           name: Install Gems
           command: |
@@ -18,7 +18,7 @@ jobs:
               bundle clean
             fi
       - save_cache:
-          key: v1-gems-ruby-2.6.6-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
+          key: v1-gems-ruby-2.6.8-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
           paths:
             - "vendor/bundle"
             - "gemfiles/vendor/bundle"
@@ -80,18 +80,22 @@ workflows:
               - "gemfiles/rails_5.2.gemfile"
               - "gemfiles/rails_6.0.gemfile"
               - "gemfiles/rails_6.1.gemfile"
+              - "gemfiles/rails_7.0.gemfile"
               - "gemfiles/rails_edge.gemfile"
               ruby_version:
-              - "2.6.6"
-              - "2.7.2"
-              - "3.0.0"
+              - "2.6.8"
+              - "2.7.4"
+              - "3.0.3"
+              - "3.1.0"
             exclude:
               - gemfile: "gemfiles/rails_5.2.gemfile"
-                ruby_version: "3.0.0"
-              - gemfile: "gemfiles/rails_6.0.gemfile"
-                ruby_version: "3.0.0"
+                ruby_version: "3.0.3"
+              - gemfile: "gemfiles/rails_5.2.gemfile"
+                ruby_version: "3.1.0"
+              - gemfile: "gemfiles/rails_7.0.gemfile"
+                ruby_version: "2.6.8"
               - gemfile: "gemfiles/rails_edge.gemfile"
-                ruby_version: "2.6.6"
+                ruby_version: "2.6.8"
   weekly_rails_edge:
     triggers:
       - schedule:
@@ -107,4 +111,4 @@ workflows:
               gemfile:
                 - "gemfiles/rails_edge.gemfile"
               ruby_version:
-                - "2.7.2"
+                - "3.1.0"
