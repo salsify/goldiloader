@@ -13,35 +13,11 @@ SimpleCov.start do
   add_filter 'spec'
 end
 
-require 'logger'
-require 'database_cleaner'
-require 'goldiloader'
-require 'yaml'
+require 'bundler'
 
-FileUtils.makedirs('log')
+Bundler.require :default, :development
+Combustion.initialize! :active_record, :active_storage, :active_job
 
-ActiveRecord::Base.logger = Logger.new('log/test.log')
-ActiveRecord::Base.logger.level = Logger::DEBUG
-ActiveRecord::Migration.verbose = false
-
-# Stub the dependency on Rails methods
-module Rails
-  module Autoloaders
-    def self.zeitwerk_enabled?
-      false
-    end
-  end
-
-  def self.autoloaders
-    Autoloaders
-  end
-end
-
-require 'active_storage_setup'
-
-db_adapter = ENV.fetch('ADAPTER', 'sqlite3')
-db_config = YAML.safe_load(File.read('spec/db/database.yml'))
-ActiveRecord::Base.establish_connection(db_config[db_adapter])
 require 'db/schema'
 
 RSpec.configure do |config|

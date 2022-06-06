@@ -6,6 +6,10 @@ jobs:
     working_directory: ~/goldiloader
     steps:
       - checkout
+      - run:
+          # This is only needed for Ruby 2.6.8 which has an old version of SQLite
+          name: Install SQLite
+          command: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
       - restore_cache:
           keys:
             - v1-gems-ruby-2.6.8-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
@@ -39,6 +43,14 @@ jobs:
     working_directory: ~/goldiloader
     steps:
       - checkout
+      - when:
+          condition:
+            equal: [ "2.6.8", << parameters.ruby_version >> ]
+          steps:
+          - run:
+              # This is only needed for Ruby 2.6.8 which has an old version of SQLite
+              name: Install SQLite
+              command: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
       - unless:
           condition:
             equal: ["gemfiles/rails_edge.gemfile", << parameters.gemfile >>]
