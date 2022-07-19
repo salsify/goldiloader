@@ -102,7 +102,7 @@ Goldiloader.globally_enabled = false
 Automatic eager loading can then be selectively enabled for particular sections of code:
 
 ```ruby
-# Using a non-block form
+# Using a block form
 Goldiloader.enabled do
   # Automatic eager loading is enabled for the current thread
   # ...
@@ -118,7 +118,7 @@ Goldiloader.enabled = false
 Similarly, you can selectively disable automatic eager loading for particular sections of code in a thread local manner:
 
 ```ruby
-# Using a non-block form
+# Using a block form
 Goldiloader.disabled do
   # Automatic eager loading is disabled for the current thread
   # ...
