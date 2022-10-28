@@ -96,14 +96,14 @@ workflows:
               - "gemfiles/rails_edge.gemfile"
               ruby_version:
               - "2.6.8"
-              - "2.7.4"
-              - "3.0.3"
-              - "3.1.0"
+              - "2.7.6"
+              - "3.0.4"
+              - "3.1.2"
             exclude:
               - gemfile: "gemfiles/rails_5.2.gemfile"
-                ruby_version: "3.0.3"
+                ruby_version: "3.0.4"
               - gemfile: "gemfiles/rails_5.2.gemfile"
-                ruby_version: "3.1.0"
+                ruby_version: "3.1.2"
               - gemfile: "gemfiles/rails_7.0.gemfile"
                 ruby_version: "2.6.8"
               - gemfile: "gemfiles/rails_edge.gemfile"
@@ -123,4 +123,4 @@ workflows:
               gemfile:
                 - "gemfiles/rails_edge.gemfile"
               ruby_version:
-                - "3.1.0"
+                - "3.1.2"
