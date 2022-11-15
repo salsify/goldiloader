@@ -18,26 +18,12 @@ require 'bundler'
 Bundler.require :default, :development
 Combustion.initialize! :active_record, :active_storage, :active_job
 
+require 'rspec/rails'
 require 'db/schema'
 
 RSpec.configure do |config|
   config.order = 'random'
-
-  config.before(:suite) do
-    DatabaseCleaner.clean_with(:truncation)
-  end
-
-  config.before do
-    DatabaseCleaner.strategy = :transaction
-  end
-
-  config.before do
-    DatabaseCleaner.start
-  end
-
-  config.after do
-    DatabaseCleaner.clean
-  end
+  config.use_transactional_fixtures = true
 end
 
 # Takes a hash from model class to the number of expected queries executed for that model e.g.
