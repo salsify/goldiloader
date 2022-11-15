@@ -1,3 +1,3 @@
 test:
   adapter:  sqlite3
-  database: ":memory:"
+  database: "tmp/test.sqlite3"
