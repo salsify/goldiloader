@@ -2,7 +2,7 @@ inherit_gem:
   salsify_rubocop: conf/rubocop.yml
 
 AllCops:
-  TargetRubyVersion: 2.6
+  TargetRubyVersion: 3.0
   Exclude:
     - 'vendor/**/*'
     - 'gemfiles/**/*'
