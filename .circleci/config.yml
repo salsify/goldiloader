@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   lint:
     docker:
-      - image: salsify/ruby_ci:2.6.10
+      - image: ruby:2.6.10
     working_directory: ~/goldiloader
     steps:
       - checkout
@@ -36,7 +36,7 @@ jobs:
       ruby_version:
         type: string
     docker:
-      - image: salsify/ruby_ci:<< parameters.ruby_version >>
+      - image: ruby:<< parameters.ruby_version >>
     environment:
       CIRCLE_TEST_REPORTS: "test-results"
       BUNDLE_GEMFILE: << parameters.gemfile >>
