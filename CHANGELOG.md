@@ -1,5 +1,8 @@
 # Changelog
 
+## 5.0.0
+- Drop support for Ruby < 3.0 and Rails < 6.1.
+
 ## 4.2.0
 - Add support for Rails 7.0 and Ruby 3.1.
 

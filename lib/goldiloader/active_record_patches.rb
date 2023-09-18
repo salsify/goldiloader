@@ -114,8 +114,7 @@ module Goldiloader
     private
 
     def eager_loadable?
-      klass && reflection.eager_loadable?(klass) &&
-        (::Goldiloader::Compatibility.destroyed_model_associations_eager_loadable? || !owner.destroyed?)
+      klass && reflection.eager_loadable?(klass)
     end
 
     def load_with_auto_include
