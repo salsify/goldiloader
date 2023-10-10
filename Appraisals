@@ -12,6 +12,12 @@ appraise 'rails-7.0' do
   gem 'rails', '7.0.8'
 end
 
+appraise 'rails-7.1' do
+  gem 'activerecord', '7.1.0'
+  gem 'activesupport', '7.1.0'
+  gem 'rails', '7.1.0'
+end
+
 appraise 'rails-edge' do
   gem 'activerecord', github: 'rails/rails', branch: 'main'
   gem 'activesupport', github: 'rails/rails', branch: 'main'
