@@ -986,9 +986,9 @@ describe Goldiloader do
     let(:blogs) { Blog.order(:name).to_a }
 
     it "returns custom preloads" do
-      expected_values = blogs.map {|blog|
+      expected_values = blogs.map do |blog|
         blog.posts.count
-      }
+      end
 
       expect do
         expect(blogs.map(&:posts_count)).to eq expected_values
