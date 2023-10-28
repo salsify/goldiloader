@@ -293,7 +293,7 @@ class Blog < ActiveRecord::Base
   
   def posts_count
     goldiload(:posts_count) do |ids|
-      # this block will only be executed once
+      # By default, `ids` will be a list of `Blog#id`s
       Post
         .where(blog_id: ids)
         .group(:blog_id)
@@ -305,7 +305,7 @@ end
 
 The first time you call the `posts_count` method, it will call the block with all model ids from the current context and reuse the result from the block for all other models in the context.
 
-A more complex example:
+A more complex example might use a custom primary key instead of `id`, use a non ActiveRecord API and have more complex return values than just scalar values:
 
 ```ruby
 class Blog < ActiveRecord::Base
