@@ -51,5 +51,7 @@ module Goldiloader
     end
 
     alias_method :register_model, :register_models
+
+    include Goldiloader::CustomPreloads
   end
 end

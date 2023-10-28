@@ -3,6 +3,7 @@
 require 'active_support/all'
 require 'active_record'
 require 'goldiloader/compatibility'
+require 'goldiloader/custom_preloads'
 require 'goldiloader/auto_include_context'
 require 'goldiloader/scope_info'
 require 'goldiloader/association_options'

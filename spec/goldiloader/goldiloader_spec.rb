@@ -978,6 +978,24 @@ describe Goldiloader do
     end
   end
 
+  context "custom preloads" do
+    before do
+      blog1.posts.create(title: 'another-post')
+    end
+
+    let(:blogs) { Blog.order(:name).to_a }
+
+    it "returns custom preloads" do
+      expected_values = blogs.map {|blog|
+        blog.posts.count
+      }
+
+      expect do
+        expect(blogs.map(&:posts_count)).to eq expected_values
+      end.to execute_queries(Post => 1)
+    end
+  end
+
   describe "#globally_enabled" do
     context "enabled" do
       it "allows setting per thread" do

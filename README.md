@@ -275,6 +275,57 @@ class RecentPostReference < ActiveRecord::Base
 end
 ```
 
+## Custom Preloads
+
+In addition to preloading relations, you can also define custom preloads directly in your model. The only requirement is that you need to be able perform a lookup for multiple records/ids and return a single Hash with the ids as keys.
+If that's the case, these preloads can nearly be anything. Some examples could be:
+
+- simple aggregations (count, sum, maximum, etc.)
+- more complex custom SQL queries
+- external API requests (ElasticSearch, Redis, etc.)
+- relations with primary_keys stored in a `jsonb` column
+
+Here's how:
+
+```ruby
+class Blog < ActiveRecord::Base
+  has_many :posts
+  
+  def posts_count
+    goldiload(:posts_count) do |ids|
+      # this block will only be executed once
+      Post
+        .where(blog_id: ids)
+        .group(:blog_id)
+        .count
+    end
+  end
+end
+```
+
+The first time you call the `posts_count` method, it will call the block with all model ids from the current context and reuse the result from the block for all other models in the context.
+
+A more complex example:
+
+```ruby
+class Blog < ActiveRecord::Base
+  has_many :posts
+
+  def main_translator_reference
+    json_payload[:main_translator_reference]
+  end
+  
+  def main_translator
+    goldiload(:main_translator, primary_key: :main_translator_reference) do |references|
+      SomeExternalApi.fetch_translators(
+        id: references
+      ).index_by(&:id)
+    end
+  end
+end
+```
+
+
 ## Upgrading
 
 ### From 0.x, 1.x

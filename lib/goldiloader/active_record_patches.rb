@@ -25,6 +25,10 @@ module Goldiloader
       @auto_include_context = nil
       super
     end
+
+    def goldiload(name, primary_key: :id, &block)
+      auto_include_context.preloaded(self, name, primary_key: primary_key, &block)
+    end
   end
   ::ActiveRecord::Base.include(::Goldiloader::BasePatch)
 
