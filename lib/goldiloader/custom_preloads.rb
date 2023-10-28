@@ -14,16 +14,16 @@ module Goldiloader
     end
 
     def store_preloaded(key, preloads_hash)
-      @preloads ||= {}
-      @preloads[key] = preloads_hash
+      @custom_preloads ||= {}
+      @custom_preloads[key] = preloads_hash
     end
 
     def fetch_preloaded(key, instance, primary_key: :id)
-      @preloads&.dig(key, instance.public_send(primary_key))
+      @custom_preloads&.dig(key, instance.public_send(primary_key))
     end
 
     def preloaded?(key)
-      @preloads&.key?(key)
+      @custom_preloads&.key?(key)
     end
   end
 end
