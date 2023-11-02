@@ -2,28 +2,35 @@
 
 module Goldiloader
   module CustomPreloads
-    def preloaded(instance, key, primary_key: :id, &_block)
-      unless preloaded?(key)
+    def initialize
+      super
+      @custom_preloads = nil
+    end
+
+    def preloaded(model, cache_name:, key:, &_block)
+      unless preloaded?(cache_name)
         ids = models.map do |record|
-          record.public_send(primary_key)
+          record.public_send(key)
         end
 
-        store_preloaded(key, yield(ids))
+        store_preloaded(cache_name, yield(ids))
       end
-      fetch_preloaded(key, instance, primary_key: primary_key)
+      fetch_preloaded(cache_name, model, key: key)
     end
 
-    def store_preloaded(key, preloads_hash)
+    private
+
+    def store_preloaded(cache_name, preloaded_hash)
       @custom_preloads ||= {}
-      @custom_preloads[key] = preloads_hash
+      @custom_preloads[cache_name] = preloaded_hash
     end
 
-    def fetch_preloaded(key, instance, primary_key: :id)
-      @custom_preloads&.dig(key, instance.public_send(primary_key))
+    def fetch_preloaded(cache_name, instance, key:)
+      @custom_preloads&.dig(cache_name, instance.public_send(key))
     end
 
-    def preloaded?(key)
-      @custom_preloads&.key?(key)
+    def preloaded?(cache_name)
+      @custom_preloads&.key?(cache_name)
     end
   end
 end

@@ -26,8 +26,9 @@ module Goldiloader
       super
     end
 
-    def goldiload(name, primary_key: :id, &block)
-      auto_include_context.preloaded(self, name, primary_key: primary_key, &block)
+    def goldiload(cache_name=nil, key: self.class.primary_key, &block)
+      cache_name ||= block.source_location.join(':')
+      auto_include_context.preloaded(self, cache_name: cache_name, key: key, &block)
     end
   end
   ::ActiveRecord::Base.include(::Goldiloader::BasePatch)

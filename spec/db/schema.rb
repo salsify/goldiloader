@@ -106,8 +106,18 @@ class Blog < ActiveRecord::Base
   has_one :post_with_order, -> { order(:id) }, class_name: 'Post'
 
   def posts_count
-    goldiload(:posts_count) do |ids|
+    goldiload do |ids|
       Post.where(blog_id: ids).group(:blog_id).count
+    end
+  end
+
+  def tags_count
+    goldiload do |ids|
+      Tag
+        .joins(:posts)
+        .where(posts: { blog_id: ids })
+        .group(:blog_id)
+        .count
     end
   end
 

@@ -220,6 +220,9 @@ Associations with any of the following options cannot be eager loaded:
 
 Goldiloader detects associations with any of these options and disables automatic eager loading on them.
 
+It might still be possible to eager load these with Goldiloader by using [custom preloads](#custom-preloads).
+
+
 ### Eager Loading Limitation Workarounds
 
 Most of the Rails limitations with eager loading can be worked around by pushing the problematic SQL into the database via database views. Consider the following example with associations that can't be eager loaded due to SQL limits:
@@ -277,13 +280,13 @@ end
 
 ## Custom Preloads
 
-In addition to preloading relations, you can also define custom preloads directly in your model. The only requirement is that you need to be able perform a lookup for multiple records/ids and return a single Hash with the ids as keys.
+In addition to preloading relations, you can also define custom preloads by yourself in your model. The only requirement is that you need to be able to perform a lookup for multiple records/ids and return a single Hash with the ids as keys.
 If that's the case, these preloads can nearly be anything. Some examples could be:
 
 - simple aggregations (count, sum, maximum, etc.)
 - more complex custom SQL queries
 - external API requests (ElasticSearch, Redis, etc.)
-- relations with primary_keys stored in a `jsonb` column
+- relations with primary keys stored in a `jsonb` column
 
 Here's how:
 
@@ -292,8 +295,8 @@ class Blog < ActiveRecord::Base
   has_many :posts
   
   def posts_count
-    goldiload(:posts_count) do |ids|
-      # By default, `ids` will be a list of `Blog#id`s
+    goldiload do |ids|
+      # By default, `ids` will be an array of `Blog#id`s
       Post
         .where(blog_id: ids)
         .group(:blog_id)
@@ -308,15 +311,14 @@ The first time you call the `posts_count` method, it will call the block with al
 A more complex example might use a custom primary key instead of `id`, use a non ActiveRecord API and have more complex return values than just scalar values:
 
 ```ruby
-class Blog < ActiveRecord::Base
-  has_many :posts
-
+class Post < ActiveRecord::Base
   def main_translator_reference
     json_payload[:main_translator_reference]
   end
   
   def main_translator
-    goldiload(:main_translator, primary_key: :main_translator_reference) do |references|
+    goldiload(key: :main_translator_reference) do |references|
+      # `references` will be an array of `Post#main_translator_reference`s
       SomeExternalApi.fetch_translators(
         id: references
       ).index_by(&:id)
@@ -324,6 +326,8 @@ class Blog < ActiveRecord::Base
   end
 end
 ```
+
+**Note:** The `goldiload` method will use the `source_location` of the given block as a cache name to distinguish between multiple defined preloads. If this causes an issue for you, you can also pass a cache name explicitly as the first argument to the `goldiload` method.
 
 
 ## Upgrading

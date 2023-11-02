@@ -980,19 +980,32 @@ describe Goldiloader do
 
   context "custom preloads" do
     before do
-      blog1.posts.create(title: 'another-post')
+      # create some additional records to make sure we actually have different counts
+      blog1.posts.create!(title: 'another-post') do |post|
+        post.tags << Tag.create!(name: 'some tag')
+      end
     end
 
     let(:blogs) { Blog.order(:name).to_a }
 
     it "returns custom preloads" do
-      expected_values = blogs.map do |blog|
+      expected_post_counts = blogs.map do |blog|
         blog.posts.count
       end
 
+      expected_tag_counts = blogs.map do |blog|
+        blog.posts.sum {|post| post.tags.count }
+      end
+
       expect do
-        expect(blogs.map(&:posts_count)).to eq expected_values
-      end.to execute_queries(Post => 1)
+        expect(blogs.map(&:posts_count)).to eq expected_post_counts
+        expect(blogs.map(&:tags_count)).to eq expected_tag_counts
+      end.to execute_queries(Post => 1, Tag => 1)
+    end
+
+    it "works without a collection" do
+      expect(blog1.posts_count).to eq blog1.posts.count
+      expect(blog2.posts_count).to eq blog2.posts.count
     end
   end
 
