@@ -994,7 +994,7 @@ describe Goldiloader do
       end
 
       expected_tag_counts = blogs.map do |blog|
-        blog.posts.sum {|post| post.tags.count }
+        blog.posts.sum { |post| post.tags.count }
       end
 
       expect do
