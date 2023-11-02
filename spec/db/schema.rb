@@ -121,13 +121,15 @@ class Blog < ActiveRecord::Base
     end
   end
 
+  # rubocop:disable Style/RedundantSelf
   def custom_preload_with_self_reference
     goldiload do |ids|
       ids.to_h do |id|
-        [id, posts.count]
+        [id, self.posts.count]
       end
     end
   end
+  # rubocop:enable Style/RedundantSelf
 
   def posts_overridden
     'boom'
