@@ -310,6 +310,7 @@ The first time you call the `posts_count` method, it will call the block with al
 
 A more complex example might use a custom primary key instead of `id`, use a non ActiveRecord API and have more complex return values than just scalar values:
 
+
 ```ruby
 class Post < ActiveRecord::Base
   def main_translator_reference
@@ -328,6 +329,11 @@ end
 ```
 
 **Note:** The `goldiload` method will use the `source_location` of the given block as a cache name to distinguish between multiple defined preloads. If this causes an issue for you, you can also pass a cache name explicitly as the first argument to the `goldiload` method.
+
+
+### Gotchas
+
+Even though the methods in the examples above (`posts_count`, `main_translator`) are actually instance methods, the block passed to `goldiload` should not contain any references to these instances, as this could break the internal lookup/caching mechanism. We prevent this for the `self` keyword, so you'll get a `NoMethodError`. If you get this, you might want to think about the implementation rather than just trying to work around the exception.
 
 
 ## Upgrading
