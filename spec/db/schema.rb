@@ -121,6 +121,14 @@ class Blog < ActiveRecord::Base
     end
   end
 
+  def custom_preload_with_self_reference
+    goldiload do |ids|
+      ids.to_h {|id|
+        [id, self.posts.count]
+      }
+    end
+  end
+
   def posts_overridden
     'boom'
   end

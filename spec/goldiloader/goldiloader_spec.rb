@@ -1007,6 +1007,12 @@ describe Goldiloader do
       expect(blog1.posts_count).to eq blog1.posts.count
       expect(blog2.posts_count).to eq blog2.posts.count
     end
+
+    it "prevents self references to the model inside the block" do
+      expect {
+        blog1.custom_preload_with_self_reference
+      }.to raise_error(NoMethodError)
+    end
   end
 
   describe "#globally_enabled" do

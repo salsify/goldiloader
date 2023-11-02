@@ -7,13 +7,17 @@ module Goldiloader
       @custom_preloads = nil
     end
 
-    def preloaded(model, cache_name:, key:, &_block)
+    def preloaded(model, cache_name:, key:, &block)
       unless preloaded?(cache_name)
         ids = models.map do |record|
           record.public_send(key)
         end
 
-        store_preloaded(cache_name, yield(ids))
+        # We're using instance_exec instead of a simple yield to make sure that the
+        # given block does not have any references to the model instance as this might
+        # lead to unexpected results
+        preloaded_hash = instance_exec(ids, &block)
+        store_preloaded(cache_name, preloaded_hash)
       end
       fetch_preloaded(cache_name, model, key: key)
     end
