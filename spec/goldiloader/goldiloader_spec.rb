@@ -1009,9 +1009,9 @@ describe Goldiloader do
     end
 
     it "prevents self references to the model inside the block" do
-      expect {
+      expect do
         blog1.custom_preload_with_self_reference
-      }.to raise_error(NoMethodError)
+      end.to raise_error(NoMethodError)
     end
   end
 

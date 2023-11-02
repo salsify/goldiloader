@@ -123,9 +123,9 @@ class Blog < ActiveRecord::Base
 
   def custom_preload_with_self_reference
     goldiload do |ids|
-      ids.to_h {|id|
-        [id, self.posts.count]
-      }
+      ids.to_h do |id|
+        [id, posts.count]
+      end
     end
   end
 
