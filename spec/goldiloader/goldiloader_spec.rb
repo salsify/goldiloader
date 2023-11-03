@@ -978,6 +978,81 @@ describe Goldiloader do
     end
   end
 
+  context "custom preloads" do
+    before do
+      # create some additional records to make sure we actually have different counts
+      blog1.posts.create!(title: 'another-post') do |post|
+        post.tags << Tag.create!(name: 'some tag')
+      end
+    end
+
+    let(:blogs) { Blog.order(:name).to_a }
+
+    it "returns custom preloads" do
+      expected_post_counts = blogs.map do |blog|
+        blog.posts.count
+      end
+
+      expected_tag_counts = blogs.map do |blog|
+        blog.posts.sum { |post| post.tags.count }
+      end
+
+      expect do
+        expect(blogs.map(&:posts_count)).to eq expected_post_counts
+        expect(blogs.map(&:tags_count)).to eq expected_tag_counts
+      end.to execute_queries(Post => 1, Tag => 1)
+    end
+
+    it "works without a collection" do
+      expect(blog1.posts_count).to eq blog1.posts.count
+      expect(blog2.posts_count).to eq blog2.posts.count
+    end
+
+    it "prevents self references to the model inside the block" do
+      expect do
+        blog1.custom_preload_with_self_reference
+      end.to raise_error(NoMethodError)
+    end
+
+    it "uses different caches for different blocks" do
+      result1 = blog1.goldiload do |ids|
+        ids.to_h { |id| [id, 42] }
+      end
+      expect(result1).to eq 42
+
+      result2 = blog1.goldiload do |ids|
+        ids.to_h { |id| [id, 666] }
+      end
+      expect(result2).to eq 666
+    end
+
+    it "can use an explicit cache_name" do
+      # Define explicit cache key :random_cache_key
+      blog1.goldiload(:random_cache_key) do |ids|
+        ids.to_h { |id| [id, 42] }
+      end
+
+      # Another blog for the same key
+      result = blog1.goldiload(:random_cache_key) do |ids|
+        # :nocov:
+        ids.to_h { |id| [id, 666] }
+        # :nocov:
+      end
+
+      # First block should be used
+      expect(result).to eq 42
+    end
+
+    it "can preload with a custom key" do
+      posts = Post.all.order(id: :asc)
+      expected_authors = posts.map(&:author)
+
+      expect do
+        expect(posts.map(&:author_via_global_id)).to eq expected_authors
+      end.to execute_queries(User => 1)
+    end
+  end
+
   describe "#globally_enabled" do
     context "enabled" do
       it "allows setting per thread" do
