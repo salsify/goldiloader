@@ -1016,12 +1016,12 @@ describe Goldiloader do
 
     it "uses different caches for different blocks" do
       result1 = blog1.goldiload do |ids|
-        ids.to_h {|id| [id, 42] }
+        ids.to_h { |id| [id, 42] }
       end
       expect(result1).to eq 42
 
       result2 = blog1.goldiload do |ids|
-        ids.to_h {|id| [id, 666] }
+        ids.to_h { |id| [id, 666] }
       end
       expect(result2).to eq 666
     end
@@ -1029,13 +1029,13 @@ describe Goldiloader do
     it "can use an explicit cache_name" do
       # Define explicit cache key :random_cache_key
       blog1.goldiload(:random_cache_key) do |ids|
-        ids.to_h {|id| [id, 42] }
+        ids.to_h { |id| [id, 42] }
       end
 
       # Another blog for the same key
       result = blog1.goldiload(:random_cache_key) do |ids|
         # :nocov:
-        ids.to_h {|id| [id, 666] }
+        ids.to_h { |id| [id, 666] }
         # :nocov:
       end
 
