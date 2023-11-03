@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.1.0
+- Add support for custom preloads to automatically eager loading non-Active Record association data. See
+  [129](https://github.com/salsify/goldiloader/pull/129) for details.
+  **Thanks [@apauly](https://github.com/apauly)**
+
 ## 5.0.0
 - Drop support for Ruby < 3.0 and Rails < 6.1.
 
