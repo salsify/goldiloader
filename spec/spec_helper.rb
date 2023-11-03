@@ -39,7 +39,7 @@ RSpec::Matchers.define(:execute_queries) do |expected_counts|
 
     expected_counts_by_table = expected_counts.transform_keys(&:table_name)
 
-    table_extractor = /SELECT .* FROM "(.+)" WHERE/
+    table_extractor = /SELECT .* FROM "(\w+)" (WHERE|INNER JOIN)/
     actual_counts_by_table = @actual_queries.group_by do |query|
       table_extractor.match(query)[1]
     end.transform_values(&:size)

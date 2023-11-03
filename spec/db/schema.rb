@@ -105,6 +105,32 @@ class Blog < ActiveRecord::Base
 
   has_one :post_with_order, -> { order(:id) }, class_name: 'Post'
 
+  def posts_count
+    goldiload do |ids|
+      Post.where(blog_id: ids).group(:blog_id).count
+    end
+  end
+
+  def tags_count
+    goldiload do |ids|
+      Tag
+        .joins(:posts)
+        .where(posts: { blog_id: ids })
+        .group(:blog_id)
+        .count
+    end
+  end
+
+  # rubocop:disable Style/RedundantSelf
+  def custom_preload_with_self_reference
+    goldiload do |ids|
+      ids.to_h do |id|
+        [id, self.posts.count]
+      end
+    end
+  end
+  # rubocop:enable Style/RedundantSelf
+
   def posts_overridden
     'boom'
   end
@@ -127,6 +153,18 @@ class Post < ActiveRecord::Base
   has_many_attached :images
 
   after_destroy :after_post_destroy
+
+  def author_global_id
+    author&.to_gid&.to_s
+  end
+
+  def author_via_global_id
+    goldiload key: :author_global_id do |gids|
+      GlobalID::Locator.locate_many(gids).index_by do |author|
+        author.to_gid.to_s
+      end
+    end
+  end
 
   def after_post_destroy
     # Hook for tests

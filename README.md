@@ -219,6 +219,9 @@ Associations with any of the following options cannot be eager loaded:
 
 Goldiloader detects associations with any of these options and disables automatic eager loading on them.
 
+It might still be possible to eager load these with Goldiloader by using [custom preloads](#custom-preloads).
+
+
 ### Eager Loading Limitation Workarounds
 
 Most of the Rails limitations with eager loading can be worked around by pushing the problematic SQL into the database via database views. Consider the following example with associations that can't be eager loaded due to SQL limits:
@@ -273,6 +276,64 @@ class RecentPostReference < ActiveRecord::Base
   belongs_to :blog
 end
 ```
+
+## Custom Preloads
+
+In addition to preloading relations, you can also define custom preloads by yourself in your model. The only requirement is that you need to be able to perform a lookup for multiple records/ids and return a single Hash with the ids as keys.
+If that's the case, these preloads can nearly be anything. Some examples could be:
+
+- simple aggregations (count, sum, maximum, etc.)
+- more complex custom SQL queries
+- external API requests (ElasticSearch, Redis, etc.)
+- relations with primary keys stored in a `jsonb` column
+
+Here's how:
+
+```ruby
+class Blog < ActiveRecord::Base
+  has_many :posts
+  
+  def posts_count
+    goldiload do |ids|
+      # By default, `ids` will be an array of `Blog#id`s
+      Post
+        .where(blog_id: ids)
+        .group(:blog_id)
+        .count
+    end
+  end
+end
+```
+
+The first time you call the `posts_count` method, it will call the block with all model ids from the current context and reuse the result from the block for all other models in the context.
+
+A more complex example might use a custom primary key instead of `id`, use a non ActiveRecord API and have more complex return values than just scalar values:
+
+
+```ruby
+class Post < ActiveRecord::Base
+  def main_translator_reference
+    json_payload[:main_translator_reference]
+  end
+  
+  def main_translator
+    goldiload(key: :main_translator_reference) do |references|
+      # `references` will be an array of `Post#main_translator_reference`s
+      SomeExternalApi.fetch_translators(
+        id: references
+      ).index_by(&:id)
+    end
+  end
+end
+```
+
+**Note:** The `goldiload` method will use the `source_location` of the given block as a cache name to distinguish between multiple defined preloads. If this causes an issue for you, you can also pass a cache name explicitly as the first argument to the `goldiload` method.
+
+
+### Gotchas
+
+Even though the methods in the examples above (`posts_count`, `main_translator`) are actually instance methods, the block passed to `goldiload` should not contain any references to these instances, as this could break the internal lookup/caching mechanism. We prevent this for the `self` keyword, so you'll get a `NoMethodError`. If you get this, you might want to think about the implementation rather than just trying to work around the exception.
+
 
 ## Upgrading
 
