@@ -154,6 +154,18 @@ class Post < ActiveRecord::Base
 
   after_destroy :after_post_destroy
 
+  def author_global_id
+    author&.to_gid&.to_s
+  end
+
+  def author_via_global_id
+    goldiload key: :author_global_id do |gids|
+      GlobalID::Locator.locate_many(gids).index_by do |author|
+        author.to_gid.to_s
+      end
+    end
+  end
+
   def after_post_destroy
     # Hook for tests
   end

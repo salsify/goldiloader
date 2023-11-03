@@ -1013,6 +1013,44 @@ describe Goldiloader do
         blog1.custom_preload_with_self_reference
       end.to raise_error(NoMethodError)
     end
+
+    it "uses different caches for different blocks" do
+      result1 = blog1.goldiload do |ids|
+        ids.to_h {|id| [id, 42] }
+      end
+      expect(result1).to eq 42
+
+      result2 = blog1.goldiload do |ids|
+        ids.to_h {|id| [id, 666] }
+      end
+      expect(result2).to eq 666
+    end
+
+    it "can use an explicit cache_name" do
+      # Define explicit cache key :random_cache_key
+      blog1.goldiload(:random_cache_key) do |ids|
+        ids.to_h {|id| [id, 42] }
+      end
+
+      # Another blog for the same key
+      result = blog1.goldiload(:random_cache_key) do |ids|
+        # :nocov:
+        ids.to_h {|id| [id, 666] }
+        # :nocov:
+      end
+
+      # First block should be used
+      expect(result).to eq 42
+    end
+
+    it "can preload with a custom key" do
+      posts = Post.all.order(id: :asc)
+      expected_authors = posts.map(&:author)
+
+      expect do
+        expect(posts.map(&:author_via_global_id)).to eq expected_authors
+      end.to execute_queries(User => 1)
+    end
   end
 
   describe "#globally_enabled" do

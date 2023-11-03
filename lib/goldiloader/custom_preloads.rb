@@ -15,8 +15,10 @@ module Goldiloader
 
         # We're using instance_exec instead of a simple yield to make sure that the
         # given block does not have any references to the model instance as this might
-        # lead to unexpected results
-        preloaded_hash = instance_exec(ids, &block)
+        # lead to unexpected results. The block will be executed in the context of the
+        # class of the model instead.
+        block_context = models.first.class
+        preloaded_hash = block_context.instance_exec(ids, &block)
         store_preloaded(cache_name, preloaded_hash)
       end
       fetch_preloaded(cache_name, model, key: key)
