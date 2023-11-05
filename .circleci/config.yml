@@ -2,18 +2,14 @@ version: 2.1
 jobs:
   lint:
     docker:
-      - image: salsify/ruby_ci:2.6.10
+      - image: ruby:3.0.6
     working_directory: ~/goldiloader
     steps:
       - checkout
-      - run:
-          # This is only needed for Ruby 2.6.10 which has an old version of SQLite
-          name: Install SQLite
-          command: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
       - restore_cache:
           keys:
-            - v1-gems-ruby-2.6.10-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
-            - v1-gems-ruby-2.6.10-
+            - v1-gems-ruby-3.0.6-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
+            - v1-gems-ruby-3.0.6-
       - run:
           name: Install Gems
           command: |
@@ -22,7 +18,7 @@ jobs:
               bundle clean
             fi
       - save_cache:
-          key: v1-gems-ruby-2.6.10-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
+          key: v1-gems-ruby-3.0.6-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
           paths:
             - "vendor/bundle"
             - "gemfiles/vendor/bundle"
@@ -36,21 +32,13 @@ jobs:
       ruby_version:
         type: string
     docker:
-      - image: salsify/ruby_ci:<< parameters.ruby_version >>
+      - image: ruby:<< parameters.ruby_version >>
     environment:
       CIRCLE_TEST_REPORTS: "test-results"
       BUNDLE_GEMFILE: << parameters.gemfile >>
     working_directory: ~/goldiloader
     steps:
       - checkout
-      - when:
-          condition:
-            equal: [ "2.6.10", << parameters.ruby_version >> ]
-          steps:
-          - run:
-              # This is only needed for Ruby 2.6.10 which has an old version of SQLite
-              name: Install SQLite
-              command: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
       - unless:
           condition:
             equal: ["gemfiles/rails_edge.gemfile", << parameters.gemfile >>]
@@ -126,4 +114,4 @@ workflows:
               gemfile:
                 - "gemfiles/rails_edge.gemfile"
               ruby_version:
-                - "3.2.0"
+                - "3.2.2"
