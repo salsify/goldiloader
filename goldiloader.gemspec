@@ -45,9 +45,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rspec-rails'
   spec.add_development_dependency 'salsify_rubocop', '~> 1.0.1'
   spec.add_development_dependency 'simplecov'
-  if RUBY_VERSION < "2.7"
-    spec.add_development_dependency 'sqlite3', '1.5.4'
-  else
-    spec.add_development_dependency 'sqlite3'
-  end
+  spec.add_development_dependency 'sqlite3'
 end
