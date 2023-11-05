@@ -160,9 +160,9 @@ class Post < ActiveRecord::Base
 
   def author_via_global_id
     goldiload key: :author_global_id do |gids|
-      user_ids = gids.compact.map {|gid|
+      user_ids = gids.compact.map do |gid|
         GlobalID.parse(gid).model_id
-      }
+      end
 
       User.where(id: user_ids).index_by do |author|
         author.to_gid.to_s
