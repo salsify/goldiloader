@@ -9,7 +9,7 @@ jobs:
       - run:
           # This is only needed for Ruby 2.6.10 which has an old version of SQLite
           name: Install SQLite
-          command: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+          command: apt-get update && apt-get install -y libsqlite3-dev
       - restore_cache:
           keys:
             - v1-gems-ruby-3.0.6-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
