@@ -6,8 +6,4 @@ gem "activerecord", branch: "main", git: "https://github.com/rails/rails.git"
 gem "activesupport", branch: "main", git: "https://github.com/rails/rails.git"
 gem "rails", branch: "main", git: "https://github.com/rails/rails.git"
 
-install_if -> { RUBY_VERSION < '2.7' } do
-  gem "sqlite3", "1.5.4"
-end
-
 gemspec path: "../"
