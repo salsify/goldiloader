@@ -6,4 +6,8 @@ gem "activerecord", "7.0.4"
 gem "activesupport", "7.0.4"
 gem "rails", "7.0.4"
 
+install_if -> { RUBY_VERSION < '2.7' } do
+  gem "sqlite3", "1.5.4"
+end
+
 gemspec path: "../"
