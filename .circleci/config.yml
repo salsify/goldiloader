@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   lint:
     docker:
-      - image: ruby:3.0.6
+      - image: ruby:2.6.10
     working_directory: ~/goldiloader
     steps:
       - checkout
@@ -12,8 +12,8 @@ jobs:
           command: apt-get update && apt-get install -y libsqlite3-dev
       - restore_cache:
           keys:
-            - v1-gems-ruby-3.0.6-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
-            - v1-gems-ruby-3.0.6-
+            - v1-gems-ruby-2.6.10-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
+            - v1-gems-ruby-2.6.10-
       - run:
           name: Install Gems
           command: |
@@ -22,7 +22,7 @@ jobs:
               bundle clean
             fi
       - save_cache:
-          key: v1-gems-ruby-3.0.6-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
+          key: v1-gems-ruby-2.6.10-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
           paths:
             - "vendor/bundle"
             - "gemfiles/vendor/bundle"

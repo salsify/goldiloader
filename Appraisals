@@ -4,6 +4,7 @@ appraise 'rails-5.2' do
   gem 'activerecord', '5.2.8.1'
   gem 'activesupport', '5.2.8.1'
   gem 'rails', '5.2.8.1'
+  gem "sqlite3", "1.5.4" if RUBY_VERSION < "2.7"
 end
 
 appraise 'rails-6.0' do
