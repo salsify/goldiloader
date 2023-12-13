@@ -29,9 +29,9 @@ module Goldiloader
     def key_from_record(record, key_or_key_list)
       if key_or_key_list.is_a?(Array)
         # allow passing an array of keys that will be collected from the record
-        key_or_key_list.map {|key|
+        key_or_key_list.map do |key|
           record.public_send(key)
-        }
+        end
       else
         record.public_send(key_or_key_list)
       end
