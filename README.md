@@ -328,6 +328,28 @@ class Post < ActiveRecord::Base
 end
 ```
 
+If you want to preload something that is based on multiple keys, you can also pass an array:
+
+```ruby
+class Meeting < ActiveRecord::Base
+  def organizer_notes
+    goldiload(key: [:organizer_id, :room_id]) do |id_sets|
+      # +id_sets+ will be a two dimensional array with the
+      # organizer_id and room_id for each item, e.g.
+      # [
+      #   [<organizer_id_1>, <room_id_1>],
+      #   [<organizer_id_2>, <room_id_2>]
+      # ]
+      notes = logic_for_fetching_organizer_notes
+      notes.group_by do |report|
+        [report.organizer_id, report.room_id]
+      end
+    end
+  end
+end
+```
+
+
 **Note:** The `goldiload` method will use the `source_location` of the given block as a cache name to distinguish between multiple defined preloads. If this causes an issue for you, you can also pass a cache name explicitly as the first argument to the `goldiload` method.
 
 

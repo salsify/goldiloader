@@ -1051,6 +1051,21 @@ describe Goldiloader do
         expect(posts.map(&:author_via_global_id)).to eq expected_authors
       end.to execute_queries(User => 1)
     end
+
+    it "can use an array as key argument" do
+      yielded_values = nil
+      result = blog1.goldiload(key: [:id, :name]) do |key_set|
+        yielded_values = key_set
+        key_set.to_h do |keys|
+          [keys, 123]
+        end
+      end
+
+      expect(yielded_values).to eq [
+        [blog1.id, blog1.name]
+      ]
+      expect(result).to eq 123
+    end
   end
 
   describe "#globally_enabled" do
