@@ -341,9 +341,9 @@ class Meeting < ActiveRecord::Base
       #   [<organizer_id_2>, <room_id_2>]
       # ]
       notes = logic_for_fetching_organizer_notes
-      notes.group_by {|report|
+      notes.group_by do |report|
         [report.organizer_id, report.room_id]
-      }
+      end
     end
   end
 end
