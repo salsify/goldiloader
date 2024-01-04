@@ -72,31 +72,33 @@ jobs:
 workflows:
   build:
     jobs:
-      - lint
-      - test:
-          matrix:
-            parameters:
-              gemfile:
-              - "gemfiles/rails_6.1.gemfile"
-              - "gemfiles/rails_7.0.gemfile"
-              - "gemfiles/rails_edge.gemfile"
-              ruby_version:
-              - "3.0.6"
-              - "3.1.4"
-              - "3.2.2"
+    - lint
+    - test:
+        matrix:
+          parameters:
+            gemfile:
+            - gemfiles/rails_6.1.gemfile
+            - gemfiles/rails_7.0.gemfile
+            - gemfiles/rails_edge.gemfile
+            ruby_version:
+            - 3.0.6
+            - 3.1.4
+            - 3.2.2
+            - 3.3.0
   weekly_rails_edge:
     triggers:
-      - schedule:
-          cron: "0 0 * * 0"
-          filters:
-            branches:
-              only:
-                - master
+    - schedule:
+        cron: 0 0 * * 0
+        filters:
+          branches:
+            only:
+            - master
     jobs:
-      - test:
-          matrix:
-            parameters:
-              gemfile:
-                - "gemfiles/rails_edge.gemfile"
-              ruby_version:
-                - "3.2.2"
+    - test:
+        matrix:
+          parameters:
+            gemfile:
+            - gemfiles/rails_edge.gemfile
+            ruby_version:
+            - 3.2.2
+            - 3.3.0
