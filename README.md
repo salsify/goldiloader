@@ -215,8 +215,6 @@ Associations with any of the following options cannot be eager loaded:
 * `limit`
 * `offset`
 * `finder_sql`
-* `group` (only applies to Rails < 5.0.7 and Rails 5.1.x < 5.1.5 due to a [Rails bug](https://github.com/rails/rails/issues/15854))
-* `from` (only applies to Rails < 5.0.7 and Rails 5.1.x < 5.1.5 due to a Rails bug)
 
 Goldiloader detects associations with any of these options and disables automatic eager loading on them.
 
@@ -377,7 +375,7 @@ end
 
 ## Status
 
-This gem is tested with Rails 6.1, 7.0 and Edge using MRI 3.0, 3.1 and 3.2. 
+This gem is tested with Rails 6.1, 7.0, 7.1, and Edge using MRI 3.0, 3.1, 3.2, and 3.3. 
 
 Let us know if you find any issues or have any other feedback.
 
