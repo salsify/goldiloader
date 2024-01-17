@@ -225,7 +225,7 @@ It might still be possible to eager load these with Goldiloader by using [custom
 
 ### Eager Loading Limitation Workarounds
 
-Most of the Rails limitations with eager loading can be worked around by pushing the problematic SQL into the database via database views. Consider the following example with associations that can't be eager loaded due to SQL limits:
+Most of the Rails limitations with eager loading can be worked around by pushing the problematic SQL into the database via lateral joins (or database views if your database doesn't support lateral joins). Consider the following example with associations that can't be eager loaded due to SQL limits:
 
 ```ruby
 class Blog < ActiveRecord::Base
@@ -234,47 +234,33 @@ class Blog < ActiveRecord::Base
   has_many :recent_posts, -> { order(published_at: desc).limit(5) }, class_name: 'Post'
 end
 ```
-This can be reworked to push the order/limit into a database view:
+This can be reworked to push the order/limit into lateral joins like this:
 
-```sql
-CREATE VIEW most_recent_post_references AS
-SELECT blogs.id AS blog_id, p.id as post_id
-FROM blogs, LATERAL (
-  SELECT posts.id
-  FROM posts
-  WHERE posts.blog_id = blogs.id
-  ORDER BY published_at DESC
-  LIMIT 1
-) p
-
-CREATE VIEW recent_post_references AS
-SELECT blogs.id AS blog_id, p.id as post_id, p.published_at AS post_published_at
-FROM blogs, LATERAL (
-  SELECT posts.id, posts.published_at
-  FROM posts
-  WHERE posts.blog_id = blogs.id
-  ORDER BY published_at DESC
-  LIMIT 5
-) p
-```
-The models would now be:
 ```ruby
 class Blog < ActiveRecord::Base
   has_many :posts
-  has_one :most_recent_post_reference
-  has_one :most_recent_post, through: :most_recent_post_reference, source: :post
-  has_many :recent_post_references, -> { order(post_published_at: desc) }
-  has_many :recent_posts, through: :recent_post_reference, source: :post
-end
-
-class MostRecentPostReference < ActiveRecord::Base
-  belongs_to :post
-  belongs_to :blog
-end
-
-class RecentPostReference < ActiveRecord::Base
-  belongs_to :post
-  belongs_to :blog
+  has_one :most_recent_post, -> {
+    joins(Arel.sql(<<-SQL.squish))
+      INNER JOIN LATERAL (
+        SELECT id
+        FROM posts p1
+        WHERE blog_id = posts.blog_id
+        ORDER BY published_at DESC
+        LIMIT 1
+      ) p2 on (p2.id = posts.id)
+    SQL
+  }, class_name: 'Post'
+  has_many :recent_posts, -> {
+    joins(Arel.sql(<<-SQL.squish))
+      INNER JOIN LATERAL (
+        SELECT id
+        FROM posts p1
+        WHERE blog_id = posts.blog_id
+        ORDER BY published_at DESC
+        LIMIT 5
+      ) p2 on (p2.id = posts.id)
+    SQL
+  }, class_name: 'Post'
 end
 ```
 
