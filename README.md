@@ -225,7 +225,7 @@ It might still be possible to eager load these with Goldiloader by using [custom
 
 ### Eager Loading Limitation Workarounds
 
-Most of the Rails limitations with eager loading can be worked around by pushing the problematic SQL into the database via database views. Consider the following example with associations that can't be eager loaded due to SQL limits:
+Most of the Rails limitations with eager loading can be worked around by pushing the problematic SQL into the database via lateral joins (or database views if your database doesn't support lateral joins). Consider the following example with associations that can't be eager loaded due to SQL limits:
 
 ```ruby
 class Blog < ActiveRecord::Base
