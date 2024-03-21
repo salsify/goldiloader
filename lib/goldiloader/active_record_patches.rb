@@ -107,9 +107,19 @@ module Goldiloader
     end
 
     def auto_include?
-      # We only auto include associations that don't have in-memory changes since the
-      # Rails association Preloader clobbers any in-memory changes
-      !loaded? && target.blank? && eager_loadable?
+      # No auto-include when the association is not eager loadable
+      return false unless eager_loadable?
+
+      # If the association was not yet loaded and we don't have anything in the target we are good.
+      # (Something would be in the target e.g. when `association.create(...)` was called)
+      return true if !loaded? && target.blank?
+
+      # If the association was already loaded and does not contain new, changed, or destroyed records
+      # we are also able to auto-include the association. It means it has only already been read or changes are
+      # already persisted.
+      loaded? && !target.blank? && Array.wrap(target).none? do |record|
+        record.new_record? || record.changed? || record.destroyed?
+      end
     end
 
     def fully_load?
