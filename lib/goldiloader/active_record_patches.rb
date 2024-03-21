@@ -177,7 +177,20 @@ module Goldiloader
     def auto_include?
       # Only auto include through associations if the target association is auto-loadable
       through_association = owner.association(through_reflection.name)
-      through_association.auto_include? && super
+      auto_include_self = super
+
+      # If the current association cannot be auto-included there is nothing we can do
+      return false unless auto_include_self
+
+      # If the through association can just be auto-included we're good
+      return true if through_association.auto_include?
+
+      # If the through association was already loaded and does not contain new, changed, or destroyed records
+      # we are also able to auto-include the association. It means it has only already been read or changes are
+      # already persisted.
+      through_association.loaded? && Array.wrap(through_association.target).none? do |record|
+        record.new_record? || record.changed? || record.destroyed?
+      end
     end
   end
   ::ActiveRecord::Associations::HasManyThroughAssociation.prepend(::Goldiloader::ThroughAssociationPatch)
