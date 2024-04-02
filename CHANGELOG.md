@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.2.1
+- Auto include associations when the through association has already been loaded. See
+  [138](https://github.com/salsify/goldiloader/pull/138) for details.
+  **Thanks [@Flixt](https://github.com/Flixt)**
+
 ## 5.2.0
 - Add support for custom preloads with compound keys. See
   [129](https://github.com/salsify/goldiloader/pull/133) for details.
