@@ -23,4 +23,6 @@ module Goldiloader
   end
 end
 
-Goldiloader::AssociationOptions.register
+ActiveSupport.on_load(:active_record) do
+  Goldiloader::AssociationOptions.register
+end

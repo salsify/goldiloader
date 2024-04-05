@@ -31,7 +31,9 @@ module Goldiloader
       auto_include_context.preloaded(self, cache_name: cache_name, key: key, &block)
     end
   end
-  ::ActiveRecord::Base.include(::Goldiloader::BasePatch)
+  ActiveSupport.on_load(:active_record) do
+    ::ActiveRecord::Base.include(::Goldiloader::BasePatch)
+  end
 
   module RelationPatch
     def exec_queries
@@ -60,7 +62,9 @@ module Goldiloader
       @values[:auto_include] = value
     end
   end
-  ::ActiveRecord::Relation.prepend(::Goldiloader::RelationPatch)
+  ActiveSupport.on_load(:active_record) do
+    ::ActiveRecord::Relation.prepend(::Goldiloader::RelationPatch)
+  end
 
   module MergerPatch
     private
@@ -70,7 +74,9 @@ module Goldiloader
       super
     end
   end
-  ActiveRecord::Relation::Merger.prepend(::Goldiloader::MergerPatch)
+  ActiveSupport.on_load(:active_record) do
+    ActiveRecord::Relation::Merger.prepend(::Goldiloader::MergerPatch)
+  end
 
   module AssociationReflectionPatch
     # Note we need to pass the association's target class as an argument since it won't be known
@@ -95,8 +101,10 @@ module Goldiloader
       @eager_loadable_cache[target_klass]
     end
   end
-  ActiveRecord::Reflection::AssociationReflection.include(::Goldiloader::AssociationReflectionPatch)
-  ActiveRecord::Reflection::ThroughReflection.include(::Goldiloader::AssociationReflectionPatch)
+  ActiveSupport.on_load(:active_record) do
+    ActiveRecord::Reflection::AssociationReflection.include(::Goldiloader::AssociationReflectionPatch)
+    ActiveRecord::Reflection::ThroughReflection.include(::Goldiloader::AssociationReflectionPatch)
+  end
 
   module AssociationPatch
     extend ActiveSupport::Concern
@@ -143,7 +151,9 @@ module Goldiloader
       end
     end
   end
-  ::ActiveRecord::Associations::Association.include(::Goldiloader::AssociationPatch)
+  ActiveSupport.on_load(:active_record) do
+    ::ActiveRecord::Associations::Association.include(::Goldiloader::AssociationPatch)
+  end
 
   module SingularAssociationPatch
     private
@@ -152,7 +162,9 @@ module Goldiloader
       load_with_auto_include { super }
     end
   end
-  ::ActiveRecord::Associations::SingularAssociation.prepend(::Goldiloader::SingularAssociationPatch)
+  ActiveSupport.on_load(:active_record) do
+    ::ActiveRecord::Associations::SingularAssociation.prepend(::Goldiloader::SingularAssociationPatch)
+  end
 
   module CollectionAssociationPatch
     # Force these methods to load the entire association for fully_load associations
@@ -171,7 +183,9 @@ module Goldiloader
       fully_load? || super
     end
   end
-  ::ActiveRecord::Associations::CollectionAssociation.prepend(::Goldiloader::CollectionAssociationPatch)
+  ActiveSupport.on_load(:active_record) do
+    ::ActiveRecord::Associations::CollectionAssociation.prepend(::Goldiloader::CollectionAssociationPatch)
+  end
 
   module ThroughAssociationPatch
     def auto_include?
@@ -193,8 +207,10 @@ module Goldiloader
       end
     end
   end
-  ::ActiveRecord::Associations::HasManyThroughAssociation.prepend(::Goldiloader::ThroughAssociationPatch)
-  ::ActiveRecord::Associations::HasOneThroughAssociation.prepend(::Goldiloader::ThroughAssociationPatch)
+  ActiveSupport.on_load(:active_record) do
+    ::ActiveRecord::Associations::HasManyThroughAssociation.prepend(::Goldiloader::ThroughAssociationPatch)
+    ::ActiveRecord::Associations::HasOneThroughAssociation.prepend(::Goldiloader::ThroughAssociationPatch)
+  end
 
   module CollectionProxyPatch
     # The CollectionProxy just forwards exists? to the underlying scope so we need to intercept this and
@@ -210,5 +226,7 @@ module Goldiloader
       end
     end
   end
-  ::ActiveRecord::Associations::CollectionProxy.prepend(::Goldiloader::CollectionProxyPatch)
+  ActiveSupport.on_load(:active_record) do
+    ::ActiveRecord::Associations::CollectionProxy.prepend(::Goldiloader::CollectionProxyPatch)
+  end
 end
