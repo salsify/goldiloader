@@ -22,7 +22,3 @@ module Goldiloader
     end
   end
 end
-
-ActiveSupport.on_load(:active_record) do
-  Goldiloader::AssociationOptions.register
-end

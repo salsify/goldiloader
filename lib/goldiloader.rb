@@ -1,14 +1,18 @@
 # frozen_string_literal: true
 
 require 'active_support/all'
-# require 'active_record'
 require 'goldiloader/compatibility'
 require 'goldiloader/custom_preloads'
 require 'goldiloader/auto_include_context'
 require 'goldiloader/scope_info'
 require 'goldiloader/association_options'
 require 'goldiloader/association_loader'
-require 'goldiloader/active_record_patches'
+
+ActiveSupport.on_load(:active_record) do
+  # Defer referencing ActiveRecord class until it's loaded
+  # See https://github.com/rails/rails/issues/48704
+  require 'goldiloader/active_record_patches'
+end
 
 module Goldiloader
   class << self
