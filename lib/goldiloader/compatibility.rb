@@ -2,8 +2,6 @@
 
 module Goldiloader
   module Compatibility
-    ACTIVE_RECORD_VERSION = ::Gem::Version.new(::ActiveRecord::VERSION::STRING).release
-
     def self.pre_rails_7?
       ::ActiveRecord::VERSION::MAJOR < 7
     end

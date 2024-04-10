@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.2.2
+- Fix [issue 140](https://github.com/salsify/goldiloader/issues/140) - Defer referencing ActiveRecord classes until 
+  it's been initialized to ensure the `Rails.application.config.filter_parameters` setting is applied properly.
+  **Thanks [GuillouuH](https://github.com/GuillouuH)**
+
 ## 5.2.1
 - Auto include associations when the through association has already been loaded. See
   [138](https://github.com/salsify/goldiloader/pull/138) for details.

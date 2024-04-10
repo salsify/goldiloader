@@ -212,3 +212,5 @@ module Goldiloader
   end
   ::ActiveRecord::Associations::CollectionProxy.prepend(::Goldiloader::CollectionProxyPatch)
 end
+
+Goldiloader::AssociationOptions.register
