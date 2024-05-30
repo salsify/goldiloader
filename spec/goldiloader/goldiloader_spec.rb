@@ -573,6 +573,48 @@ describe Goldiloader do
     end
   end
 
+  context "when the 'middle' part of a has_many through association was already loaded to memory and not modified" do
+    let!(:posts) { Post.order(:title).to_a }
+    let(:post) { posts.first }
+    let(:other_post) { posts.last }
+
+    before do
+      post.post_tags.to_a
+    end
+
+    it "auto eager loads the association when accessing a peer" do
+      other_post.tags.to_a
+      expect(post.association(:tags)).to be_loaded
+    end
+
+    it "doesn't reload the already loaded models when accessing a peer" do
+      object_ids = post.post_tags.map(&:object_id)
+      other_post.tags.to_a
+      expect(post.post_tags.map(&:object_id)).to eq(object_ids)
+    end
+  end
+
+  context "when the 'middle' part of a has_many through association was already loaded to memory and modified" do
+    let!(:posts) { Post.order(:title).to_a }
+    let(:post) { posts.first }
+    let(:other_post) { posts.last }
+
+    before do
+      post.post_tags.to_a.first.tag = child_tag3
+    end
+
+    it "doesn't auto eager loads the association when accessing a peer" do
+      other_post.tags.to_a
+      expect(post.association(:tags)).not_to be_loaded
+    end
+
+    it "doesn't reload the already loaded models when accessing a peer" do
+      object_ids = post.post_tags.map(&:object_id)
+      other_post.tags.to_a
+      expect(post.post_tags.map(&:object_id)).to eq(object_ids)
+    end
+  end
+
   context "when a has_many through association has in-memory changes" do
     let!(:posts) { Post.order(:title).to_a }
     let(:post) { posts.first }
