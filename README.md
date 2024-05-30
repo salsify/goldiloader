@@ -13,9 +13,10 @@
 Wouldn't it be awesome if ActiveRecord didn't make you think about eager loading and it just did the "right" thing by default? With Goldiloader it can!
 
 **This branch only supports Rails 6.1+ with Ruby 3.0+. For older versions of Rails/Ruby use
-[4-x-stable](https://github.com/salsify/goldiloader/blob/4-x-stable/README.md),
-[3-x-stable](https://github.com/salsify/goldiloader/blob/3-x-stable/README.md), [2-x-stable](https://github.com/salsify/goldiloader/blob/2-x-stable/README.md)
-or [1-x-stable](https://github.com/salsify/goldiloader/blob/1-x-stable/README.md).**
+[release-4.x](https://github.com/salsify/goldiloader/blob/release-4.x/README.md),
+[release-3.x](https://github.com/salsify/goldiloader/blob/release-3.x/README.md),
+[release-2.x](https://github.com/salsify/goldiloader/blob/release-2.x/README.md)
+or [release-1.x](https://github.com/salsify/goldiloader/blob/release-1.x/README.md).**
 
 Consider the following models:
 
