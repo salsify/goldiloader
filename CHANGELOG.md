@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.2.1
+- Backport from 5.2.2: Auto include associations when the through association has already been loaded. See
+  [145](https://github.com/salsify/goldiloader/pull/145) for details.
+  **Thanks [viktorianer](https://github.com/viktorianer) and [@Flixt](https://github.com/Flixt)**
+
 ## 4.2.0
 - Add support for Rails 7.0 and Ruby 3.1.
 
