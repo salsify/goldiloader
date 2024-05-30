@@ -5,5 +5,6 @@ source "https://rubygems.org"
 gem "activerecord", "5.2.8.1"
 gem "activesupport", "5.2.8.1"
 gem "rails", "5.2.8.1"
+gem "sqlite3", "~> 1.5.4"
 
 gemspec path: "../"
