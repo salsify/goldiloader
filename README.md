@@ -56,7 +56,7 @@ Here are the same queries with the Goldiloader:
 
 Whoa! It automatically loaded all of the posts for our five blogs in a single database query without specifying any eager loads! Goldiloader assumes that you'll access all models loaded from a query in a uniform way. The first time you traverse an association on any of the models it will eager load the association for all the models. It even works with arbitrary nesting of associations.
 
-Read more about the motivation for the Goldiloader in this [blog post](http://www.salsify.com/blog/automatic-eager-loading-rails/).
+Read more about the motivation for the Goldiloader in this [blog post](https://www.salsify.com/blog/engineering/automatic-eager-loading-rails).
 
 ## Installation
 
@@ -278,7 +278,7 @@ Here's how:
 ```ruby
 class Blog < ActiveRecord::Base
   has_many :posts
-  
+
   def posts_count
     goldiload do |ids|
       # By default, `ids` will be an array of `Blog#id`s
@@ -301,7 +301,7 @@ class Post < ActiveRecord::Base
   def main_translator_reference
     json_payload[:main_translator_reference]
   end
-  
+
   def main_translator
     goldiload(key: :main_translator_reference) do |references|
       # `references` will be an array of `Post#main_translator_reference`s
@@ -362,7 +362,7 @@ end
 
 ## Status
 
-This gem is tested with Rails 6.1, 7.0, 7.1, and Edge using MRI 3.0, 3.1, 3.2, and 3.3. 
+This gem is tested with Rails 6.1, 7.0, 7.1, and Edge using MRI 3.0, 3.1, 3.2, and 3.3.
 
 Let us know if you find any issues or have any other feedback.
 
