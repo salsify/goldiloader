@@ -2,14 +2,14 @@ version: 2.1
 jobs:
   lint:
     docker:
-      - image: ruby:3.0.6
+      - image: ruby:3.0.7
     working_directory: ~/goldiloader
     steps:
       - checkout
       - restore_cache:
           keys:
-            - v1-gems-ruby-3.0.6-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
-            - v1-gems-ruby-3.0.6-
+            - v1-gems-ruby-3.0.7-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
+            - v1-gems-ruby-3.0.7-
       - run:
           name: Install Gems
           command: |
@@ -18,7 +18,7 @@ jobs:
               bundle clean
             fi
       - save_cache:
-          key: v1-gems-ruby-3.0.6-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
+          key: v1-gems-ruby-3.0.7-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
           paths:
             - "vendor/bundle"
             - "gemfiles/vendor/bundle"
@@ -41,7 +41,9 @@ jobs:
       - checkout
       - unless:
           condition:
-            equal: ["gemfiles/rails_edge.gemfile", << parameters.gemfile >>]
+            or:
+              - equal: ["gemfiles/rails_7.2.gemfile", << parameters.gemfile >>]
+              - equal: ["gemfiles/rails_edge.gemfile", << parameters.gemfile >>]
           steps:
             - restore_cache:
                 keys:
@@ -56,7 +58,9 @@ jobs:
             fi
       - unless:
           condition:
-            equal: ["gemfiles/rails_edge.gemfile", << parameters.gemfile >>]
+            or:
+              - equal: [ "gemfiles/rails_7.2.gemfile", << parameters.gemfile >> ]
+              - equal: [ "gemfiles/rails_edge.gemfile", << parameters.gemfile >> ]
           steps:
             - save_cache:
                 key: v1-gems-ruby-<< parameters.ruby_version >>-{{ checksum "goldiloader.gemspec" }}-{{ checksum "<< parameters.gemfile >>" }}
@@ -80,15 +84,18 @@ workflows:
                 - gemfiles/rails_6.1.gemfile
                 - gemfiles/rails_7.0.gemfile
                 - gemfiles/rails_7.1.gemfile
+                - gemfiles/rails_7.2.gemfile
                 - gemfiles/rails_edge.gemfile
               ruby_version:
-                - 3.0.6
-                - 3.1.4
-                - 3.2.2
-                - 3.3.0
+                - 3.0.7
+                - 3.1.6
+                - 3.2.5
+                - 3.3.4
             exclude:
+              - gemfile: gemfiles/rails_7.2.gemfile
+                ruby_version: 3.0.7
               - gemfile: gemfiles/rails_edge.gemfile
-                ruby_version: 3.0.6
+                ruby_version: 3.0.7
   weekly_rails_edge:
     triggers:
       - schedule:
@@ -102,6 +109,7 @@ workflows:
           matrix:
             parameters:
               gemfile:
+                - gemfiles/rails_7.2.gemfile
                 - gemfiles/rails_edge.gemfile
               ruby_version:
-                - 3.3.0
+                - 3.3.4
