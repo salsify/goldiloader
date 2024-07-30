@@ -56,7 +56,11 @@ module Goldiloader
     end
 
     def auto_include_value=(value)
-      assert_mutability!
+      if ::Goldiloader::Compatibility.pre_rails_7_2?
+        assert_mutability!
+      else
+        assert_modifiable!
+      end
       @values[:auto_include] = value
     end
   end
