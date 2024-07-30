@@ -362,7 +362,7 @@ end
 
 ## Status
 
-This gem is tested with Rails 6.1, 7.0, 7.1, and Edge using MRI 3.0, 3.1, 3.2, and 3.3.
+This gem is tested with Rails 6.1, 7.0, 7.1, 7.2, and Edge using MRI 3.0, 3.1, 3.2, and 3.3.
 
 Let us know if you find any issues or have any other feedback.
 
