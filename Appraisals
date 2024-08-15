@@ -19,10 +19,9 @@ appraise 'rails-7.1' do
 end
 
 appraise 'rails-7.2' do
-  # TODO: Update to 7.2.0 once it's released
-  gem 'activerecord', github: 'rails/rails', branch: '7-2-stable'
-  gem 'activesupport', github: 'rails/rails', branch: '7-2-stable'
-  gem 'rails', github: 'rails/rails', branch: '7-2-stable'
+  gem 'activerecord', '7.2.0'
+  gem 'activesupport', '7.2.0'
+  gem 'rails', '7.2.0'
 end
 
 appraise 'rails-edge' do

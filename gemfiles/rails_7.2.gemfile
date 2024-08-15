@@ -2,8 +2,8 @@
 
 source "https://rubygems.org"
 
-gem "activerecord", branch: "7-2-stable", git: "https://github.com/rails/rails.git"
-gem "activesupport", branch: "7-2-stable", git: "https://github.com/rails/rails.git"
-gem "rails", branch: "7-2-stable", git: "https://github.com/rails/rails.git"
+gem "activerecord", "7.2.0"
+gem "activesupport", "7.2.0"
+gem "rails", "7.2.0"
 
 gemspec path: "../"
