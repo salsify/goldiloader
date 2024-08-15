@@ -1,5 +1,8 @@
 # Changelog
 
+## 5.3.0
+- Add support for Rails 7.2.
+
 ## 5.2.2
 - Fix [issue 140](https://github.com/salsify/goldiloader/issues/140) - Defer referencing ActiveRecord classes until 
   it's been initialized to ensure the `Rails.application.config.filter_parameters` setting is applied properly.

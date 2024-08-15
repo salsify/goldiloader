@@ -41,9 +41,7 @@ jobs:
       - checkout
       - unless:
           condition:
-            or:
-              - equal: ["gemfiles/rails_7.2.gemfile", << parameters.gemfile >>]
-              - equal: ["gemfiles/rails_edge.gemfile", << parameters.gemfile >>]
+            equal: ["gemfiles/rails_edge.gemfile", << parameters.gemfile >>]
           steps:
             - restore_cache:
                 keys:
@@ -58,9 +56,7 @@ jobs:
             fi
       - unless:
           condition:
-            or:
-              - equal: [ "gemfiles/rails_7.2.gemfile", << parameters.gemfile >> ]
-              - equal: [ "gemfiles/rails_edge.gemfile", << parameters.gemfile >> ]
+            equal: [ "gemfiles/rails_edge.gemfile", << parameters.gemfile >> ]
           steps:
             - save_cache:
                 key: v1-gems-ruby-<< parameters.ruby_version >>-{{ checksum "goldiloader.gemspec" }}-{{ checksum "<< parameters.gemfile >>" }}
@@ -109,7 +105,6 @@ workflows:
           matrix:
             parameters:
               gemfile:
-                - gemfiles/rails_7.2.gemfile
                 - gemfiles/rails_edge.gemfile
               ruby_version:
                 - 3.3.4

@@ -31,8 +31,8 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 3.0'
 
-  spec.add_dependency 'activerecord', '>= 6.1', '< 8.1'
-  spec.add_dependency 'activesupport', '>= 6.1', '< 8.1'
+  spec.add_dependency 'activerecord', '>= 6.1', '< 8'
+  spec.add_dependency 'activesupport', '>= 6.1', '< 8'
 
   spec.add_development_dependency 'appraisal'
   spec.add_development_dependency 'benchmark-ips'
