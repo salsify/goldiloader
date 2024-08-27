@@ -3,12 +3,14 @@ jobs:
   lint:
     docker:
       - image: ruby:3.0.7
+    environment:
+      BUNDLE_GEMFILE: gemfiles/rails_6.1.gemfile
     working_directory: ~/goldiloader
     steps:
       - checkout
       - restore_cache:
           keys:
-            - v1-gems-ruby-3.0.7-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
+            - v1-gems-ruby-3.0.7-{{ checksum "goldiloader.gemspec" }}-{{ checksum "gemfiles/rails_6.1.gemfile" }}
             - v1-gems-ruby-3.0.7-
       - run:
           name: Install Gems
@@ -18,7 +20,7 @@ jobs:
               bundle clean
             fi
       - save_cache:
-          key: v1-gems-ruby-3.0.7-{{ checksum "goldiloader.gemspec" }}-{{ checksum "Gemfile" }}
+          key: v1-gems-ruby-3.0.7-{{ checksum "goldiloader.gemspec" }}-{{ checksum "gemfiles/rails_6.1.gemfile" }}
           paths:
             - "vendor/bundle"
             - "gemfiles/vendor/bundle"
