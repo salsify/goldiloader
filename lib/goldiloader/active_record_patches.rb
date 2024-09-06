@@ -152,7 +152,7 @@ module Goldiloader
   module SingularAssociationPatch
     private
 
-    def find_target(*args)
+    def find_target(...)
       load_with_auto_include { super }
     end
   end
@@ -161,13 +161,13 @@ module Goldiloader
   module CollectionAssociationPatch
     # Force these methods to load the entire association for fully_load associations
     [:size, :ids_reader, :empty?].each do |method|
-      define_method(method) do |*args, &block|
+      define_method(method) do |*args, **kwargs, &block|
         load_target if fully_load?
-        super(*args, &block)
+        super(*args, **kwargs, &block)
       end
     end
 
-    def load_target(*args)
+    def load_target(...)
       load_with_auto_include { super }
     end
 
@@ -203,14 +203,14 @@ module Goldiloader
   module CollectionProxyPatch
     # The CollectionProxy just forwards exists? to the underlying scope so we need to intercept this and
     # force it to use size which handles fully_load properly.
-    def exists?(*args)
+    def exists?(*args, **kwargs)
       # We don't fully_load the association when arguments are passed to exists? since Rails always
       # pushes this query into the database without any caching (and it likely not a common
       # scenario worth optimizing).
-      if args.empty? && @association.fully_load?
+      if args.empty? && kwargs.empty? && @association.fully_load?
         size > 0
       else
-        scope.exists?(*args)
+        scope.exists?(*args, **kwargs)
       end
     end
   end
