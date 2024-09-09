@@ -1,7 +1,7 @@
 # Changelog
 
 ## 5.3.1
-- Fix [issue 152](https://github.com/salsify/goldiloader/issues/157) which caused an `ArgumentError` when invoking
+- Fix [issue 157](https://github.com/salsify/goldiloader/issues/157) which caused an `ArgumentError` when invoking
   `ActiveRecord::Associations::Association#find_target` in Rails edge.
   **Thanks [kyrofa](https://github.com/kyrofa)**
 
