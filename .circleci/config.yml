@@ -88,12 +88,16 @@ workflows:
                 - 3.0.7
                 - 3.1.6
                 - 3.2.5
-                - 3.3.4
+                - 3.3.5
             exclude:
               - gemfile: gemfiles/rails_7.2.gemfile
                 ruby_version: 3.0.7
+              - gemfile: gemfiles/rails_8.0.gemfile
+                ruby_version: 3.0.7
               - gemfile: gemfiles/rails_edge.gemfile
                 ruby_version: 3.0.7
+              - gemfile: gemfiles/rails_edge.gemfile
+                ruby_version: 3.1.6
   weekly_rails_edge:
     triggers:
       - schedule:
@@ -109,4 +113,4 @@ workflows:
               gemfile:
                 - gemfiles/rails_edge.gemfile
               ruby_version:
-                - 3.3.4
+                - 3.3.5
