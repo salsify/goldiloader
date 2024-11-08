@@ -28,9 +28,9 @@ appraise 'rails-7.2' do
 end
 
 appraise 'rails-8.0' do
-  gem 'activerecord', '8.0.0.rc1'
-  gem 'activesupport', '8.0.0.rc1'
-  gem 'rails', '8.0.0.rc1'
+  gem 'activerecord', '8.0.0'
+  gem 'activesupport', '8.0.0'
+  gem 'rails', '8.0.0'
 end
 
 appraise 'rails-edge' do
