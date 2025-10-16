@@ -1,8 +1,5 @@
 # Changelog
 
-## 5.5.0
-- Add support for Rails 8.1.
-
 ## 5.4.0
 - Add support for Rails 8.0.
 
