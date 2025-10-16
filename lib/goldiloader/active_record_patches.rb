@@ -189,12 +189,89 @@ module Goldiloader
       # If the through association can just be auto-included we're good
       return true if through_association.auto_include?
 
-      # If the through association was already loaded and does not contain new, changed, or destroyed records
-      # we are also able to auto-include the association. It means it has only already been read or changes are
-      # already persisted.
+      # The original logic allowed auto-including when the through association was already loaded
+      # and didn't contain new, changed, or destroyed records. However, this can cause scope leakage
+      # issues in Rails' Preloader where scopes from one association leak into queries for other
+      # associations when multiple through associations share the same through model.
+      #
+      # Specifically, when the owner model has a default_scope AND there are multiple scoped through
+      # associations using the same join table, Rails' Preloader may incorrectly apply scopes/orders
+      # from one association to another association's query.
+      #
+      # To prevent this, we disable the optimization if:
+      # 1. The owner model has a default_scope with ordering, AND
+      # 2. There are other scoped through associations using the same through association
+      return false if has_scope_leakage_risk?
+
       through_association.loaded? && Array.wrap(through_association.target).none? do |record|
         record.new_record? || record.changed? || record.destroyed?
       end
+    end
+
+    private
+
+    def has_scope_leakage_risk?
+      check_class = resolve_check_class
+
+      # Only check for risk if owner has a default_scope with ordering
+      return false unless class_has_order_default_scope?(check_class)
+
+      # Check if there are other scoped through associations via the same join
+      has_other_scoped_through_associations?(check_class)
+    end
+
+    def resolve_check_class
+      # For STI subclasses, use the base class since that's where associations and default_scopes are defined
+      owner_class = owner.class
+      owner_class.respond_to?(:base_class) ? owner_class.base_class : owner_class
+    end
+
+    def class_has_order_default_scope?(check_class)
+      return false unless check_class.respond_to?(:default_scopes)
+
+      # Cache the result per class since default_scopes don't change at runtime
+      cache_key = check_class
+      @order_scope_cache ||= {}
+      return @order_scope_cache[cache_key] if @order_scope_cache.key?(cache_key)
+
+      @order_scope_cache[cache_key] = check_class.default_scopes.any? do |scope|
+        # Handle both Proc and ActiveRecord::Scoping::DefaultScope
+        scope_proc = scope.is_a?(Proc) ? scope : (scope.respond_to?(:scope) ? scope.scope : nil)
+        next false unless scope_proc
+
+        # Evaluate the scope to check if it contains ordering
+        begin
+          scope_relation = check_class.unscoped.instance_exec(&scope_proc)
+          scope_relation.order_values.present?
+        rescue StandardError => e
+          # If we can't evaluate the scope, be conservative and assume it has ordering
+          true
+        end
+      end
+    end
+
+    def has_other_scoped_through_associations?(check_class)
+      # Check if there are other through associations that:
+      # 1. Use the same through reflection
+      # 2. Have their own scopes (not just relying on the target model's default_scope)
+      through_name = through_reflection.name
+      current_assoc_name = reflection.name
+
+      # Cache the scoped through associations per class+through_name since they don't change at runtime
+      cache_key = [check_class, through_name]
+      @scoped_through_cache ||= {}
+
+      unless @scoped_through_cache.key?(cache_key)
+        @scoped_through_cache[cache_key] = check_class.reflect_on_all_associations.select do |assoc|
+          assoc.is_a?(ActiveRecord::Reflection::ThroughReflection) &&
+            assoc.through_reflection.name == through_name &&
+            assoc.scope.present?
+        end.map(&:name).to_set
+      end
+
+      # Check if there are any other scoped associations besides the current one
+      scoped_assocs = @scoped_through_cache[cache_key]
+      scoped_assocs.size > 1 || (scoped_assocs.size == 1 && !scoped_assocs.include?(current_assoc_name))
     end
   end
   ::ActiveRecord::Associations::HasManyThroughAssociation.prepend(::Goldiloader::ThroughAssociationPatch)
