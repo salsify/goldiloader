@@ -43,7 +43,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rspec', '~> 3'
   spec.add_development_dependency 'rspec_junit_formatter'
   spec.add_development_dependency 'rspec-rails'
-  spec.add_development_dependency 'salsify_rubocop', '~> 1.0.1'
+  spec.add_development_dependency 'salsify_rubocop', '~> 1.27'
   spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'sqlite3', '~> 2.0'
 end
