@@ -2,16 +2,16 @@ version: 2.1
 jobs:
   lint:
     docker:
-      - image: ruby:3.0.7
+      - image: ruby:3.2.5
     environment:
-      BUNDLE_GEMFILE: gemfiles/rails_6.1.gemfile
+      BUNDLE_GEMFILE: gemfiles/rails_7.2.gemfile
     working_directory: ~/goldiloader
     steps:
       - checkout
       - restore_cache:
           keys:
-            - v1-gems-ruby-3.0.7-{{ checksum "goldiloader.gemspec" }}-{{ checksum "gemfiles/rails_6.1.gemfile" }}
-            - v1-gems-ruby-3.0.7-
+            - v1-gems-ruby-3.2.5-{{ checksum "goldiloader.gemspec" }}-{{ checksum "gemfiles/rails_7.2.gemfile" }}
+            - v1-gems-ruby-3.2.5-
       - run:
           name: Install Gems
           command: |
@@ -20,7 +20,7 @@ jobs:
               bundle clean
             fi
       - save_cache:
-          key: v1-gems-ruby-3.0.7-{{ checksum "goldiloader.gemspec" }}-{{ checksum "gemfiles/rails_6.1.gemfile" }}
+          key: v1-gems-ruby-3.2.5-{{ checksum "goldiloader.gemspec" }}-{{ checksum "gemfiles/rails_7.2.gemfile" }}
           paths:
             - "vendor/bundle"
             - "gemfiles/vendor/bundle"
@@ -79,25 +79,14 @@ workflows:
           matrix:
             parameters:
               gemfile:
-                - gemfiles/rails_6.1.gemfile
-                - gemfiles/rails_7.0.gemfile
-                - gemfiles/rails_7.1.gemfile
                 - gemfiles/rails_7.2.gemfile
+                - gemfiles/rails_8.0.gemfile
+                - gemfiles/rails_8.1.gemfile
                 - gemfiles/rails_edge.gemfile
               ruby_version:
-                - 3.0.7
-                - 3.1.6
                 - 3.2.5
                 - 3.3.5
-            exclude:
-              - gemfile: gemfiles/rails_7.2.gemfile
-                ruby_version: 3.0.7
-              - gemfile: gemfiles/rails_8.0.gemfile
-                ruby_version: 3.0.7
-              - gemfile: gemfiles/rails_edge.gemfile
-                ruby_version: 3.0.7
-              - gemfile: gemfiles/rails_edge.gemfile
-                ruby_version: 3.1.6
+                - 3.4.5
   weekly_rails_edge:
     triggers:
       - schedule:

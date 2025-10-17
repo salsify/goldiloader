@@ -29,21 +29,21 @@ Gem::Specification.new do |spec|
 
   spec.files = `git ls-files lib Readme.md LICENSE.txt`.split($INPUT_RECORD_SEPARATOR)
 
-  spec.required_ruby_version = '>= 3.0'
+  spec.required_ruby_version = '>= 3.2'
 
-  spec.add_dependency 'activerecord', '>= 6.1', '< 8.1'
-  spec.add_dependency 'activesupport', '>= 6.1', '< 8.1'
+  spec.add_dependency 'activerecord', '>= 7.2', '< 8.3'
+  spec.add_dependency 'activesupport', '>= 7.2', '< 8.3'
 
   spec.add_development_dependency 'appraisal'
   spec.add_development_dependency 'benchmark-ips'
   spec.add_development_dependency 'combustion', '~> 1.3'
   spec.add_development_dependency 'coveralls_reborn', '>= 0.18.0'
-  spec.add_development_dependency 'rails', '>= 6.1', '< 8.1'
+  spec.add_development_dependency 'rails', '>= 7.2', '< 8.3'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec', '~> 3'
   spec.add_development_dependency 'rspec_junit_formatter'
   spec.add_development_dependency 'rspec-rails'
-  spec.add_development_dependency 'salsify_rubocop', '~> 1.0.1'
+  spec.add_development_dependency 'salsify_rubocop', '~> 1.27'
   spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'sqlite3', '~> 2.0'
 end
