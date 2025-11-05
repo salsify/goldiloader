@@ -12,7 +12,8 @@
 
 Wouldn't it be awesome if ActiveRecord didn't make you think about eager loading and it just did the "right" thing by default? With Goldiloader it can!
 
-**This branch only supports Rails 6.1+ with Ruby 3.0+. For older versions of Rails/Ruby use
+**This branch only supports Rails 7.2+ with Ruby 3.2+. For older versions of Rails/Ruby use
+[release-5.x](https://github.com/salsify/goldiloader/blob/release-5.x/README.md),
 [release-4.x](https://github.com/salsify/goldiloader/blob/release-4.x/README.md),
 [release-3.x](https://github.com/salsify/goldiloader/blob/release-3.x/README.md),
 [release-2.x](https://github.com/salsify/goldiloader/blob/release-2.x/README.md)
@@ -362,7 +363,7 @@ end
 
 ## Status
 
-This gem is tested with Rails 6.1, 7.0, 7.1, 7.2, and Edge using MRI 3.0, 3.1, 3.2, and 3.3.
+This gem is tested with Rails 7.2, 8.0, 8.1, and Edge using MRI 3.2, 3.3, and 3.4.
 
 Let us know if you find any issues or have any other feedback.
 
