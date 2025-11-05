@@ -1,5 +1,9 @@
 # Changelog
 
+## 6.0.0
+- Add support for Ruby 3.4 and drop support for Ruby 3.0 and 3.1. Add support for Rails 8.1 and drop support for Rails
+  6.1, 7.0, and 7.1. **Thanks [benaitcheson](https://github.com/benaitcheson)**
+
 ## 5.4.0
 - Add support for Rails 8.0.
 
