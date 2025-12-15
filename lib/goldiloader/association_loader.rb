@@ -15,11 +15,7 @@ module Goldiloader
     private
 
     def eager_load(models, association_name)
-      if Goldiloader::Compatibility.pre_rails_7?
-        ::ActiveRecord::Associations::Preloader.new.preload(models, [association_name])
-      else
-        ::ActiveRecord::Associations::Preloader.new(records: models, associations: [association_name]).call
-      end
+      ::ActiveRecord::Associations::Preloader.new(records: models, associations: [association_name]).call
     end
 
     def load?(model, association_name)
