@@ -64,6 +64,24 @@ ActiveRecord::Schema.define(version: 0) do
             unique: true
     t.foreign_key :active_storage_blobs, column: :blob_id
   end
+
+  # Models for testing scope leakage fix
+  create_table(:sections, force: true) do |t|
+    t.integer :position
+    t.string :name
+  end
+
+  create_table(:section_contents, force: true) do |t|
+    t.integer :section_id
+    t.integer :content_id
+    t.string :content_type
+    t.integer :position
+  end
+
+  create_table(:articles, force: true) do |t|
+    t.string :title
+    t.string :status
+  end
 end
 
 class Tag < ActiveRecord::Base
@@ -194,4 +212,26 @@ end
 
 class Group < ActiveRecord::Base
   has_many :tags, as: :owner
+end
+
+class Section < ActiveRecord::Base
+  default_scope { order(position: :asc) }
+
+  has_many :section_contents, dependent: :destroy
+
+  # These through associations reproduce the scope leakage bug pattern
+  # Some have scopes, some don't - this triggers the bug
+  has_many :published_articles, -> { where(status: 'published') }, through: :section_contents, source: :content, source_type: 'Article'
+  has_many :draft_articles, -> { where(status: 'draft') }, through: :section_contents, source: :content, source_type: 'Article'
+  has_many :all_articles, through: :section_contents, source: :content, source_type: 'Article'
+end
+
+class SectionContent < ActiveRecord::Base
+  default_scope { order(position: :asc) }
+
+  belongs_to :section
+  belongs_to :content, polymorphic: true
+end
+
+class Article < ActiveRecord::Base
 end

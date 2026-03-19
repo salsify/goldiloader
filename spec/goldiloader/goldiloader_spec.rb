@@ -1224,4 +1224,107 @@ describe Goldiloader do
       )
     end
   end
+
+  context "with default_scope and multiple scoped through associations" do
+    # Tests for https://github.com/salsify/goldiloader/issues/166
+    # Bug: When a model has default_scope with ORDER BY and multiple has_many :through associations
+    # via the same join table, scopes from one association would leak into others during eager loading
+
+    let!(:section1) do
+      section = Section.create!(name: 'section1', position: 1)
+
+      section.section_contents.create!(content: Article.create!(title: 'section1-published1', status: 'published'), position: 1)
+      section.section_contents.create!(content: Article.create!(title: 'section1-published2', status: 'published'), position: 2)
+      section.section_contents.create!(content: Article.create!(title: 'section1-draft1', status: 'draft'), position: 3)
+
+      section
+    end
+
+    let!(:section2) do
+      section = Section.create!(name: 'section2', position: 2)
+
+      section.section_contents.create!(content: Article.create!(title: 'section2-published1', status: 'published'), position: 1)
+      section.section_contents.create!(content: Article.create!(title: 'section2-draft1', status: 'draft'), position: 2)
+      section.section_contents.create!(content: Article.create!(title: 'section2-draft2', status: 'draft'), position: 3)
+
+      section
+    end
+
+    let(:sections) { Section.order(:name).to_a }
+
+    context "when the through association has already been loaded" do
+      before do
+        sections.first.section_contents.to_a
+      end
+
+      it "doesn't leak scopes between through associations" do
+        # Access the scoped association first
+        sections.first.published_articles.to_a
+
+        # Now access the unscoped association
+        # Without the fix, the where(status: 'published') scope would leak here
+        all_articles = sections.first.all_articles.to_a
+
+        expect(all_articles.size).to eq 3
+        expect(all_articles.map(&:title)).to match_array(['section1-published1', 'section1-published2', 'section1-draft1'])
+      end
+
+      it "doesn't auto-include through associations when scope leakage risk exists" do
+        sections.first.published_articles.to_a
+
+        # The optimization should be disabled due to scope leakage risk
+        expect(sections.second.association(:published_articles)).not_to be_loaded
+      end
+
+      it "returns correct results for scoped through associations" do
+        published = sections.first.published_articles.to_a
+        drafts = sections.first.draft_articles.to_a
+
+        expect(published.map(&:title)).to match_array(['section1-published1', 'section1-published2'])
+        expect(drafts.map(&:title)).to eq(['section1-draft1'])
+      end
+
+      it "returns correct results when accessing multiple scoped associations" do
+        # Access published_articles first
+        published = sections.first.published_articles.to_a
+        expect(published.map(&:title)).to match_array(['section1-published1', 'section1-published2'])
+
+        # Then access draft_articles - should not include published scope
+        drafts = sections.first.draft_articles.to_a
+        expect(drafts.map(&:title)).to eq(['section1-draft1'])
+
+        # Then access all_articles - should not include any scope
+        all_articles = sections.first.all_articles.to_a
+        expect(all_articles.size).to eq 3
+        expect(all_articles.map(&:title)).to match_array(['section1-published1', 'section1-published2', 'section1-draft1'])
+      end
+
+      it "returns correct results when accessing unscoped before scoped associations" do
+        # Access unscoped association first
+        all_articles = sections.first.all_articles.to_a
+        expect(all_articles.size).to eq 3
+
+        # Then access scoped association
+        published = sections.first.published_articles.to_a
+        expect(published.size).to eq 2
+
+        # Unscoped should still return all records
+        all_articles_again = sections.first.all_articles.to_a
+        expect(all_articles_again.size).to eq 3
+      end
+    end
+
+    it "returns correct results for both sections" do
+      sections.first.section_contents.to_a
+
+      section1_articles = sections.first.all_articles.to_a
+      section2_articles = sections.second.all_articles.to_a
+
+      expect(section1_articles.size).to eq 3
+      expect(section2_articles.size).to eq 3
+
+      expect(section1_articles.map(&:title)).to match_array(['section1-published1', 'section1-published2', 'section1-draft1'])
+      expect(section2_articles.map(&:title)).to match_array(['section2-published1', 'section2-draft1', 'section2-draft2'])
+    end
+  end
 end
