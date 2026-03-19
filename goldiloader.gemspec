@@ -36,14 +36,15 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency 'appraisal'
   spec.add_development_dependency 'benchmark-ips'
-  spec.add_development_dependency 'combustion', '~> 1.3'
+  spec.add_development_dependency 'cgi'
+  spec.add_development_dependency 'combustion', '~> 1.5'
   spec.add_development_dependency 'coveralls_reborn', '>= 0.18.0'
   spec.add_development_dependency 'rails', '>= 7.2', '< 8.3'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec', '~> 3'
   spec.add_development_dependency 'rspec_junit_formatter'
   spec.add_development_dependency 'rspec-rails'
-  spec.add_development_dependency 'salsify_rubocop', '~> 1.27'
+  spec.add_development_dependency 'salsify_rubocop', '~> 1.85'
   spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'sqlite3', '~> 2.0'
 end

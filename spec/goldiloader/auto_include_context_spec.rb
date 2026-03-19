@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'ostruct'
 
 AutoIncludeContextMockModel = Struct.new(:auto_include_context)
+AutoIncludeContextMockAssociation = Struct.new(:target)
 
 describe Goldiloader::AutoIncludeContext do
   describe ".register_models" do
@@ -157,7 +157,7 @@ describe Goldiloader::AutoIncludeContext do
       model = AutoIncludeContextMockModel.new
       associations.each do |association, models|
         allow(model).to receive(:association).with(association) do
-          OpenStruct.new(target: models)
+          AutoIncludeContextMockAssociation.new(models)
         end
       end
       model
