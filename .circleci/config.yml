@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   lint:
     docker:
-      - image: ruby:3.2.5
+      - image: ruby:3.2.10
     environment:
       BUNDLE_GEMFILE: gemfiles/rails_7.2.gemfile
     working_directory: ~/goldiloader
@@ -10,17 +10,18 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-gems-ruby-3.2.5-{{ checksum "goldiloader.gemspec" }}-{{ checksum "gemfiles/rails_7.2.gemfile" }}
-            - v1-gems-ruby-3.2.5-
+            - v1-gems-ruby-3.2.10-{{ checksum "goldiloader.gemspec" }}-{{ checksum "gemfiles/rails_7.2.gemfile" }}
+            - v1-gems-ruby-3.2.10-
       - run:
           name: Install Gems
           command: |
-            if ! bundle check --path=vendor/bundle; then
-              bundle install --path=vendor/bundle --jobs=4 --retry=3
+            bundle config set path 'vendor/bundle'
+            if ! bundle check; then
+              bundle install --jobs=4 --retry=3
               bundle clean
             fi
       - save_cache:
-          key: v1-gems-ruby-3.2.5-{{ checksum "goldiloader.gemspec" }}-{{ checksum "gemfiles/rails_7.2.gemfile" }}
+          key: v1-gems-ruby-3.2.10-{{ checksum "goldiloader.gemspec" }}-{{ checksum "gemfiles/rails_7.2.gemfile" }}
           paths:
             - "vendor/bundle"
             - "gemfiles/vendor/bundle"
@@ -52,8 +53,9 @@ jobs:
       - run:
           name: Install Gems
           command: |
-            if ! bundle check --path=vendor/bundle; then
-              bundle install --path=vendor/bundle --jobs=4 --retry=3
+            bundle config set path 'vendor/bundle'
+            if ! bundle check; then
+              bundle install --jobs=4 --retry=3
               bundle clean
             fi
       - unless:
@@ -84,9 +86,13 @@ workflows:
                 - gemfiles/rails_8.1.gemfile
                 - gemfiles/rails_edge.gemfile
               ruby_version:
-                - 3.2.5
-                - 3.3.5
-                - 3.4.5
+                - 3.2.10
+                - 3.3.10
+                - 3.4.9
+                - 4.0.2
+            exclude:
+              - gemfile: gemfiles/rails_edge.gemfile
+                ruby_version: 3.2.10
   weekly_rails_edge:
     triggers:
       - schedule:
@@ -102,4 +108,4 @@ workflows:
               gemfile:
                 - gemfiles/rails_edge.gemfile
               ruby_version:
-                - 3.3.5
+                - 4.0.2
