@@ -156,11 +156,19 @@ module Goldiloader
 
   module CollectionAssociationPatch
     # Force these methods to load the entire association for fully_load associations
-    [:size, :ids_reader, :empty?].each do |method|
-      define_method(method) do |*args, **kwargs, &block|
-        load_target if fully_load?
-        super(*args, **kwargs, &block)
-      end
+    def size(...)
+      load_target if fully_load?
+      super
+    end
+
+    def ids_reader(...)
+      load_target if fully_load?
+      super
+    end
+
+    def empty?(...)
+      load_target if fully_load?
+      super
     end
 
     def load_target(...)
