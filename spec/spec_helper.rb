@@ -17,7 +17,9 @@ end
 require 'bundler'
 
 Bundler.require :default, :development
-Combustion.initialize! :active_record, :active_storage, :active_job
+Combustion.initialize!(:active_record, :active_storage, :active_job) do
+  config.active_record.belongs_to_required_by_default = false
+end
 
 require 'rspec/rails'
 require 'db/schema'
