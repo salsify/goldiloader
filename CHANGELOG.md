@@ -4,6 +4,7 @@
 - Add Ruby 4.0 testing.
 - Stop allocating an argument array and hash on every `size`, `empty?` and `ids_reader` call of a collection
   association.
+- Keep the test suite passing with combustion 1.6+, whose `load_defaults` now makes `belongs_to` required.
 
 ## 6.0.0
 - Add support for Ruby 3.4 and drop support for Ruby 3.0 and 3.1. Add support for Rails 8.1 and drop support for Rails
