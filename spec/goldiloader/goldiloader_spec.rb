@@ -86,6 +86,22 @@ describe Goldiloader do
     end.to execute_queries(Post => 1)
   end
 
+  it "auto eager loads associations of models loaded with load_async" do
+    # Without an executor in the test app, make Rails return a future resolved in the foreground
+    connection = Blog.lease_connection
+    allow(connection).to receive_messages(async_enabled?: true, supports_concurrent_connections?: false)
+    blogs = Blog.order(:name).load_async
+    expect(blogs).to be_scheduled
+
+    expect do
+      blogs.first.posts.to_a
+
+      blogs.each do |blog|
+        expect(blog.association(:posts)).to be_loaded
+      end
+    end.to execute_queries(Post => 1)
+  end
+
   it "auto eager loads belongs_to associations" do
     posts = Post.order(:title).to_a
 
