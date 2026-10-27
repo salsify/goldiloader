@@ -285,9 +285,11 @@ describe Goldiloader do
   end
 
   context "with manual eager loading" do
+    let(:blog_scope) { Blog.order(:name) }
+
     shared_examples "it auto-eager loads associations of manually eager loaded associations" do
       specify do
-        blogs = Blog.order(:name).send(load_method, :posts).to_a
+        blogs = blog_scope.send(load_method, :posts).to_a
 
         expect do
           blogs.first.posts.to_a.first.author
@@ -306,6 +308,13 @@ describe Goldiloader do
 
     context "via includes" do
       let(:load_method) { :includes }
+
+      it_behaves_like "it auto-eager loads associations of manually eager loaded associations"
+    end
+
+    context "via includes joined by references" do
+      let(:load_method) { :includes }
+      let(:blog_scope) { Blog.order(:name).references(:posts) }
 
       it_behaves_like "it auto-eager loads associations of manually eager loaded associations"
     end

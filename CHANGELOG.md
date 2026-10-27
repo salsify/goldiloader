@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+- Auto eager load associations of models loaded through `includes` when Rails turns them into a JOIN, with
+  `references` or a condition on the included table. **Thanks [czj](https://github.com/czj)**
+
 ## 6.0.1
 - Add Ruby 4.0 testing.
 - Stop allocating an argument array and hash on every `size`, `empty?` and `ids_reader` call of a collection
