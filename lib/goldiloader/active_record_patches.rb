@@ -38,7 +38,10 @@ module Goldiloader
       return super if loaded? || !auto_include_value
 
       models = super
-      Goldiloader::AutoIncludeContext.register_models(models, eager_loading? ? eager_load_values | includes_values : nil)
+      Goldiloader::AutoIncludeContext.register_models(
+        models,
+        eager_loading? ? eager_load_values | includes_values : nil
+      )
       models
     end
 
