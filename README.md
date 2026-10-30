@@ -338,6 +338,25 @@ end
 
 **Note:** The `goldiload` method will use the `source_location` of the given block as a cache name to distinguish between multiple defined preloads. If this causes an issue for you, you can also pass a cache name explicitly as the first argument to the `goldiload` method.
 
+That explicit cache name also lets a preload depend on the method's arguments: include them in the name so each distinct value gets its own preload. Every distinct cache name keeps its results in memory for as long as the models are loaded, so this works best for arguments with a handful of values.
+
+```ruby
+class Blog < ActiveRecord::Base
+  def posts_count(status)
+    goldiload("posts_count_#{status}") do |ids|
+      Post
+        .where(blog_id: ids, status: status)
+        .group(:blog_id)
+        .count
+    end
+  end
+end
+
+blogs = Blog.limit(5).to_a
+blogs.each { |blog| blog.posts_count(:published) } # One query for all 5 blogs
+blogs.each { |blog| blog.posts_count(:draft) }     # Another query for all 5 blogs
+```
+
 
 ### Gotchas
 
