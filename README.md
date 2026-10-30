@@ -380,6 +380,12 @@ class Blog < ActiveRecord::Base
 end
 ```
 
+## Uninstalling
+
+Goldiloader keeps a reference to the records loaded alongside each record in an instance variable. Records cached with `Marshal` (for instance through `Rails.cache`) in the Rails 6.1 marshalling format carry that reference, so reading them back after removing the gem raises `NameError: uninitialized constant Goldiloader`.
+
+Records dumped with `ActiveRecord.marshalling_format_version = 7.1` (the default under `config.load_defaults 7.1` and later) only carry their attributes and loaded associations, so removing the gem is safe for them. Cache entries written in the 6.1 format must expire or be cleared first, or you can [disable automatic eager loading](#disabling-automatic-eager-loading) instead of removing the gem.
+
 ## Status
 
 This gem is tested with Rails 7.2, 8.0, 8.1, and Edge using MRI 3.2, 3.3, and 3.4.
