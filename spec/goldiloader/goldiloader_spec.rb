@@ -87,11 +87,9 @@ describe Goldiloader do
   end
 
   it "auto eager loads associations of models loaded with load_async" do
-    # Without an executor in the test app, make Rails return a future resolved in the foreground
-    connection = Blog.lease_connection
-    allow(connection).to receive_messages(async_enabled?: true, supports_concurrent_connections?: false)
     blogs = Blog.order(:name).load_async
     expect(blogs).to be_scheduled
+    blogs.to_a
 
     expect do
       blogs.first.posts.to_a

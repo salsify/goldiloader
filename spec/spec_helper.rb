@@ -19,6 +19,7 @@ require 'bundler'
 Bundler.require :default, :development
 Combustion.initialize!(:active_record, :active_storage, :active_job) do
   config.active_record.belongs_to_required_by_default = false
+  config.active_record.async_query_executor = :global_thread_pool
 end
 
 require 'rspec/rails'

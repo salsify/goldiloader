@@ -35,7 +35,7 @@ module Goldiloader
 
   module RelationPatch
     def exec_queries
-      return super if (loaded? && !scheduled?) || !auto_include_value
+      return super unless auto_include_value
 
       models = super
       Goldiloader::AutoIncludeContext.register_models(
