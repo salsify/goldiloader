@@ -86,6 +86,20 @@ describe Goldiloader do
     end.to execute_queries(Post => 1)
   end
 
+  it "auto eager loads associations of models loaded with load_async" do
+    blogs = Blog.order(:name).load_async
+    expect(blogs).to be_scheduled
+    blogs.to_a
+
+    expect do
+      blogs.first.posts.to_a
+
+      blogs.each do |blog|
+        expect(blog.association(:posts)).to be_loaded
+      end
+    end.to execute_queries(Post => 1)
+  end
+
   it "auto eager loads belongs_to associations" do
     posts = Post.order(:title).to_a
 
