@@ -63,6 +63,7 @@ describe Goldiloader do
     # Always reset enablement status to a known-good state
     Goldiloader.globally_enabled = true
     Goldiloader.enabled = nil
+    Goldiloader.suggestion_mode = false
   end
 
   it "auto eager loads has_many associations" do
@@ -1174,6 +1175,80 @@ describe Goldiloader do
       end
       expect(Goldiloader.enabled?).to be false
       expect(Thread.current[:goldiloader_enabled]).to eq nil
+    end
+  end
+
+  describe "#suggestion_mode" do
+    let(:log) { StringIO.new }
+
+    let(:application_backtrace_cleaner) do
+      ActiveSupport::BacktraceCleaner.new.tap do |cleaner|
+        cleaner.add_silencer { |line| !line.include?('/spec/') }
+      end
+    end
+
+    around do |example|
+      logger = ActiveRecord::Base.logger
+      backtrace_cleaner = ActiveRecord::LogSubscriber.backtrace_cleaner
+      ActiveRecord::Base.logger = Logger.new(log)
+      ActiveRecord::LogSubscriber.backtrace_cleaner = application_backtrace_cleaner
+      Goldiloader.suggestion_mode = true
+      example.run
+    ensure
+      ActiveRecord::Base.logger = logger
+      ActiveRecord::LogSubscriber.backtrace_cleaner = backtrace_cleaner
+    end
+
+    it "logs the association once per set of records instead of eager loading it" do
+      blogs = Blog.order(:name).to_a
+
+      expect do
+        expect(blogs.map { |blog| blog.posts.map(&:title) }).to eq [
+          ['blog1-post1', 'blog1-post2'],
+          ['blog2-post1', 'blog2-post2']
+        ]
+      end.to execute_queries(Post => 2)
+
+      expect(suggestions).to eq ['Blog#posts']
+      expect(log.string).to include("Blog#posts, called from #{__FILE__}")
+    end
+
+    it "logs nested associations once across the records of every owner" do
+      Blog.order(:name).each do |blog|
+        blog.posts.each(&:author)
+      end
+
+      expect(suggestions).to match_array ['Blog#posts', 'Post#author']
+    end
+
+    it "logs associations of records loaded through a singular association" do
+      Post.order(:title).each do |post|
+        post.author.address
+      end
+
+      expect(suggestions).to eq ['Post#author', 'User#address']
+    end
+
+    it "doesn't log an association loaded again by the same record" do
+      blog = Blog.find(blog1.id)
+      blog.posts.to_a
+      blog.posts.reload.to_a
+
+      expect(suggestions).to be_empty
+    end
+
+    it "keeps custom preloads of the records loaded lazily" do
+      expect(Post.order(:title).map { |post| post.blog.posts_count }).to eq [2, 2, 2, 2]
+    end
+
+    it "doesn't log associations of a single record" do
+      Blog.first.posts.to_a
+
+      expect(suggestions).to be_empty
+    end
+
+    def suggestions
+      log.string.scan(/Goldiloader suggests eager loading ([^,\n]+)/).flatten
     end
   end
 
