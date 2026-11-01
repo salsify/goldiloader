@@ -155,6 +155,7 @@ An association is logged once per set of records loaded together, when it is loa
 Goldiloader suggests eager loading Blog#posts, called from app/views/blogs/index.html.erb:12:in ...
 ```
 
+Suggestion mode turns automatic eager loading off: the N+1 queries Goldiloader was saving come back while it is on.
 Goldiloader must be enabled for suggestions to be logged. [Custom preloads](#custom-preloads) are still eager loaded.
 
 ### Association Options
