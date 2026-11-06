@@ -100,6 +100,30 @@ describe Goldiloader do
     end.to execute_queries(Post => 1)
   end
 
+  it "auto eager loads associations of models loaded with find_by_sql" do
+    blogs = Blog.find_by_sql('SELECT * FROM blogs ORDER BY name')
+
+    expect do
+      blogs.first.posts.to_a
+
+      blogs.each do |blog|
+        expect(blog.association(:posts)).to be_loaded
+      end
+    end.to execute_queries(Post => 1)
+  end
+
+  it "auto eager loads associations of models loaded with async_find_by_sql" do
+    blogs = Blog.async_find_by_sql('SELECT * FROM blogs ORDER BY name').value
+
+    expect do
+      blogs.first.posts.to_a
+
+      blogs.each do |blog|
+        expect(blog.association(:posts)).to be_loaded
+      end
+    end.to execute_queries(Post => 1)
+  end
+
   it "auto eager loads belongs_to associations" do
     posts = Post.order(:title).to_a
 
