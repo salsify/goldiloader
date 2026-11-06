@@ -1186,6 +1186,26 @@ describe Goldiloader do
       expect(authors.first.auto_include_context.models).to eq(authors)
     end
 
+    it "registers the loaded associations of a single model" do
+      blog = Blog.order(:name).first
+      blog.posts.to_a
+      blog = Goldiloader.register_models(read_back_from_cache(blog))
+
+      expect do
+        blog.posts.first.author
+
+        blog.posts.each do |post|
+          expect(post.association(:author)).to be_loaded
+        end
+      end.to execute_queries(User => 1)
+    end
+
+    it "skips nil models" do
+      blogs = Goldiloader.register_models(read_back_from_cache([Blog.order(:name).first, nil, Blog.order(:name).last]))
+
+      expect(blogs.first.auto_include_context.models).to eq(blogs.compact)
+    end
+
     def read_back_from_cache(models)
       Marshal.load(Marshal.dump(models))
     end
