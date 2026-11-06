@@ -45,42 +45,37 @@ module Goldiloader
     end
 
     def register_models(models)
-      models_to_register = models.is_a?(ActiveRecord::Base) ? [models] : models
-      register_with_loaded_associations(models_to_register, Set.new.compare_by_identity)
+      models_to_register = models.is_a?(ActiveRecord::Base) ? [models] : models.to_a.compact
+      registered_models = Set.new.compare_by_identity
+
+      until models_to_register.empty?
+        models_to_register = models_to_register.select { |model| registered_models.add?(model) }
+        models_to_register.group_by { |model| model.class.base_class }.each_value do |models_of_class|
+          Goldiloader::AutoIncludeContext.register_models(models_of_class)
+        end
+        models_to_register = loaded_auto_include_targets(models_to_register)
+      end
+
       models
     end
 
     private
 
-    def register_with_loaded_associations(models, registered_models)
-      models = models.select { |model| model && registered_models.add?(model) }
+    def loaded_auto_include_targets(models)
+      models.group_by(&:class).flat_map do |model_class, models_of_class|
+        model_class.reflect_on_all_associations.flat_map do |reflection|
+          models_of_class.flat_map do |model|
+            next [] unless model.association_cached?(reflection.name)
 
-      models.group_by { |model| model.class.base_class }.each_value do |models_of_class|
-        Goldiloader::AutoIncludeContext.register_models(models_of_class)
-      end
+            association = model.association(reflection.name)
+            next [] unless association.loaded? && association.klass && reflection.eager_loadable?(association.klass)
 
-      loaded_targets_by_reflection(models).each_value do |targets|
-        register_with_loaded_associations(targets, registered_models)
-      end
-    end
-
-    def loaded_targets_by_reflection(models)
-      targets_by_reflection = Hash.new { |hash, reflection| hash[reflection] = [] }
-
-      models.each do |model|
-        model.class.reflect_on_all_associations.each do |reflection|
-          next unless model.association_cached?(reflection.name)
-
-          association = model.association(reflection.name)
-          next unless association.loaded?
-
-          # Don't use Array.wrap(), see AutoIncludeContext#register_models
-          target = association.target
-          targets_by_reflection[reflection].concat(target.is_a?(Array) ? target : [target].compact)
+            # Don't use Array.wrap(), see AutoIncludeContext#register_models
+            target = association.target
+            target.is_a?(Array) ? target : [target].compact
+          end
         end
       end
-
-      targets_by_reflection
     end
   end
 
