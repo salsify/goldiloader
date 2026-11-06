@@ -36,6 +36,12 @@ module Goldiloader
       end
     end
 
+    def self.register_models_found_by_sql(models, scope)
+      # A single model builds the same context lazily, so find and find_by don't allocate one upfront
+      register_models(models) if models.size > 1 && scope&.auto_include_value != false
+      models
+    end
+
     def register_models(models)
       # Don't use Array() or Array.wrap() because they will check respond_to?(:to_ary)
       # which for ActiveStorage::Attachment will delegate to the blob association which
