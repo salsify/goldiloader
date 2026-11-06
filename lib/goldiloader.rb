@@ -45,21 +45,22 @@ module Goldiloader
     end
 
     def register_models(models)
-      register_loaded_together(models, Set.new.compare_by_identity)
+      models_to_register = models.is_a?(ActiveRecord::Base) ? [models] : models
+      register_with_loaded_associations(models_to_register, Set.new.compare_by_identity)
       models
     end
 
     private
 
-    def register_loaded_together(models, registered_models)
-      models = models.select { |model| registered_models.add?(model) }
+    def register_with_loaded_associations(models, registered_models)
+      models = models.select { |model| model && registered_models.add?(model) }
 
       models.group_by { |model| model.class.base_class }.each_value do |models_of_class|
-        Goldiloader::AutoIncludeContext.new.register_models(models_of_class)
+        Goldiloader::AutoIncludeContext.register_models(models_of_class)
       end
 
       loaded_targets_by_reflection(models).each_value do |targets|
-        register_loaded_together(targets, registered_models)
+        register_with_loaded_associations(targets, registered_models)
       end
     end
 
