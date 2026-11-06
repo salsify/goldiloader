@@ -222,6 +222,10 @@ Goldiloader detects associations with any of these options and disables automati
 
 It might still be possible to eager load these with Goldiloader by using [custom preloads](#custom-preloads).
 
+### strict_loading
+
+Associations that Goldiloader eager loads never raise `ActiveRecord::StrictLoadingViolationError`, since there is no N+1 left to catch. Rails still raises when a model was loaded on its own, or with automatic eager loading disabled, so a test with a single record can raise where the same code with several records doesn't.
+
 
 ### Eager Loading Limitation Workarounds
 
