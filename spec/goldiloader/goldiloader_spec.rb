@@ -124,6 +124,52 @@ describe Goldiloader do
     end.to execute_queries(Post => 1)
   end
 
+  it "honours auto_include(false) for models loaded with find_by_sql" do
+    blogs = Blog.auto_include(false).find_by_sql('SELECT * FROM blogs ORDER BY name')
+
+    expect do
+      blogs.first.posts.to_a
+
+      expect(blogs.last.association(:posts)).not_to be_loaded
+    end.to execute_queries(Post => 1)
+  end
+
+  it "honours auto_include(false) for models loaded with async_find_by_sql" do
+    blogs = Blog.auto_include(false).async_find_by_sql('SELECT * FROM blogs ORDER BY name').value
+
+    expect do
+      blogs.first.posts.to_a
+
+      expect(blogs.last.association(:posts)).not_to be_loaded
+    end.to execute_queries(Post => 1)
+  end
+
+  it "auto eager loads associations of models loaded through an association while disabled" do
+    posts = Goldiloader.disabled { Blog.order(:name).first.posts.to_a }
+
+    expect do
+      posts.first.author
+
+      posts.each do |post|
+        expect(post.association(:author)).to be_loaded
+      end
+    end.to execute_queries(User => 1)
+  end
+
+  it "auto eager loads associations of models loaded through an association with in-memory changes" do
+    blog = Blog.order(:name).first
+    blog.posts.build
+    posts = blog.posts.to_a.select(&:persisted?)
+
+    expect do
+      posts.first.author
+
+      posts.each do |post|
+        expect(post.association(:author)).to be_loaded
+      end
+    end.to execute_queries(User => 1)
+  end
+
   it "auto eager loads belongs_to associations" do
     posts = Post.order(:title).to_a
 

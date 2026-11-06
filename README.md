@@ -87,6 +87,9 @@ Blog.order(:name).auto_include(false)
 
 Note this will not disable automatic eager loading for nested associations.
 
+It also applies to `find_by_sql`, whose models otherwise share one context and stay in memory as long as any of them
+does: `Blog.auto_include(false).find_by_sql(sql)`.
+
 Automatic eager loading can be disabled for specific associations by customizing the association's scope:
 
 ```ruby

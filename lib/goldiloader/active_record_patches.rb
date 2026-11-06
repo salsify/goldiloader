@@ -34,20 +34,15 @@ module Goldiloader
   ::ActiveRecord::Base.include(::Goldiloader::BasePatch)
 
   module QueryingPatch
+    # As of https://github.com/rails/rails/commit/bd3b28f7f181dce53e872daa23dda101498b8fb4 association
+    # queries go through find_by_sql (StatementCache#execute) rather than Relation#exec_queries
     def find_by_sql(...)
-      register_auto_include_models(super)
+      Goldiloader::AutoIncludeContext.register_models_found_by_sql(super, current_scope)
     end
 
     def async_find_by_sql(...)
-      super.then { |models| register_auto_include_models(models) }
-    end
-
-    private
-
-    def register_auto_include_models(models)
-      # A single model builds the same context lazily, so find and find_by don't allocate one upfront
-      Goldiloader::AutoIncludeContext.register_models(models) if models.size > 1
-      models
+      scope = current_scope
+      super.then { |models| Goldiloader::AutoIncludeContext.register_models_found_by_sql(models, scope) }
     end
   end
   ::ActiveRecord::Base.singleton_class.prepend(::Goldiloader::QueryingPatch)
