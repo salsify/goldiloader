@@ -132,6 +132,13 @@ module Goldiloader
         target
       elsif !auto_include?
         yield
+      elsif Goldiloader.suggestion_mode
+        suggestion_tracker = owner.auto_include_context.suggestion_tracker
+        Goldiloader::AssociationLoader.suggest(reflection) if suggestion_tracker.second_owner?(reflection, owner)
+        result = yield
+        auto_include_context = Goldiloader::AutoIncludeContext.new.register_models(result)
+        auto_include_context.suggestion_tracker = suggestion_tracker.nested_tracker(reflection)
+        result
       elsif owner.auto_include_context.size == 1
         # Bypassing the preloader for a single model reduces object allocations by ~5% in benchmarks
         result = yield
