@@ -33,6 +33,25 @@ module Goldiloader
   end
   ::ActiveRecord::Base.include(::Goldiloader::BasePatch)
 
+  module QueryingPatch
+    def find_by_sql(...)
+      register_auto_include_models(super)
+    end
+
+    def async_find_by_sql(...)
+      super.then { |models| register_auto_include_models(models) }
+    end
+
+    private
+
+    def register_auto_include_models(models)
+      # A single model builds the same context lazily, so find and find_by don't allocate one upfront
+      Goldiloader::AutoIncludeContext.register_models(models) if models.size > 1
+      models
+    end
+  end
+  ::ActiveRecord::Base.singleton_class.prepend(::Goldiloader::QueryingPatch)
+
   module RelationPatch
     def exec_queries
       return super unless auto_include_value
@@ -134,12 +153,7 @@ module Goldiloader
         yield
       elsif owner.auto_include_context.size == 1
         # Bypassing the preloader for a single model reduces object allocations by ~5% in benchmarks
-        result = yield
-        # As of https://github.com/rails/rails/commit/bd3b28f7f181dce53e872daa23dda101498b8fb4
-        # ActiveRecord does not use ActiveRecord::Relation#exec_queries to resolve association
-        # queries
-        Goldiloader::AutoIncludeContext.register_models(result)
-        result
+        yield
       else
         Goldiloader::AssociationLoader.load(owner, reflection.name)
         target
