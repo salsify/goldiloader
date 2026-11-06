@@ -43,6 +43,40 @@ module Goldiloader
     ensure
       self.enabled = old_enabled
     end
+
+    def register_models(models)
+      models_to_register = models.is_a?(ActiveRecord::Base) ? [models] : models.to_a.compact
+      registered_models = Set.new.compare_by_identity
+
+      until models_to_register.empty?
+        models_to_register = models_to_register.select { |model| registered_models.add?(model) }
+        models_to_register.group_by { |model| model.class.base_class }.each_value do |models_of_class|
+          Goldiloader::AutoIncludeContext.register_models(models_of_class)
+        end
+        models_to_register = loaded_auto_include_targets(models_to_register)
+      end
+
+      models
+    end
+
+    private
+
+    def loaded_auto_include_targets(models)
+      models.group_by(&:class).flat_map do |model_class, models_of_class|
+        model_class.reflect_on_all_associations.flat_map do |reflection|
+          models_of_class.flat_map do |model|
+            next [] unless model.association_cached?(reflection.name)
+
+            association = model.association(reflection.name)
+            next [] unless association.loaded? && association.klass && reflection.eager_loadable?(association.klass)
+
+            # Don't use Array.wrap(), see AutoIncludeContext#register_models
+            target = association.target
+            target.is_a?(Array) ? target : [target].compact
+          end
+        end
+      end
+    end
   end
 
   self.globally_enabled = true

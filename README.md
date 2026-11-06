@@ -137,6 +137,22 @@ Goldiloader.enabled = true
 Note `Goldiloader.enabled=`, `Goldiloader.enabled`, and `Goldiloader.disabled` are thread local to ensure
 proper thread isolation in multi-threaded servers like Puma.
 
+### Models Read Back From a Cache
+
+Models dumped with `ActiveRecord.marshalling_format_version = 7.1` (the default under `config.load_defaults 7.1`
+and later), or with the `ActiveRecord::MessagePack` cache serializer, no longer know which models they were
+loaded with once read back from a cache, so each association loads one model at a time.
+`Goldiloader.register_models` restores automatic eager loading for them and for the models of their loaded
+associations:
+
+```ruby
+blogs = Goldiloader.register_models(Rails.cache.fetch('blogs') { Blog.includes(:posts).to_a })
+blogs.each { |blog| blog.posts.each { |post| post.author } } # One query for all authors
+```
+
+It takes a model, an array or a relation, and registers models of unrelated classes separately. Pass a hash's
+`values`, not the hash itself.
+
 ### Association Options
 
 Goldiloader supports a few options on ActiveRecord associations to customize its behavior.
