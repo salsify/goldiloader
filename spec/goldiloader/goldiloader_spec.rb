@@ -1133,6 +1133,64 @@ describe Goldiloader do
     end
   end
 
+  describe ".register_models" do
+    around do |example|
+      marshalling_format_version = ActiveRecord.marshalling_format_version
+      ActiveRecord.marshalling_format_version = 7.1
+      example.run
+    ensure
+      ActiveRecord.marshalling_format_version = marshalling_format_version
+    end
+
+    it "auto eager loads associations of models read back from a cache" do
+      blogs = Goldiloader.register_models(read_back_from_cache(Blog.order(:name).to_a))
+
+      expect do
+        blogs.first.posts.to_a
+
+        blogs.each do |blog|
+          expect(blog.association(:posts)).to be_loaded
+        end
+      end.to execute_queries(Post => 1)
+    end
+
+    it "registers the models of associations loaded before caching" do
+      blogs = Blog.order(:name).to_a
+      blogs.first.posts.to_a
+      blogs = Goldiloader.register_models(read_back_from_cache(blogs))
+      posts = blogs.flat_map(&:posts)
+
+      expect do
+        posts.first.author
+
+        posts.each do |post|
+          expect(post.association(:author)).to be_loaded
+        end
+      end.to execute_queries(User => 1)
+    end
+
+    it "registers models loaded back through an inverse association once" do
+      blogs = Blog.order(:name).to_a
+      blogs.each { |blog| blog.posts_with_inverse_of.to_a }
+      blogs = Goldiloader.register_models(read_back_from_cache(blogs))
+
+      expect(blogs.first.auto_include_context.models).to eq(blogs)
+      expect(blogs.first.posts_with_inverse_of.first.blog).to equal(blogs.first)
+    end
+
+    it "registers models of unrelated classes separately" do
+      models = Goldiloader.register_models(read_back_from_cache(Blog.order(:name).to_a + User.order(:name).to_a))
+      blogs, authors = models.partition { |model| model.is_a?(Blog) }
+
+      expect(blogs.first.auto_include_context.models).to eq(blogs)
+      expect(authors.first.auto_include_context.models).to eq(authors)
+    end
+
+    def read_back_from_cache(models)
+      Marshal.load(Marshal.dump(models))
+    end
+  end
+
   describe "#globally_enabled" do
     context "enabled" do
       it "allows setting per thread" do
