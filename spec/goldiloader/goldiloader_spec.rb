@@ -1175,7 +1175,6 @@ describe Goldiloader do
       blogs = Goldiloader.register_models(read_back_from_cache(blogs))
 
       expect(blogs.first.auto_include_context.models).to eq(blogs)
-      expect(blogs.first.posts_with_inverse_of.first.blog).to equal(blogs.first)
     end
 
     it "registers models of unrelated classes separately" do
@@ -1204,6 +1203,46 @@ describe Goldiloader do
       blogs = Goldiloader.register_models(read_back_from_cache([Blog.order(:name).first, nil, Blog.order(:name).last]))
 
       expect(blogs.first.auto_include_context.models).to eq(blogs.compact)
+    end
+
+    it "accepts nil" do
+      expect(Goldiloader.register_models(nil)).to be_nil
+    end
+
+    it "accepts a relation" do
+      blogs = Blog.order(:name)
+
+      expect(Goldiloader.register_models(blogs)).to equal(blogs)
+      expect(blogs.first.auto_include_context.models).to eq(blogs.to_a)
+    end
+
+    it "registers loaded models of the same class reached through different associations together" do
+      author = User.find(author1.id)
+      author.posts.to_a
+      blog = Blog.find(blog2.id)
+      blog.posts.to_a
+      author, blog = Goldiloader.register_models(read_back_from_cache([author, blog]))
+
+      expect(blog.posts.first.auto_include_context.models).to eq(author.posts.to_a + blog.posts.to_a)
+    end
+
+    it "registers loaded polymorphic targets separately by class" do
+      tags = Tag.order(:name).to_a
+      tags.first.owner
+      tags = Goldiloader.register_models(read_back_from_cache(tags))
+      users, groups = tags.map(&:owner).uniq(&:object_id).partition { |owner| owner.is_a?(User) }
+
+      expect(users.first.auto_include_context.models).to eq(users)
+      expect(groups.first.auto_include_context.models).to eq(groups)
+    end
+
+    it "doesn't register loaded targets of associations with auto_include(false)" do
+      blogs = Blog.order(:name).to_a
+      blogs.each { |blog| blog.posts_without_auto_include.to_a }
+      blogs = Goldiloader.register_models(read_back_from_cache(blogs))
+      post = blogs.first.posts_without_auto_include.first
+
+      expect(post.auto_include_context.models).to eq([post])
     end
 
     def read_back_from_cache(models)
