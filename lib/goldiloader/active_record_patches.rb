@@ -88,11 +88,16 @@ module Goldiloader
                                     # be eager loaded
                                     false
                                   else
-                                    scope_info = Goldiloader::ScopeInfo.new(scope_for(target_klass_key.unscoped))
+                                    unscoped = target_klass_key.unscoped
+                                    scope_info = Goldiloader::ScopeInfo.new(scope_for(unscoped))
                                     scope_info.auto_include? &&
                                       !scope_info.limit? &&
                                       !scope_info.offset? &&
-                                      (!has_one? || !scope_info.order?)
+                                      (!has_one? || !scope_info.order?) &&
+                                      # Rails preloads a scoped through association from the source records
+                                      # an unscoped sibling already loaded, dropping every scope value but
+                                      # `distinct`: https://github.com/salsify/goldiloader/issues/166
+                                      (!through_reflection? || scope_info.distinct_only?(unscoped))
                                   end
       end
       @eager_loadable_cache[target_klass]

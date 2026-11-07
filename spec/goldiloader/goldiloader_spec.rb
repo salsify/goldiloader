@@ -441,7 +441,7 @@ describe Goldiloader do
         expect(blogs.first.posts_ordered_by_author.map(&:author).map(&:address).map(&:city)).to eq sorted_post_cities
       end
 
-      it_behaves_like "it auto eager loads the association", :authors_with_join
+      it_behaves_like "it doesn't auto eager load the association", :authors_with_join
     end
 
     context "associations with an unscoped" do
@@ -512,6 +512,25 @@ describe Goldiloader do
     it "auto eager loads the association" do
       posts.each do |blog|
         expect(blog.association(:unique_tags)).to be_loaded
+      end
+    end
+  end
+
+  context "scoped has_many through associations after an unscoped sibling was auto eager loaded" do
+    let(:posts) { Post.order(:title).to_a }
+
+    before do
+      posts.first.tags.to_a
+    end
+
+    it "applies the scope correctly" do
+      expect(posts.map(&:tags_owned_by_users)).to eq [[child_tag1], [child_tag1], [child_tag1], [child_tag3]]
+    end
+
+    it "doesn't auto eager load the association" do
+      posts.first.tags_owned_by_users.to_a
+      posts.drop(1).each do |post|
+        expect(post.association(:tags_owned_by_users)).not_to be_loaded
       end
     end
   end
