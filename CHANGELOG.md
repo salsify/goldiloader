@@ -5,7 +5,8 @@
   `references` or a condition on the included table. **Thanks [czj](https://github.com/czj)**
 - Auto eager load associations of models loaded with `load_async`. **Thanks [czj](https://github.com/czj)**
 - Auto eager load associations of models loaded with `find_by_sql` and `async_find_by_sql`, including association targets
-  loaded while automatic eager loading is disabled or the association has in-memory changes.
+  loaded while automatic eager loading is disabled or the association has in-memory changes. Both take an
+  `auto_include: false` option to opt out.
   **Thanks [czj](https://github.com/czj)**
 
 ## 6.0.1

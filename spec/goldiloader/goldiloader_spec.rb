@@ -124,8 +124,8 @@ describe Goldiloader do
     end.to execute_queries(Post => 1)
   end
 
-  it "honours auto_include(false) for models loaded with find_by_sql" do
-    blogs = Blog.auto_include(false).find_by_sql('SELECT * FROM blogs ORDER BY name')
+  it "doesn't auto eager load associations of models loaded with find_by_sql and auto_include: false" do
+    blogs = Blog.find_by_sql('SELECT * FROM blogs ORDER BY name', auto_include: false)
 
     expect do
       blogs.first.posts.to_a
@@ -134,8 +134,8 @@ describe Goldiloader do
     end.to execute_queries(Post => 1)
   end
 
-  it "honours auto_include(false) for models loaded with async_find_by_sql" do
-    blogs = Blog.auto_include(false).async_find_by_sql('SELECT * FROM blogs ORDER BY name').value
+  it "doesn't auto eager load associations of models loaded with async_find_by_sql and auto_include: false" do
+    blogs = Blog.async_find_by_sql('SELECT * FROM blogs ORDER BY name', auto_include: false).value
 
     expect do
       blogs.first.posts.to_a
@@ -144,7 +144,7 @@ describe Goldiloader do
     end.to execute_queries(Post => 1)
   end
 
-  it "auto eager loads associations of models loaded through an association while disabled" do
+  it "shares one context between models loaded through an association while goldiloader is disabled" do
     posts = Goldiloader.disabled { Blog.order(:name).first.posts.to_a }
 
     expect do
