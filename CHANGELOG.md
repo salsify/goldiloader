@@ -4,6 +4,9 @@
 - Auto eager load associations of models loaded through `includes` when Rails turns them into a JOIN, with
   `references` or a condition on the included table. **Thanks [czj](https://github.com/czj)**
 - Auto eager load associations of models loaded with `load_async`. **Thanks [czj](https://github.com/czj)**
+- Fix [issue 166](https://github.com/salsify/goldiloader/issues/166) - Stop auto eager loading through associations
+  whose scope has anything other than `distinct`, since Rails preloads them from the source records an unscoped
+  sibling already loaded and drops their scope. **Thanks [czj](https://github.com/czj)**
 
 ## 6.0.1
 - Add Ruby 4.0 testing.
