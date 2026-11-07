@@ -34,8 +34,6 @@ module Goldiloader
   ::ActiveRecord::Base.include(::Goldiloader::BasePatch)
 
   module QueryingPatch
-    # As of https://github.com/rails/rails/commit/bd3b28f7f181dce53e872daa23dda101498b8fb4 association
-    # queries go through find_by_sql (StatementCache#execute) rather than Relation#exec_queries
     def find_by_sql(...)
       Goldiloader::AutoIncludeContext.register_models_found_by_sql(super, current_scope)
     end
@@ -147,7 +145,10 @@ module Goldiloader
       elsif !auto_include?
         yield
       elsif owner.auto_include_context.size == 1
-        # Bypassing the preloader for a single model reduces object allocations by ~5% in benchmarks
+        # Bypassing the preloader for a single model reduces object allocations by ~5% in benchmarks.
+        # The loaded models need no registering here: as of
+        # https://github.com/rails/rails/commit/bd3b28f7f181dce53e872daa23dda101498b8fb4 association queries
+        # go through find_by_sql (StatementCache#execute), which registers them, rather than Relation#exec_queries
         yield
       else
         Goldiloader::AssociationLoader.load(owner, reflection.name)
