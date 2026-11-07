@@ -100,6 +100,86 @@ describe Goldiloader do
     end.to execute_queries(Post => 1)
   end
 
+  it "auto eager loads associations of models loaded with find_by_sql" do
+    blogs = Blog.find_by_sql('SELECT * FROM blogs ORDER BY name')
+
+    expect do
+      blogs.first.posts.to_a
+
+      blogs.each do |blog|
+        expect(blog.association(:posts)).to be_loaded
+      end
+    end.to execute_queries(Post => 1)
+  end
+
+  it "auto eager loads associations of models loaded with async_find_by_sql" do
+    blogs = Blog.async_find_by_sql('SELECT * FROM blogs ORDER BY name').value
+
+    expect do
+      blogs.first.posts.to_a
+
+      blogs.each do |blog|
+        expect(blog.association(:posts)).to be_loaded
+      end
+    end.to execute_queries(Post => 1)
+  end
+
+  it "doesn't auto eager load associations of models loaded with find_by_sql and auto_include: false" do
+    blogs = Blog.find_by_sql('SELECT * FROM blogs ORDER BY name', auto_include: false)
+
+    expect do
+      blogs.first.posts.to_a
+
+      expect(blogs.last.association(:posts)).not_to be_loaded
+    end.to execute_queries(Post => 1)
+  end
+
+  it "doesn't auto eager load associations of models loaded with async_find_by_sql and auto_include: false" do
+    blogs = Blog.async_find_by_sql('SELECT * FROM blogs ORDER BY name', auto_include: false).value
+
+    expect do
+      blogs.first.posts.to_a
+
+      expect(blogs.last.association(:posts)).not_to be_loaded
+    end.to execute_queries(Post => 1)
+  end
+
+  it "ignores the auto_include value of the current scope in find_by_sql, as Rails ignores the current scope there" do
+    blogs = Blog.auto_include(false).find_by_sql('SELECT * FROM blogs ORDER BY name')
+
+    expect do
+      blogs.first.posts.to_a
+
+      expect(blogs.last.association(:posts)).to be_loaded
+    end.to execute_queries(Post => 1)
+  end
+
+  it "shares one context between models loaded through an association while goldiloader is disabled" do
+    posts = Goldiloader.disabled { Blog.order(:name).first.posts.to_a }
+
+    expect do
+      posts.first.author
+
+      posts.each do |post|
+        expect(post.association(:author)).to be_loaded
+      end
+    end.to execute_queries(User => 1)
+  end
+
+  it "auto eager loads associations of models loaded through an association with in-memory changes" do
+    blog = Blog.order(:name).first
+    blog.posts.build
+    posts = blog.posts.to_a.select(&:persisted?)
+
+    expect do
+      posts.first.author
+
+      posts.each do |post|
+        expect(post.association(:author)).to be_loaded
+      end
+    end.to execute_queries(User => 1)
+  end
+
   it "auto eager loads belongs_to associations" do
     posts = Post.order(:title).to_a
 
