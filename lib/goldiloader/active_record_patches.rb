@@ -34,13 +34,18 @@ module Goldiloader
   ::ActiveRecord::Base.include(::Goldiloader::BasePatch)
 
   module QueryingPatch
-    def find_by_sql(...)
-      Goldiloader::AutoIncludeContext.register_models_found_by_sql(super, current_scope)
+    def find_by_sql(sql, binds = [], auto_include: true, **options, &block)
+      models = super(sql, binds, **options, &block)
+      # A single model builds the same context lazily, so find and find_by don't allocate one upfront
+      Goldiloader::AutoIncludeContext.register_models(models) if auto_include && models.size > 1
+      models
     end
 
-    def async_find_by_sql(...)
-      scope = current_scope
-      super.then { |models| Goldiloader::AutoIncludeContext.register_models_found_by_sql(models, scope) }
+    def async_find_by_sql(sql, binds = [], auto_include: true, **options, &block)
+      super(sql, binds, **options, &block).then do |models|
+        Goldiloader::AutoIncludeContext.register_models(models) if auto_include && models.size > 1
+        models
+      end
     end
   end
   ::ActiveRecord::Base.singleton_class.prepend(::Goldiloader::QueryingPatch)
