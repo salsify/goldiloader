@@ -144,6 +144,16 @@ describe Goldiloader do
     end.to execute_queries(Post => 1)
   end
 
+  it "ignores the auto_include value of the current scope in find_by_sql, as Rails ignores the current scope there" do
+    blogs = Blog.auto_include(false).find_by_sql('SELECT * FROM blogs ORDER BY name')
+
+    expect do
+      blogs.first.posts.to_a
+
+      expect(blogs.last.association(:posts)).to be_loaded
+    end.to execute_queries(Post => 1)
+  end
+
   it "shares one context between models loaded through an association while goldiloader is disabled" do
     posts = Goldiloader.disabled { Blog.order(:name).first.posts.to_a }
 

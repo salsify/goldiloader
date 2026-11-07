@@ -34,13 +34,14 @@ module Goldiloader
   ::ActiveRecord::Base.include(::Goldiloader::BasePatch)
 
   module QueryingPatch
-    def find_by_sql(sql, binds = [], auto_include: true, **options, &block)
-      models = super(sql, binds, **options, &block)
+    def find_by_sql(sql, binds = [], preparable: nil, allow_retry: false, auto_include: true, &block)
+      models = super(sql, binds, preparable: preparable, allow_retry: allow_retry, &block)
       # A single model builds the same context lazily, so find and find_by don't allocate one upfront
       Goldiloader::AutoIncludeContext.register_models(models) if auto_include && models.size > 1
       models
     end
 
+    # Rails 7.2's async_find_by_sql takes no allow_retry: keyword
     def async_find_by_sql(sql, binds = [], auto_include: true, **options, &block)
       super(sql, binds, **options, &block).then do |models|
         Goldiloader::AutoIncludeContext.register_models(models) if auto_include && models.size > 1
