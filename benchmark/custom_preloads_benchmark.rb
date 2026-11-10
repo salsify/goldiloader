@@ -33,10 +33,20 @@ ForkingBenchmark.ips do |x|
           ::Post.where(blog_id: ids).group(:blog_id).count
         end
       end
+
+      def named_posts_count
+        goldiload(:posts_count) do |ids|
+          ::Post.where(blog_id: ids).group(:blog_id).count
+        end
+      end
     end
   end
   x.report('Goldiloader custom preloading', setup: goldiloader_setup) do
     ::Blog.all.each(&:posts_count)
+  end
+
+  x.report('Goldiloader custom preloading with explicit cache name', setup: goldiloader_setup) do
+    ::Blog.all.each(&:named_posts_count)
   end
 
   x.compare!

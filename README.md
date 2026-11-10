@@ -349,7 +349,7 @@ end
 
 **Note:** The `goldiload` method will use the `source_location` of the given block as a cache name to distinguish between multiple defined preloads. If this causes an issue for you, you can also pass a cache name explicitly as the first argument to the `goldiload` method.
 
-That explicit cache name also lets a preload depend on the method's arguments: include them in the name so each distinct value gets its own preload. Every distinct cache name keeps its results in memory for as long as the models are loaded, so this works best for arguments with a handful of values.
+That explicit cache name also lets a preload depend on the method's arguments: include them in the name so each distinct value gets its own preload. Every distinct cache name keeps its results in memory for as long as the models are loaded, so this works best for arguments with a handful of values. An explicit cache name is also faster in hot code paths.
 
 ```ruby
 class Blog < ActiveRecord::Base
