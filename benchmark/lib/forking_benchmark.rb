@@ -16,19 +16,21 @@ module ForkingBenchmark
     def initialize(benchmark)
       @benchmark = benchmark
       @setups = []
-      @experiement_servers = []
+      @experiment_servers = {}
     end
 
     def report(label, setup: nil, &step)
+      raise ArgumentError.new("Duplicate report label: #{label}") if @experiment_servers.key?(label)
+
       setups = @setups.dup
       setups << setup if setup
       wrapped_setup = Proc.new do
         setups.each(&:call)
       end
-      experiement_server = ExperimentServer.start(setup: wrapped_setup, step: step)
-      @experiement_servers << experiement_server
+      experiment_server = ExperimentServer.start(setup: wrapped_setup, step: step)
+      @experiment_servers[label] = experiment_server
       @benchmark.report(label) do |iterations|
-        experiement_server.step(iterations)
+        experiment_server.step(iterations)
       end
     end
 
@@ -39,8 +41,30 @@ module ForkingBenchmark
       nil
     end
 
+    def report_allocations
+      allocations = @experiment_servers.transform_values do |experiment_server|
+        # Run a throwaway step to ensure the scenario has been warmed up
+        experiment_server.step
+        experiment_server.step.allocations
+      end
+      return if allocations.empty?
+
+      fewest_allocations = allocations.values.min
+      label_width = allocations.keys.map(&:length).max
+
+      puts
+      puts 'Allocations per iteration:'
+      allocations.sort_by(&:last).each do |label, count|
+        line = "#{label.rjust(label_width)}: #{count.to_s.rjust(8)}"
+        line += " - #{format('%.2f', count / fewest_allocations.to_f)}x more" if count > fewest_allocations
+        puts line
+      end
+      puts
+      nil
+    end
+
     def shutdown
-      @experiement_servers.each(&:shutdown)
+      @experiment_servers.each_value(&:shutdown)
       nil
     end
   end
@@ -51,6 +75,7 @@ module ForkingBenchmark
       adapter = BenchmarkAdapter.new(benchmark)
       yield(adapter)
     end
+    adapter.report_allocations
   ensure
     adapter.shutdown if adapter
   end

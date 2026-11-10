@@ -21,6 +21,7 @@ end
 
 class Blog < ActiveRecord::Base
   has_many :posts
+  has_many :authors, through: :posts
 end
 
 class Post < ActiveRecord::Base

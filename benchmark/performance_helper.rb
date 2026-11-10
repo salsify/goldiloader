@@ -7,6 +7,12 @@ require 'active_record'
 
 ActiveRecord::Migration.verbose = false
 
+if defined?(RubyVM::YJIT)
+  RubyVM::YJIT.enable
+else
+  warn('Running benchmarks without YJIT since this Ruby was built without it.')
+end
+
 def setup_database
   ActiveRecord::Base.establish_connection(
     adapter: 'sqlite3',
