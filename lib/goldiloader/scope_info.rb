@@ -31,5 +31,9 @@ module Goldiloader
     def order?
       scope.order_values.present?
     end
+
+    def distinct_only?
+      scope.values.except(:distinct, :auto_include).empty?
+    end
   end
 end
