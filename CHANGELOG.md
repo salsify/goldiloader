@@ -8,6 +8,7 @@
   loaded while automatic eager loading is disabled or the association has in-memory changes. Both take an
   `auto_include: false` option to opt out.
   **Thanks [czj](https://github.com/czj)**
+- Optimize custom preloads.
 
 ## 6.0.1
 - Add Ruby 4.0 testing.
