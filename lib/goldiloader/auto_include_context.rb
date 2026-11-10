@@ -11,6 +11,9 @@ module Goldiloader
     end
 
     def self.register_models(models, included_associations = nil)
+      # A lone model builds the same context lazily, so loading one record allocates none upfront
+      return if models.size <= 1 && included_associations.blank?
+
       auto_include_context = Goldiloader::AutoIncludeContext.new
       auto_include_context.register_models(models)
 
