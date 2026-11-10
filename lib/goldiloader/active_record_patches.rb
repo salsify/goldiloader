@@ -27,7 +27,11 @@ module Goldiloader
     end
 
     def goldiload(cache_name = nil, key: self.class.primary_key, &block)
-      cache_name ||= block.source_location.join(':')
+      cache_name ||= begin
+        # Interpolating builds the same name as Array#join(':') but is faster
+        path, line = block.source_location
+        "#{path}:#{line}"
+      end
       auto_include_context.preloaded(self, cache_name: cache_name, key: key, &block)
     end
   end
