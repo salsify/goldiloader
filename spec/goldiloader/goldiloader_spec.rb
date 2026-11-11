@@ -824,6 +824,20 @@ describe Goldiloader do
     end
   end
 
+  context "through associations with a default scoped class_name after an unscoped sibling was auto eager loaded" do
+    let(:posts) { Post.order(:title).to_a }
+
+    before do
+      posts.first.tags.to_a
+    end
+
+    it "loads records of that class with its default scope" do
+      expected = Goldiloader.disabled { Post.order(:title).map { |post| post.user_owned_tags.to_a } }
+      expect(posts.map { |post| post.user_owned_tags.to_a }).to eq expected
+      expect(expected.first).to eq [UserOwnedTag.find(child_tag1.id)]
+    end
+  end
+
   context "polymorphic associations with nil" do
     let!(:user) { User.create! }
     let!(:group) { Group.create! }

@@ -179,9 +179,7 @@ module Goldiloader
 
       if loaded? && !stale_target?
         target
-      elsif !auto_include?
-        yield
-      elsif owner.auto_include_context.size == 1
+      elsif owner.auto_include_context.size == 1 || !auto_include?
         # Bypassing the preloader for a single model reduces object allocations by ~5% in benchmarks.
         # The loaded models need no registering here: as of
         # https://github.com/rails/rails/commit/bd3b28f7f181dce53e872daa23dda101498b8fb4 association queries
@@ -276,19 +274,25 @@ module Goldiloader
       source_reflection = chain_reflection.source_reflection
       return true if scope_lost_by_reusing_loaded_records?(record, through_reflection)
 
-      scope_lost = chain_reflection.scope_lost_by_reusing_loaded_records?(target_klass || chain_reflection.klass)
+      target_klass ||= chain_reflection.klass
+      # With a `class_name` other than the source's class, the target class (and its default scope) is lost too
+      other_class = !source_reflection.polymorphic? && target_klass != source_reflection.klass
+      scope_lost = other_class || chain_reflection.scope_lost_by_reusing_loaded_records?(target_klass)
+      return false unless scope_lost || source_reflection.through_reflection?
+
       any_reused_record?(record, through_reflection) do |through_record|
-        (scope_lost && reuses_loaded_source?(through_record, chain_reflection)) ||
+        (scope_lost && reuses_loaded_source?(through_record, chain_reflection, other_class)) ||
           scope_lost_by_reusing_loaded_records?(through_record, source_reflection)
       end
     end
 
     # Whether preloading `chain_reflection` reuses something loaded on `through_record`, one of its through
     # records, in a way Rails doesn't guard against
-    def reuses_loaded_source?(through_record, chain_reflection)
+    def reuses_loaded_source?(through_record, chain_reflection, other_class)
       source_reflection = chain_reflection.source_reflection
-      # Rails with the fix still reuses what's loaded further down a nested through association
-      return false if RAILS_REQUERIES_FILTERED_SOURCE &&
+      # Rails with the fix still reuses what's loaded further down a nested through association, and source
+      # records of another class
+      return false if RAILS_REQUERIES_FILTERED_SOURCE && !other_class &&
                       !chain_reflection.through_reflection.through_reflection? &&
                       !source_reflection.through_reflection?
 
