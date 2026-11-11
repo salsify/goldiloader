@@ -144,6 +144,32 @@ Goldiloader.enabled = true
 Note `Goldiloader.enabled=`, `Goldiloader.enabled`, and `Goldiloader.disabled` are thread local to ensure
 proper thread isolation in multi-threaded servers like Puma.
 
+### Suggestion Mode
+
+Goldiloader can log the associations it would eager load and leave Active Record to load them one record at a time,
+e.g. to find the N+1 queries of an application before relying on automatic eager loading, or to spot an association
+that is better loaded explicitly:
+
+```ruby
+# config/initializers/goldiloader.rb
+Goldiloader.suggestion_mode = true
+```
+
+An association is logged once, when a second record loads it, among the records a query loads and the records they
+load lazily in turn: `Blog.all.each { |blog| blog.posts.each(&:author) }` logs `Blog#posts` and `Post#author` once
+each, not `Post#author` once per blog. Suggestions are logged at the `info` level of the Active Record logger, with the
+first application line of the backtrace:
+
+```
+Goldiloader suggests eager loading Blog#posts, called from app/views/blogs/index.html.erb:12:in ...
+```
+
+Suggestion mode turns automatic eager loading off: the N+1 queries Goldiloader was saving come back while it is on.
+`Goldiloader.suggestion_mode` is process-wide like `Goldiloader.globally_enabled`, not thread local like
+`Goldiloader.enabled`. Goldiloader must be enabled for suggestions to be logged. [Custom preloads](#custom-preloads) still run once for the
+records a query loads, but once per owner for records loaded lazily: with `blog.posts` loaded blog by blog, a
+`goldiload` block on posts runs once per blog.
+
 ### Association Options
 
 Goldiloader supports a few options on ActiveRecord associations to customize its behavior.

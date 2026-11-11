@@ -153,6 +153,8 @@ module Goldiloader
         target
       elsif !auto_include?
         yield
+      elsif Goldiloader.suggestion_mode
+        load_with_suggestion { yield }
       elsif owner.auto_include_context.size == 1
         # Bypassing the preloader for a single model reduces object allocations by ~5% in benchmarks.
         # The loaded models need no registering here: as of
@@ -163,6 +165,27 @@ module Goldiloader
         Goldiloader::AssociationLoader.load(owner, reflection.name)
         target
       end
+    end
+
+    def load_with_suggestion
+      auto_include_context = owner.auto_include_context
+      # Records Goldiloader would have eager loaded: loaded together, or lazily loaded from records loaded together
+      batched = auto_include_context.size > 1 || auto_include_context.batched?
+      # Like the preloader Goldiloader would use, don't raise on strict loading for them
+      result = batched ? skip_strict_loading { yield } : yield
+
+      suggestion_tracker = auto_include_context.suggestion_tracker
+      # A polymorphic belongs_to is eager loaded with one query per target class
+      key = [reflection.active_record, reflection.name]
+      key << klass if reflection.polymorphic?
+      Goldiloader::AssociationLoader.suggest(reflection) if batched && suggestion_tracker.second_owner?(key, owner)
+      # find_target(async: true) returns a promise rather than records
+      return result unless result.is_a?(Array) || result.is_a?(::ActiveRecord::Base)
+
+      nested_context = Goldiloader::AutoIncludeContext.new.register_models(result)
+      nested_context.suggestion_tracker = suggestion_tracker.nested_tracker(key)
+      nested_context.batched = batched
+      result
     end
   end
   ::ActiveRecord::Associations::Association.include(::Goldiloader::AssociationPatch)

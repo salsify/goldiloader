@@ -12,6 +12,16 @@ module Goldiloader
       eager_load(models, association_name)
     end
 
+    def suggest(reflection)
+      logger = ::ActiveRecord::Base.logger
+      return unless logger&.info?
+
+      message = +"Goldiloader suggests eager loading #{reflection.active_record.name}##{reflection.name}"
+      location = ::ActiveRecord::LogSubscriber.backtrace_cleaner.clean(caller(1).lazy).first
+      message << ", called from #{location}" if location
+      logger.info(message)
+    end
+
     private
 
     def eager_load(models, association_name)

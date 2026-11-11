@@ -63,6 +63,7 @@ describe Goldiloader do
     # Always reset enablement status to a known-good state
     Goldiloader.globally_enabled = true
     Goldiloader.enabled = nil
+    Goldiloader.suggestion_mode = false
   end
 
   it "auto eager loads has_many associations" do
@@ -1254,6 +1255,196 @@ describe Goldiloader do
       end
       expect(Goldiloader.enabled?).to be false
       expect(Thread.current[:goldiloader_enabled]).to eq nil
+    end
+  end
+
+  describe "#suggestion_mode" do
+    let(:log) { StringIO.new }
+
+    let(:application_backtrace_cleaner) do
+      ActiveSupport::BacktraceCleaner.new.tap do |cleaner|
+        cleaner.add_silencer { |line| !line.include?('/spec/') }
+      end
+    end
+
+    around do |example|
+      logger = ActiveRecord::Base.logger
+      backtrace_cleaner = ActiveRecord::LogSubscriber.backtrace_cleaner
+      ActiveRecord::Base.logger = Logger.new(log)
+      ActiveRecord::LogSubscriber.backtrace_cleaner = application_backtrace_cleaner
+      Goldiloader.suggestion_mode = true
+      example.run
+    ensure
+      ActiveRecord::Base.logger = logger
+      ActiveRecord::LogSubscriber.backtrace_cleaner = backtrace_cleaner
+    end
+
+    it "logs the association once per set of records instead of eager loading it" do
+      blogs = Blog.order(:name).to_a
+
+      expect do
+        expect(blogs.map { |blog| blog.posts.map(&:title) }).to eq [
+          ['blog1-post1', 'blog1-post2'],
+          ['blog2-post1', 'blog2-post2']
+        ]
+      end.to execute_queries(Post => 2)
+
+      expect(suggestions).to eq ['Blog#posts']
+      expect(log.string).to include("Blog#posts, called from #{__FILE__}")
+    end
+
+    it "logs nested associations once across the records of every owner" do
+      Blog.order(:name).each do |blog|
+        blog.posts.each(&:author)
+      end
+
+      expect(suggestions).to match_array ['Blog#posts', 'Post#author']
+    end
+
+    it "logs associations of records loaded through a singular association" do
+      Post.order(:title).each do |post|
+        post.author.address
+      end
+
+      expect(suggestions).to eq ['Post#author', 'User#address']
+    end
+
+    it "doesn't log an association loaded again by the same record" do
+      blog = Blog.find(blog1.id)
+      blog.posts.to_a
+      blog.posts.reload.to_a
+
+      expect(suggestions).to be_empty
+    end
+
+    it "keeps custom preloads of the records loaded lazily" do
+      expect(Post.order(:title).map { |post| post.blog.posts_count }).to eq [2, 2, 2, 2]
+    end
+
+    it "still batches custom preloads of the records loaded together" do
+      blogs = Blog.order(:name).to_a
+
+      expect do
+        expect(blogs.map(&:posts_count)).to eq [2, 2]
+      end.to execute_queries(Post => 1)
+    end
+
+    it "keeps records dumpable with Marshal" do
+      marshalling_format_version = ActiveRecord.marshalling_format_version
+      # The 6.1 format dumps every instance variable, the auto include context included. Rails 8.2 removes it.
+      ActiveRecord.marshalling_format_version = 6.1 if ActiveRecord.gem_version < Gem::Version.new('8.2.a')
+      blogs = Blog.order(:name).to_a
+      blogs.each { |blog| blog.posts.to_a }
+
+      expect(Marshal.load(Marshal.dump(blogs.first)).name).to eq 'blog1'
+    ensure
+      ActiveRecord.marshalling_format_version = marshalling_format_version
+    end
+
+    it "doesn't log associations of a single record" do
+      Blog.first.posts.to_a
+
+      expect(suggestions).to be_empty
+    end
+
+    it "doesn't log associations of the records a single record loads in turn" do
+      post = Post.find_by!(title: 'blog1-post1')
+      post.author.address
+      post.update!(author: author2)
+      post.reload_author.address
+
+      expect(suggestions).to be_empty
+    end
+
+    it "doesn't log associations of polymorphic records of different classes" do
+      tags = Tag.where(id: [parent_tag1.id, child_tag1.id]).order(:name).to_a
+      tags.each { |tag| tag.owner.tags.to_a }
+
+      expect(suggestions).to be_empty
+    end
+
+    it "logs a polymorphic belongs_to loaded by records of the same target class" do
+      tags = Tag.where(id: [parent_tag1.id, child_tag1.id, child_tag3.id]).order(:name).to_a
+      tags.each { |tag| tag.owner.tags.to_a }
+
+      expect(suggestions).to eq ['Tag#owner', 'User#tags']
+    end
+
+    it "logs a polymorphic belongs_to once for all its target classes" do
+      Tag.order(:name).each(&:owner)
+
+      expect(suggestions).to eq ['Tag#owner']
+    end
+
+    it "logs associations of records loaded without their id" do
+      Post.select(:author_id).order(:title).each(&:author)
+      CompositeKeyPost.select(:author_id).order(:title).each(&:author)
+
+      expect(suggestions).to eq ['Post#author', 'CompositeKeyPost#author']
+    end
+
+    it "logs associations of records loaded with part of their composite key" do
+      CompositeKeyPost.where(blog_id: blog1.id).select(:blog_id, :author_id).order(:title).each(&:author)
+
+      expect(suggestions).to eq ['CompositeKeyPost#author']
+    end
+
+    it "doesn't log associations of records reloaded by the same owner" do
+      blog = Blog.find(blog1.id)
+      blog.posts.to_a.first.author
+      blog.posts.reload.to_a.first.author
+
+      expect(suggestions).to be_empty
+    end
+
+    it "doesn't log an association whose load raises" do
+      blogs = Blog.order(:name).to_a
+      blogs.first.posts.to_a
+      allow(blogs.last.association(:posts)).to receive(:skip_strict_loading).and_raise(ActiveRecord::StatementInvalid)
+
+      expect { blogs.last.posts.to_a }.to raise_error(ActiveRecord::StatementInvalid)
+      expect(suggestions).to be_empty
+    end
+
+    it "doesn't raise on strict loading records loaded together" do
+      blogs = Blog.strict_loading.order(:name).to_a
+
+      expect(blogs.map { |blog| blog.posts.map(&:title) }).to eq [
+        ['blog1-post1', 'blog1-post2'],
+        ['blog2-post1', 'blog2-post2']
+      ]
+      expect(suggestions).to eq ['Blog#posts']
+    end
+
+    it "doesn't raise on strict loading records loaded lazily from records loaded together" do
+      Blog.create!(name: 'blog3').posts.create!(title: 'blog3-post1', author: author1)
+      Blog.create!(name: 'blog4').posts.create!(title: 'blog4-post1', author: author2)
+      blogs = Blog.where(name: ['blog3', 'blog4']).order(:name).to_a
+      blogs.each { |blog| blog.strict_loading!(true, mode: :n_plus_one_only) }
+
+      expect(blogs.map { |blog| blog.posts.map { |post| post.author.name } }).to eq [['author1'], ['author2']]
+    end
+
+    it "doesn't raise on a strict loading association of records loaded lazily from records loaded together" do
+      expect(Post.order(:title).map { |post| post.author.strict_address.city }).to eq [
+        'author1-city', 'author2-city', 'author3-city', 'author1-city'
+      ]
+    end
+
+    it "still raises on strict loading a single record" do
+      expect { Blog.strict_loading.find(blog1.id).posts.to_a }.to raise_error(ActiveRecord::StrictLoadingViolationError)
+    end
+
+    if ActiveRecord::VERSION::MAJOR >= 8
+      it "returns the promise of an async load" do
+        post = Post.order(:title).to_a.first
+
+        expect(post.association(:blog).send(:find_target, async: true).value).to eq blog1
+      end
+    end
+
+    def suggestions
+      log.string.scan(/Goldiloader suggests eager loading ([^,\n]+)/).flatten
     end
   end
 

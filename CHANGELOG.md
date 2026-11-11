@@ -9,6 +9,8 @@
   `auto_include: false` option to opt out.
   **Thanks [czj](https://github.com/czj)**
 - Optimize custom preloads.
+- Add `Goldiloader.suggestion_mode` to log the associations Goldiloader would eager load and leave them lazily loaded,
+  to find N+1 queries in production without relying on automatic eager loading. **Thanks [czj](https://github.com/czj)**
 
 ## 6.0.1
 - Add Ruby 4.0 testing.
