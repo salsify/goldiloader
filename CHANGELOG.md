@@ -10,7 +10,9 @@
   **Thanks [czj](https://github.com/czj)**
 - Optimize custom preloads.
 - Fix [issue 166](https://github.com/salsify/goldiloader/issues/166) - Don't auto eager load scoped through associations
-  whose source records are already loaded, since Rails then drops their scope. **Thanks [czj](https://github.com/czj)**
+  whose source records are already loaded, since Rails then drops their scope. Reading an unscoped sibling first now
+  runs one query per model for the scoped association, except for single level through associations on Rails versions
+  that fix it. **Thanks [czj](https://github.com/czj)**
 
 ## 6.0.1
 - Add Ruby 4.0 testing.
