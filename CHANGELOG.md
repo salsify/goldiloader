@@ -9,10 +9,8 @@
   `auto_include: false` option to opt out.
   **Thanks [czj](https://github.com/czj)**
 - Optimize custom preloads.
-- Fix [issue 166](https://github.com/salsify/goldiloader/issues/166) - Stop auto eager loading through associations
-  whose scope has anything other than `distinct` when the records they go through already have their source records
-  loaded e.g. by an unscoped sibling, since Rails preloads them from those records and drops their scope.
-  **Thanks [czj](https://github.com/czj)**
+- Fix [issue 166](https://github.com/salsify/goldiloader/issues/166) - Don't auto eager load scoped through associations
+  whose source records are already loaded, since Rails then drops their scope. **Thanks [czj](https://github.com/czj)**
 
 ## 6.0.1
 - Add Ruby 4.0 testing.
