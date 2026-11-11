@@ -1133,7 +1133,7 @@ describe Goldiloader do
     end
   end
 
-  describe ".register_models" do
+  describe ".restore_auto_include" do
     around do |example|
       marshalling_format_version = ActiveRecord.marshalling_format_version
       ActiveRecord.marshalling_format_version = 7.1
@@ -1143,7 +1143,7 @@ describe Goldiloader do
     end
 
     it "auto eager loads associations of models read back from a cache" do
-      blogs = Goldiloader.register_models(read_back_from_cache(Blog.order(:name).to_a))
+      blogs = Goldiloader.restore_auto_include(read_back_from_cache(Blog.order(:name).to_a))
 
       expect do
         blogs.first.posts.to_a
@@ -1157,7 +1157,7 @@ describe Goldiloader do
     it "registers the models of associations loaded before caching" do
       blogs = Blog.order(:name).to_a
       blogs.first.posts.to_a
-      blogs = Goldiloader.register_models(read_back_from_cache(blogs))
+      blogs = Goldiloader.restore_auto_include(read_back_from_cache(blogs))
       posts = blogs.flat_map(&:posts)
 
       expect do
@@ -1169,26 +1169,61 @@ describe Goldiloader do
       end.to execute_queries(User => 1)
     end
 
+    it "gives models the contexts of a regular load" do
+      blogs = Blog.order(:name).to_a
+      blogs.each do |blog|
+        blog.posts.each { |post| post.tags.each(&:owner) }
+        blog.read_only_posts.each(&:author)
+        blog.posts_without_auto_include.each { |post| post.tags.each(&:owner) }
+      end
+      expected_contexts = auto_include_contexts(blogs)
+      blogs = Goldiloader.restore_auto_include(read_back_from_cache(blogs))
+
+      expect(auto_include_contexts(blogs)).to eq(expected_contexts)
+    end
+
+    it "keeps the contexts of models that weren't read back from a cache" do
+      blogs = Blog.order(:name).includes(:posts).to_a
+      blog_context = blogs.first.auto_include_context
+      post_context = blogs.first.posts.first.auto_include_context
+
+      expect(Goldiloader.restore_auto_include(blogs)).to equal(blogs)
+      expect(blogs.first.auto_include_context).to equal(blog_context)
+      expect(blogs.first.posts.first.auto_include_context).to equal(post_context)
+    end
+
     it "registers models loaded back through an inverse association once" do
       blogs = Blog.order(:name).to_a
       blogs.each { |blog| blog.posts_with_inverse_of.to_a }
-      blogs = Goldiloader.register_models(read_back_from_cache(blogs))
+      blogs = Goldiloader.restore_auto_include(read_back_from_cache(blogs))
 
       expect(blogs.first.auto_include_context.models).to eq(blogs)
     end
 
     it "registers models of unrelated classes separately" do
-      models = Goldiloader.register_models(read_back_from_cache(Blog.order(:name).to_a + User.order(:name).to_a))
+      models = Goldiloader.restore_auto_include(read_back_from_cache(Blog.order(:name).to_a + User.order(:name).to_a))
       blogs, authors = models.partition { |model| model.is_a?(Blog) }
 
       expect(blogs.first.auto_include_context.models).to eq(blogs)
       expect(authors.first.auto_include_context.models).to eq(authors)
     end
 
+    it "registers models of an STI hierarchy and their loaded associations together" do
+      author2.update!(type: 'Admin')
+      authors = User.order(:name).to_a
+      authors.each { |author| author.posts.to_a }
+      authors = Goldiloader.restore_auto_include(read_back_from_cache(authors))
+      posts = authors.flat_map(&:posts)
+
+      expect(authors.map(&:class)).to eq([User, Admin, User])
+      expect(authors.first.auto_include_context.models).to eq(authors)
+      expect(posts.first.auto_include_context.models).to eq(posts)
+    end
+
     it "registers the loaded associations of a single model" do
       blog = Blog.order(:name).first
       blog.posts.to_a
-      blog = Goldiloader.register_models(read_back_from_cache(blog))
+      blog = Goldiloader.restore_auto_include(read_back_from_cache(blog))
 
       expect do
         blog.posts.first.author
@@ -1199,54 +1234,81 @@ describe Goldiloader do
       end.to execute_queries(User => 1)
     end
 
-    it "skips nil models" do
-      blogs = Goldiloader.register_models(read_back_from_cache([Blog.order(:name).first, nil, Blog.order(:name).last]))
+    it "returns the models in their order, nil included" do
+      blogs = Goldiloader.restore_auto_include(
+        read_back_from_cache([Blog.find(blog2.id), nil, Blog.find(blog1.id)])
+      )
 
+      expect(blogs).to eq([blog2, nil, blog1])
       expect(blogs.first.auto_include_context.models).to eq(blogs.compact)
     end
 
     it "accepts nil" do
-      expect(Goldiloader.register_models(nil)).to be_nil
+      expect(Goldiloader.restore_auto_include(nil)).to be_nil
     end
 
     it "accepts a relation" do
       blogs = Blog.order(:name)
 
-      expect(Goldiloader.register_models(blogs)).to equal(blogs)
+      expect(Goldiloader.restore_auto_include(blogs)).to equal(blogs)
       expect(blogs.first.auto_include_context.models).to eq(blogs.to_a)
     end
 
-    it "registers loaded models of the same class reached through different associations together" do
-      author = User.find(author1.id)
-      author.posts.to_a
+    it "registers models of the same class loaded through different associations separately" do
       blog = Blog.find(blog2.id)
       blog.posts.to_a
-      author, blog = Goldiloader.register_models(read_back_from_cache([author, blog]))
+      blog.read_only_posts.to_a
+      blog = Goldiloader.restore_auto_include(read_back_from_cache(blog))
 
-      expect(blog.posts.first.auto_include_context.models).to eq(author.posts.to_a + blog.posts.to_a)
+      expect(blog.posts.first.auto_include_context.models).to eq(blog.posts.to_a)
+      expect(blog.read_only_posts.first.auto_include_context.models).to eq(blog.read_only_posts.to_a)
     end
 
     it "registers loaded polymorphic targets separately by class" do
       tags = Tag.order(:name).to_a
       tags.first.owner
-      tags = Goldiloader.register_models(read_back_from_cache(tags))
+      tags = Goldiloader.restore_auto_include(read_back_from_cache(tags))
       users, groups = tags.map(&:owner).uniq(&:object_id).partition { |owner| owner.is_a?(User) }
 
       expect(users.first.auto_include_context.models).to eq(users)
       expect(groups.first.auto_include_context.models).to eq(groups)
     end
 
-    it "doesn't register loaded targets of associations with auto_include(false)" do
+    it "doesn't register loaded targets of associations with auto_include(false) together" do
       blogs = Blog.order(:name).to_a
       blogs.each { |blog| blog.posts_without_auto_include.to_a }
-      blogs = Goldiloader.register_models(read_back_from_cache(blogs))
+      blogs = Goldiloader.restore_auto_include(read_back_from_cache(blogs))
       post = blogs.first.posts_without_auto_include.first
 
       expect(post.auto_include_context.models).to eq([post])
     end
 
+    it "registers the models below associations with auto_include(false)" do
+      blogs = Blog.order(:name).to_a
+      blogs.each { |blog| blog.posts_without_auto_include.each { |post| post.tags.to_a } }
+      blogs = Goldiloader.restore_auto_include(read_back_from_cache(blogs))
+      posts = blogs.flat_map(&:posts_without_auto_include)
+
+      expect do
+        posts.each { |post| post.tags.each(&:parent) }
+      end.to execute_queries(Tag => posts.size)
+    end
+
     def read_back_from_cache(models)
       Marshal.load(Marshal.dump(models))
+    end
+
+    # The context of each model in the loaded graph, as class and id pairs, in traversal order
+    def auto_include_contexts(models, visited = Set.new.compare_by_identity)
+      Array.wrap(models).flat_map do |model|
+        next [] unless visited.add?(model)
+
+        context = model.auto_include_context.models.map { |peer| [peer.class.name, peer.id] }
+        loaded_targets = model.class.reflect_on_all_associations.filter_map do |reflection|
+          model.association(reflection.name).target if model.association_cached?(reflection.name)
+        end
+        [[model.class.name, model.id, context]] + auto_include_contexts(loaded_targets.flatten.compact, visited)
+      end
     end
   end
 

@@ -44,16 +44,22 @@ module Goldiloader
       self.enabled = old_enabled
     end
 
-    def register_models(models)
-      models_to_register = models.is_a?(ActiveRecord::Base) ? [models] : models.to_a.compact
-      registered_models = Set.new.compare_by_identity
+    # Gives models that lost their auto include context, typically when read back from a cache, and the
+    # models of their loaded associations the contexts a regular load would have given them. Models that
+    # still have one, like those just loaded on a cache miss, keep it.
+    def restore_auto_include(models)
+      top_level_models = models.is_a?(ActiveRecord::Base) ? [models] : models.to_a.compact
+      visited_models = Set.new.compare_by_identity
+      # Like a query result, each group shares a context
+      groups = top_level_models.group_by { |model| model.class.base_class }.values
 
-      until models_to_register.empty?
-        models_to_register = models_to_register.select { |model| registered_models.add?(model) }
-        models_to_register.group_by { |model| model.class.base_class }.each_value do |models_of_class|
-          Goldiloader::AutoIncludeContext.register_models(models_of_class)
+      until groups.empty?
+        groups = groups.flat_map do |group|
+          group = group.select { |model| visited_models.add?(model) }
+          lost_context = group.reject { |model| model.instance_variable_get(:@auto_include_context) }
+          Goldiloader::AutoIncludeContext.register_models(lost_context) unless lost_context.empty?
+          loaded_target_groups(group)
         end
-        models_to_register = loaded_auto_include_targets(models_to_register)
       end
 
       models
@@ -61,21 +67,42 @@ module Goldiloader
 
     private
 
-    def loaded_auto_include_targets(models)
-      models.group_by(&:class).flat_map do |model_class, models_of_class|
-        model_class.reflect_on_all_associations.flat_map do |reflection|
-          models_of_class.flat_map do |model|
-            next [] unless model.association_cached?(reflection.name)
+    # Groups the loaded targets of models sharing a context the way a regular load would have loaded them:
+    # one query per association that can be eager loaded (one per class for a polymorphic belongs_to),
+    # otherwise one query per model.
+    def loaded_target_groups(models)
+      targets_by_reflection = {}.compare_by_identity
+      lazy_groups = []
 
-            association = model.association(reflection.name)
-            next [] unless association.loaded? && association.klass && reflection.eager_loadable?(association.klass)
+      models.each do |model|
+        model.class.reflect_on_all_associations.each do |reflection|
+          next unless model.association_cached?(reflection.name)
 
-            # Don't use Array.wrap(), see AutoIncludeContext#register_models
-            target = association.target
-            target.is_a?(Array) ? target : [target].compact
+          association = model.association(reflection.name)
+          next unless association.loaded? && association.klass
+
+          # Don't use Array.wrap(), see AutoIncludeContext#register_models
+          target = association.target
+          targets = target.is_a?(Array) ? target : [target].compact
+          next if targets.empty?
+
+          if reflection.eager_loadable?(association.klass)
+            (targets_by_reflection[reflection] ||= []).concat(targets)
+          else
+            lazy_groups.concat(targets.map { |target_model| [target_model] })
           end
         end
       end
+
+      eager_groups = targets_by_reflection.flat_map do |reflection, targets|
+        if reflection.polymorphic?
+          targets.group_by { |target| target.class.base_class }.values
+        else
+          [targets]
+        end
+      end
+
+      eager_groups + lazy_groups
     end
   end
 

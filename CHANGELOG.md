@@ -4,7 +4,7 @@
 - Auto eager load associations of models loaded through `includes` when Rails turns them into a JOIN, with
   `references` or a condition on the included table. **Thanks [czj](https://github.com/czj)**
 - Auto eager load associations of models loaded with `load_async`. **Thanks [czj](https://github.com/czj)**
-- Add `Goldiloader.register_models` to restore automatic eager loading of models read back from a cache.
+- Add `Goldiloader.restore_auto_include` to restore automatic eager loading of models read back from a cache.
   **Thanks [czj](https://github.com/czj)**
 
 ## 6.0.1

@@ -142,16 +142,18 @@ proper thread isolation in multi-threaded servers like Puma.
 Models dumped with `ActiveRecord.marshalling_format_version = 7.1` (the default under `config.load_defaults 7.1`
 and later), or with the `ActiveRecord::MessagePack` cache serializer, no longer know which models they were
 loaded with once read back from a cache, so each association loads one model at a time.
-`Goldiloader.register_models` restores automatic eager loading for them and for the models of their loaded
-associations:
+`Goldiloader.restore_auto_include` restores automatic eager loading for them and for the models of their loaded
+associations, grouped as a regular load would have grouped them:
 
 ```ruby
-blogs = Goldiloader.register_models(Rails.cache.fetch('blogs') { Blog.includes(:posts).to_a })
+blogs = Goldiloader.restore_auto_include(Rails.cache.fetch('blogs') { Blog.includes(:posts).to_a })
 blogs.each { |blog| blog.posts.each { |post| post.author } } # One query for all authors
 ```
 
-It takes a model, an array or a relation, and registers models of unrelated classes separately. Pass a hash's
-`values`, not the hash itself.
+Models that weren't read back from a cache, like those loaded by the block on a cache miss, keep what they were
+loaded with, so the result of `Rails.cache.fetch` can always be passed. Call it before using the models.
+It takes a model, an array or a relation, and keeps models of unrelated classes apart. Pass a hash's `values`,
+not the hash itself.
 
 ### Association Options
 
