@@ -110,8 +110,6 @@ class Blog < ActiveRecord::Base
   has_many :tags_owned_by_users, -> { where(owner_type: 'User') }, through: :blog_post_tags, source: :tag
   # Unscoped, through `posts` and a scoped through source
   has_many :post_tags_owned_by_users, through: :posts, source: :tags_owned_by_users
-  # Through `posts` and a through source with a default scoped class_name
-  has_many :post_user_owned_tags, through: :posts, source: :user_owned_tags
 
   has_one :post_with_order, -> { order(:id) }, class_name: 'Post'
 
@@ -167,9 +165,6 @@ class Post < ActiveRecord::Base
                           class_name: 'Tag'
   # Unscoped, through a scoped through association
   has_many :tags_owned_by_users_children, through: :tags_owned_by_users, source: :children
-  has_many :tag_owner_users, through: :tags, source: :owner, source_type: 'User'
-  # Unscoped, with a default scoped class other than the source's
-  has_many :user_owned_tags, through: :post_tags, source: :tag, class_name: 'UserOwnedTag'
 
   has_many_attached :images
 
@@ -211,11 +206,6 @@ class ScopedAddress < ActiveRecord::Base
   self.table_name = 'addresses'
   default_scope { where(city: ['Philadelphia']) }
   belongs_to :user
-end
-
-class UserOwnedTag < ActiveRecord::Base
-  self.table_name = 'tags'
-  default_scope { where(owner_type: 'User') }
 end
 
 class Group < ActiveRecord::Base

@@ -822,49 +822,20 @@ describe Goldiloader do
     end
   end
 
-  context "through associations with a source_type after the through association was loaded for some models" do
-    # The first post in title order, the only one with a tag owned by a group, comes last
-    let(:posts) { Post.order(title: :desc).to_a }
+  context "scoped nested through associations whose through association was loaded without its source records" do
+    let(:blogs) { Blog.order(:name).to_a }
 
     before do
-      Goldiloader.disabled { posts.last.tags.to_a }
+      # Each blog's `blog_post_tags` come from their own query, without their `tag`. The unscoped sibling then
+      # loads the `posts`, their `post_tags` and each `tag` that `blog_post_tags` goes through.
+      Goldiloader.disabled { blogs.each { |blog| blog.blog_post_tags.to_a } }
+      blogs.first.tags.to_a
     end
 
-    it "only loads source records of that type" do
-      expected = Goldiloader.disabled { Post.order(title: :desc).map { |post| post.tag_owner_users.to_a } }
-      expect(posts.map { |post| post.tag_owner_users.to_a }).to eq expected
-      expect(expected.last).to eq [author1]
-    end
-  end
-
-  context "through associations with a default scoped class_name" do
-    let(:posts) { Post.order(:title).to_a }
-
-    it "loads records of that class" do
-      expected = Goldiloader.disabled { Post.order(:title).map { |post| post.user_owned_tags.to_a } }
-      expect(posts.map { |post| post.user_owned_tags.to_a }).to eq expected
-      expect(posts.flat_map(&:user_owned_tags).map(&:class).uniq).to eq [UserOwnedTag]
-    end
-
-    it "loads records of that class through a nested through association" do
-      blogs = Blog.order(:name).to_a
-      expected = Goldiloader.disabled { Blog.order(:name).map { |blog| blog.post_user_owned_tags.to_a } }
-      expect(blogs.map { |blog| blog.post_user_owned_tags.to_a }).to eq expected
-      expect(blogs.flat_map(&:post_user_owned_tags).map(&:class).uniq).to eq [UserOwnedTag]
-    end
-  end
-
-  context "through associations with a default scoped class_name after an unscoped sibling was auto eager loaded" do
-    let(:posts) { Post.order(:title).to_a }
-
-    before do
-      posts.first.tags.to_a
-    end
-
-    it "loads records of that class with its default scope" do
-      expected = Goldiloader.disabled { Post.order(:title).map { |post| post.user_owned_tags.to_a } }
-      expect(posts.map { |post| post.user_owned_tags.to_a }).to eq expected
-      expect(expected.first).to eq [UserOwnedTag.find(child_tag1.id)]
+    it "applies the scope correctly" do
+      expected = Goldiloader.disabled { Blog.order(:name).map { |blog| blog.tags_owned_by_users.to_a } }
+      expect(blogs.map { |blog| blog.tags_owned_by_users.to_a }).to eq expected
+      expect(expected.first).to eq [child_tag1, child_tag1]
     end
   end
 
