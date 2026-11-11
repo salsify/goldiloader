@@ -87,6 +87,13 @@ Blog.order(:name).auto_include(false)
 
 Note this will not disable automatic eager loading for nested associations.
 
+Like the rest of Rails, `find_by_sql` and `async_find_by_sql` ignore the current scope, so they take an `auto_include`
+option instead. Their models otherwise share one context and stay in memory as long as any of them does:
+
+```ruby
+Blog.find_by_sql(sql, auto_include: false)
+```
+
 Automatic eager loading can be disabled for specific associations by customizing the association's scope:
 
 ```ruby
@@ -240,6 +247,10 @@ Goldiloader detects associations with any of these options and disables automati
 
 It might still be possible to eager load these with Goldiloader by using [custom preloads](#custom-preloads).
 
+### strict_loading
+
+Associations that Goldiloader eager loads never raise `ActiveRecord::StrictLoadingViolationError`, since there is no N+1 left to catch. Rails still raises when a model was loaded on its own, or with automatic eager loading disabled, so a test with a single record can raise where the same code with several records doesn't.
+
 
 ### Eager Loading Limitation Workarounds
 
@@ -356,7 +367,7 @@ end
 
 **Note:** The `goldiload` method will use the `source_location` of the given block as a cache name to distinguish between multiple defined preloads. If this causes an issue for you, you can also pass a cache name explicitly as the first argument to the `goldiload` method.
 
-That explicit cache name also lets a preload depend on the method's arguments: include them in the name so each distinct value gets its own preload. Every distinct cache name keeps its results in memory for as long as the models are loaded, so this works best for arguments with a handful of values.
+That explicit cache name also lets a preload depend on the method's arguments: include them in the name so each distinct value gets its own preload. Every distinct cache name keeps its results in memory for as long as the models are loaded, so this works best for arguments with a handful of values. An explicit cache name is also faster in hot code paths.
 
 ```ruby
 class Blog < ActiveRecord::Base

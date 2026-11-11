@@ -27,11 +27,32 @@ module Goldiloader
     end
 
     def goldiload(cache_name = nil, key: self.class.primary_key, &block)
-      cache_name ||= block.source_location.join(':')
+      cache_name ||= begin
+        # Interpolating builds the same name as Array#join(':') but is faster
+        path, line = block.source_location
+        "#{path}:#{line}"
+      end
       auto_include_context.preloaded(self, cache_name: cache_name, key: key, &block)
     end
   end
   ::ActiveRecord::Base.include(::Goldiloader::BasePatch)
+
+  module QueryingPatch
+    def find_by_sql(sql, binds = [], preparable: nil, allow_retry: false, auto_include: true, &block)
+      models = super(sql, binds, preparable: preparable, allow_retry: allow_retry, &block)
+      Goldiloader::AutoIncludeContext.register_models(models) if auto_include
+      models
+    end
+
+    # Rails 7.2's async_find_by_sql takes no allow_retry: keyword
+    def async_find_by_sql(sql, binds = [], auto_include: true, **options, &block)
+      super(sql, binds, **options, &block).then do |models|
+        Goldiloader::AutoIncludeContext.register_models(models) if auto_include
+        models
+      end
+    end
+  end
+  ::ActiveRecord::Base.singleton_class.prepend(::Goldiloader::QueryingPatch)
 
   module RelationPatch
     def exec_queries
@@ -133,13 +154,11 @@ module Goldiloader
       elsif !auto_include?
         yield
       elsif owner.auto_include_context.size == 1
-        # Bypassing the preloader for a single model reduces object allocations by ~5% in benchmarks
-        result = yield
-        # As of https://github.com/rails/rails/commit/bd3b28f7f181dce53e872daa23dda101498b8fb4
-        # ActiveRecord does not use ActiveRecord::Relation#exec_queries to resolve association
-        # queries
-        Goldiloader::AutoIncludeContext.register_models(result)
-        result
+        # Bypassing the preloader for a single model reduces object allocations by ~5% in benchmarks.
+        # The loaded models need no registering here: as of
+        # https://github.com/rails/rails/commit/bd3b28f7f181dce53e872daa23dda101498b8fb4 association queries
+        # go through find_by_sql (StatementCache#execute), which registers them, rather than Relation#exec_queries
+        yield
       else
         Goldiloader::AssociationLoader.load(owner, reflection.name)
         target
