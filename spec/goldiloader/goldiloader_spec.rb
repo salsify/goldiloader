@@ -1331,7 +1331,8 @@ describe Goldiloader do
 
     it "keeps records dumpable with Marshal" do
       marshalling_format_version = ActiveRecord.marshalling_format_version
-      ActiveRecord.marshalling_format_version = 6.1
+      # The 6.1 format dumps every instance variable, the auto include context included. Rails 8.2 removes it.
+      ActiveRecord.marshalling_format_version = 6.1 if ActiveRecord.gem_version < Gem::Version.new('8.2.a')
       blogs = Blog.order(:name).to_a
       blogs.each { |blog| blog.posts.to_a }
 
@@ -1344,6 +1345,31 @@ describe Goldiloader do
       Blog.first.posts.to_a
 
       expect(suggestions).to be_empty
+    end
+
+    it "doesn't log associations of polymorphic records of different classes" do
+      tags = Tag.where(id: [parent_tag1.id, child_tag1.id]).order(:name).to_a
+      tags.each { |tag| tag.owner.tags.to_a }
+
+      expect(suggestions).to eq ['Tag#owner']
+    end
+
+    it "doesn't raise on strict loading records loaded together" do
+      blogs = Blog.strict_loading.order(:name).to_a
+
+      expect(blogs.map { |blog| blog.posts.map(&:title) }).to eq [
+        ['blog1-post1', 'blog1-post2'],
+        ['blog2-post1', 'blog2-post2']
+      ]
+      expect(suggestions).to eq ['Blog#posts']
+    end
+
+    if ActiveRecord::VERSION::MAJOR >= 8
+      it "returns the promise of an async load" do
+        post = Post.order(:title).to_a.first
+
+        expect(post.association(:blog).send(:find_target, async: true).value).to eq blog1
+      end
     end
 
     def suggestions
