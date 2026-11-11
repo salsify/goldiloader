@@ -239,18 +239,29 @@ module Goldiloader
     private
 
     def eager_loadable?
-      super && (reflection.eager_loadable_from_loaded_source?(klass) || !source_loaded_on_through_records?)
+      super && (reflection.eager_loadable_from_loaded_source?(klass) || !reuses_loaded_source_records?)
     end
 
     # A sibling association might have loaded the records this association would reuse e.g. `tags` loads the
     # `post_tags` and their `tag` that `tags_owned_by_users` goes through too. Through records loaded without
     # their source records are fine: Rails then queries the source records with the association's scope.
-    def source_loaded_on_through_records?
-      through_association = owner.association(through_reflection.name)
-      return false unless through_association.loaded?
+    def reuses_loaded_source_records?
+      loaded_records(owner, reflection).any?
+    end
 
-      Array.wrap(through_association.target).any? do |through_record|
-        through_record.association(source_reflection.name).loaded?
+    # The records Rails reuses instead of querying when preloading `chain_reflection` on `record`. For a through
+    # association that isn't loaded, Rails reuses whatever is loaded at each level of its chain e.g. the loaded
+    # `post_tags` of a blog's loaded `posts` for `has_many :blog_post_tags, through: :posts`.
+    def loaded_records(record, chain_reflection)
+      association = record.association(chain_reflection.name)
+      if association.loaded?
+        Array.wrap(association.target)
+      elsif chain_reflection.through_reflection?
+        loaded_records(record, chain_reflection.through_reflection).flat_map do |through_record|
+          loaded_records(through_record, chain_reflection.source_reflection)
+        end
+      else
+        []
       end
     end
   end

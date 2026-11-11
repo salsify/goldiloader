@@ -103,6 +103,12 @@ class Blog < ActiveRecord::Base
   has_many :authors, through: :posts
   has_many :addresses, through: :authors
 
+  # Nested through associations: `Post#tags` and `blog_post_tags` are through associations themselves
+  has_many :tags, through: :posts
+  has_many :reverse_ordered_tags, -> { order(id: :desc) }, through: :posts, source: :tags
+  has_many :blog_post_tags, through: :posts, source: :post_tags
+  has_many :tags_owned_by_users, -> { where(owner_type: 'User') }, through: :blog_post_tags, source: :tag
+
   has_one :post_with_order, -> { order(:id) }, class_name: 'Post'
 
   def posts_count

@@ -709,6 +709,39 @@ describe Goldiloader do
     end
   end
 
+  context "scoped nested through associations after an unscoped sibling was auto eager loaded" do
+    let(:blogs) { Blog.order(:name).to_a }
+
+    def expected(association_name)
+      Goldiloader.disabled do
+        Blog.order(:name).map { |blog| blog.public_send(association_name).to_a }
+      end
+    end
+
+    before do
+      blogs.first.tags.to_a
+    end
+
+    # The source association is a through association itself e.g. `Post#tags`
+    it "applies the scope correctly when the source is a through association" do
+      expect(blogs.map { |blog| blog.reverse_ordered_tags.to_a }).to eq expected(:reverse_ordered_tags)
+    end
+
+    # The through association is a through association itself that isn't loaded, but the records it goes
+    # through are, along with their source records e.g. `Blog#blog_post_tags` goes through the loaded `posts`
+    # and their loaded `post_tags`, whose `tag` is loaded too.
+    it "applies the scope correctly when the through association is a through association" do
+      expect(blogs.map { |blog| blog.tags_owned_by_users.to_a }).to eq expected(:tags_owned_by_users)
+    end
+
+    it "doesn't auto eager load the associations" do
+      blogs.first.reverse_ordered_tags.to_a
+      blogs.first.tags_owned_by_users.to_a
+      expect(blogs.second.association(:reverse_ordered_tags)).not_to be_loaded
+      expect(blogs.second.association(:tags_owned_by_users)).not_to be_loaded
+    end
+  end
+
   context "polymorphic associations with nil" do
     let!(:user) { User.create! }
     let!(:group) { Group.create! }
