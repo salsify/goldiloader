@@ -9,10 +9,11 @@
   `auto_include: false` option to opt out.
   **Thanks [czj](https://github.com/czj)**
 - Optimize custom preloads.
-- Fix [issue 166](https://github.com/salsify/goldiloader/issues/166) - Don't auto eager load scoped through associations
-  whose source records are already loaded, since Rails then drops their scope. Reading an unscoped sibling first now
-  runs one query per model for the scoped association, except for single level through associations on Rails versions
-  that fix it. **Thanks [czj](https://github.com/czj)**
+- Fix [issue 166](https://github.com/salsify/goldiloader/issues/166) - Don't auto eager load through associations
+  whose source records are already loaded when Rails would then drop part of the association: a scope, a
+  `source_type`, a `class_name` other than the source's, or the scope of a nested through association. Reading an
+  unscoped sibling first now runs one query per model for such an association, except for single level through
+  associations on Rails versions that fix it. **Thanks [czj](https://github.com/czj)**
 
 ## 6.0.1
 - Add Ruby 4.0 testing.
