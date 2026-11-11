@@ -601,7 +601,7 @@ describe Goldiloader do
     let(:tags_owned_by_users) { [[child_tag1], [child_tag1], [child_tag1], [child_tag3]] }
     # Rails versions with https://github.com/rails/rails/pull/59599 query filtered source records again
     let(:rails_requeries_filtered_source) do
-      ActiveRecord::Associations::Preloader::ThroughAssociation.private_method_defined?(:source_scope_filters_source?)
+      ActiveRecord::Associations::Preloader::ThroughAssociation.const_defined?(:SOURCE_REUSING_SCOPE_VALUES, false)
     end
 
     context "when the through association isn't loaded" do
@@ -667,6 +667,19 @@ describe Goldiloader do
         posts.first.tags_owned_by_users.to_a
         posts.drop(1).each do |post|
           expect(post.association(:tags_owned_by_users)).to be_loaded
+        end
+      end
+    end
+
+    context "when the scope only preloads and an unscoped sibling was auto eager loaded" do
+      before do
+        posts.first.tags.to_a
+      end
+
+      it "auto eager loads the association" do
+        posts.first.tags_with_owner.to_a
+        posts.drop(1).each do |post|
+          expect(post.association(:tags_with_owner)).to be_loaded
         end
       end
     end
@@ -821,6 +834,16 @@ describe Goldiloader do
       expected = Goldiloader.disabled { Post.order(title: :desc).map { |post| post.tag_owner_users.to_a } }
       expect(posts.map { |post| post.tag_owner_users.to_a }).to eq expected
       expect(expected.last).to eq [author1]
+    end
+  end
+
+  context "through associations with a default scoped class_name" do
+    let(:posts) { Post.order(:title).to_a }
+
+    it "loads records of that class" do
+      expected = Goldiloader.disabled { Post.order(:title).map { |post| post.user_owned_tags.to_a } }
+      expect(posts.map { |post| post.user_owned_tags.to_a }).to eq expected
+      expect(posts.flat_map(&:user_owned_tags).map(&:class).uniq).to eq [UserOwnedTag]
     end
   end
 

@@ -124,7 +124,9 @@ module Goldiloader
 
   module ThroughReflectionPatch
     # Scope values that Rails keeps (`distinct`) or whose loss doesn't change the records the association holds
-    SCOPE_VALUES_SAFE_TO_DROP = [:distinct, :auto_include, :annotate, :extending, :preload].freeze
+    SCOPE_VALUES_SAFE_TO_DROP = [
+      :distinct, :auto_include, :annotate, :extending, :preload, :includes, :references, :optimizer_hints, :create_with
+    ].freeze
     private_constant :SCOPE_VALUES_SAFE_TO_DROP
 
     # Whether reusing loaded records loses part of this association's own scope or its `source_type`, as Rails
@@ -254,11 +256,18 @@ module Goldiloader
     # Rails versions with https://github.com/rails/rails/pull/59599 query the source records of a single level
     # through association instead of reusing loaded ones when its scope or `source_type` filters them
     RAILS_REQUERIES_FILTERED_SOURCE =
-      ::ActiveRecord::Associations::Preloader::ThroughAssociation.private_method_defined?(:source_scope_filters_source?)
+      ::ActiveRecord::Associations::Preloader::ThroughAssociation.const_defined?(:SOURCE_REUSING_SCOPE_VALUES, false)
     private_constant :RAILS_REQUERIES_FILTERED_SOURCE
 
     def eager_loadable?
-      super && !scope_lost_by_reusing_loaded_records?(owner, reflection, klass)
+      super && !(reflection.through_reflection? && other_class_than_source?(reflection, klass)) &&
+        !scope_lost_by_reusing_loaded_records?(owner, reflection, klass)
+    end
+
+    # Rails preloads a through association with a `class_name` other than its source's as the source's class
+    def other_class_than_source?(chain_reflection, target_klass)
+      source_reflection = chain_reflection.source_reflection
+      !source_reflection.polymorphic? && target_klass != source_reflection.klass
     end
 
     # A sibling association might have loaded the records this association would reuse e.g. `tags` loads the
@@ -276,7 +285,7 @@ module Goldiloader
 
       target_klass ||= chain_reflection.klass
       # With a `class_name` other than the source's class, the target class (and its default scope) is lost too
-      other_class = !source_reflection.polymorphic? && target_klass != source_reflection.klass
+      other_class = other_class_than_source?(chain_reflection, target_klass)
       scope_lost = other_class || chain_reflection.scope_lost_by_reusing_loaded_records?(target_klass)
       return false unless scope_lost || source_reflection.through_reflection?
 

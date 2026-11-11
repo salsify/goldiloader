@@ -155,6 +155,7 @@ class Post < ActiveRecord::Base
 
   has_many :unique_tags, -> { distinct }, through: :post_tags, source: :tag, class_name: 'Tag'
   has_many :tags_owned_by_users, -> { where(owner_type: 'User') }, through: :post_tags, source: :tag
+  has_many :tags_with_owner, -> { includes(:owner) }, through: :post_tags, source: :tag
   has_many :author_blog1_posts, -> { where(title: ['blog1-post1', 'blog1-post2']) }, through: :author,
                                                                                     source: :posts
 
