@@ -59,6 +59,12 @@ module Goldiloader
 
     alias_method :register_model, :register_models
 
+    attr_writer :suggestion_tracker
+
+    def suggestion_tracker
+      @suggestion_tracker ||= SuggestionTracker.new
+    end
+
     prepend Goldiloader::CustomPreloads
   end
 end

@@ -15,6 +15,8 @@
 - Fix [issue 166](https://github.com/salsify/goldiloader/issues/166) - On Rails before 8.2, don't auto eager load
   a scoped through association whose records are already loaded, since Rails would then drop its scope. Reading an
   unscoped sibling first now runs one query per model for such an association. **Thanks [czj](https://github.com/czj)**
+- Add `Goldiloader.suggestion_mode` to log the associations Goldiloader would eager load and leave them lazily loaded,
+  to find N+1 queries in production without relying on automatic eager loading. **Thanks [czj](https://github.com/czj)**
 
 ## 6.0.1
 - Add Ruby 4.0 testing.

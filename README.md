@@ -173,6 +173,26 @@ end
 Goldiloader.reset_auto_include_context(blogs) if cache_hit
 ```
 
+### Suggestion Mode
+
+Goldiloader can log the associations it would eager load and leave Active Record to load them one record at a time,
+e.g. to find the N+1 queries of an application before relying on automatic eager loading, or to spot an association
+that is better loaded explicitly:
+
+```ruby
+# config/initializers/goldiloader.rb
+Goldiloader.suggestion_mode = true
+```
+
+An association is logged once per set of records loaded together, when it is loaded for the second of them, at the
+`info` level of the Active Record logger and with the first application line of the backtrace:
+
+```
+Goldiloader suggests eager loading Blog#posts, called from app/views/blogs/index.html.erb:12:in ...
+```
+
+Goldiloader must be enabled for suggestions to be logged. [Custom preloads](#custom-preloads) are still eager loaded.
+
 ### Association Options
 
 Goldiloader supports a few options on ActiveRecord associations to customize its behavior.
