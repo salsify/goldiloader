@@ -1305,12 +1305,74 @@ describe Goldiloader do
       expect(blogs.first.posts.first.auto_include_context.models).to eq(blogs.flat_map(&:posts))
     end
 
-    it "finds models in nested arrays and hashes and skips anything else" do
-      cached = read_back_from_cache([[Blog.find(blog1.id)], { blog: Blog.find(blog2.id), count: 2 }, 'blogs'])
-      blogs = [cached.dig(0, 0), cached.dig(1, :blog)]
+    it "registers the models of each array or hash together and skips anything else" do
+      blogs = [Blog.find(blog1.id), Blog.find(blog2.id)]
+      cached = read_back_from_cache([*blogs, [User.find(author1.id)], { author: User.find(author2.id), count: 2 }, 'x'])
 
       expect(Goldiloader.restore_auto_include(cached)).to equal(cached)
-      expect(blogs.first.auto_include_context.models).to eq(blogs)
+      expect(cached.first.auto_include_context.models).to eq(cached.first(2))
+      expect(cached.dig(2, 0).auto_include_context.models).to eq([cached.dig(2, 0)])
+      expect(cached.dig(3, :author).auto_include_context.models).to eq([cached.dig(3, :author)])
+    end
+
+    it "registers separately cached lists of the same class separately" do
+      cached = read_back_from_cache(featured: Post.order(:id).first(2), archive: Post.order(:id).last(2))
+      Goldiloader.restore_auto_include(cached)
+
+      expect(cached[:featured].first.auto_include_context.models).to eq(cached[:featured])
+      expect(cached[:archive].first.auto_include_context.models).to eq(cached[:archive])
+    end
+
+    it "doesn't load a relation" do
+      blogs = Blog.order(:name)
+
+      expect do
+        expect(Goldiloader.restore_auto_include(blogs)).to equal(blogs)
+      end.to execute_queries({})
+      expect(blogs).not_to be_loaded
+    end
+
+    it "doesn't register new records" do
+      blog = Blog.new(name: 'new')
+      2.times { |index| blog.posts.build(title: "new-#{index}") }
+      blogs = Goldiloader.restore_auto_include(read_back_from_cache([blog, Blog.new]))
+
+      expect(blogs.first.auto_include_context.models).to eq([blogs.first])
+      expect(blogs.first.posts.first.auto_include_context.models).to eq([blogs.first.posts.first])
+    end
+
+    it "skips a polymorphic belongs_to with no target and a type that no longer exists" do
+      post = Post.find(blog1.posts.first.id)
+      post.update_columns(owner_type: 'User', owner_id: nil)
+      post.reload.owner
+      # As if the owner's class had been removed since the post was cached
+      post.owner_type = 'RemovedOwner'
+      posts = Goldiloader.restore_auto_include(read_back_from_cache([post]))
+
+      expect(posts.first.auto_include_context.models).to eq(posts)
+    end
+
+    it "doesn't flag copies of models read back from a cache, nor reloaded models" do
+      blog = read_back_from_cache(Blog.find(blog1.id))
+
+      expect(blog.dup).not_to be_auto_include_context_lost
+      expect(blog.clone).not_to be_auto_include_context_lost
+      expect(blog.reload).not_to be_auto_include_context_lost
+    end
+
+    if Gem::Version.new(ActiveRecord::VERSION::STRING).release < Gem::Version.new('8.2')
+      it "leaves models dumped in the 6.1 format, which keeps their context, alone" do
+        ActiveRecord.marshalling_format_version = 6.1
+        blogs = Blog.order(:name).to_a
+        blogs.each { |blog| blog.posts.to_a }
+        blogs = read_back_from_cache(blogs)
+        context = blogs.first.auto_include_context
+
+        Goldiloader.restore_auto_include(blogs)
+
+        expect(blogs.first.auto_include_context).to equal(context)
+        expect(context.models).to eq(blogs)
+      end
     end
 
     it "keeps the contexts of models that weren't read back from a cache" do
@@ -1378,8 +1440,8 @@ describe Goldiloader do
       expect(Goldiloader.restore_auto_include(nil)).to be_nil
     end
 
-    it "accepts a relation" do
-      blogs = Blog.order(:name)
+    it "accepts a loaded relation" do
+      blogs = Blog.order(:name).load
 
       expect(Goldiloader.restore_auto_include(blogs)).to equal(blogs)
       expect(blogs.first.auto_include_context.models).to eq(blogs.to_a)

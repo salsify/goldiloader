@@ -15,6 +15,7 @@ module Goldiloader
     def initialize_copy(other)
       super
       @auto_include_context = nil
+      @auto_include_context_lost = false if @auto_include_context_lost
     end
 
     # Whether the model was read back from a cache and Goldiloader.restore_auto_include hasn't seen it yet.
@@ -36,6 +37,7 @@ module Goldiloader
 
     def reload(*)
       @auto_include_context = nil
+      @auto_include_context_lost = false if @auto_include_context_lost
       super
     end
 

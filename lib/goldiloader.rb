@@ -46,22 +46,23 @@ module Goldiloader
 
     # Gives models read back from a cache, and the models of their loaded associations, the contexts a regular
     # load would have given them. Other models, like those just loaded on a cache miss, are left as they are.
-    # Takes a model, a relation, or arrays and hashes holding models; anything else is skipped.
+    # Takes a model, a loaded relation, or arrays and hashes holding them: the models directly in each array or
+    # hash share a context, like a query result, and anything else is skipped.
     def restore_auto_include(models)
-      top_level_models = []
-      collect_models(models, top_level_models)
+      groups = []
+      collect_groups(models, groups)
       visited_models = Set.new.compare_by_identity
       reflections = Hash.new { |cache, model_class| cache[model_class] = model_class.reflect_on_all_associations }
       scope_auto_includes = {}.compare_by_identity
-      # Like a query result, each group shares a context
-      groups = top_level_models.group_by { |model| model.class.base_class }.values
+      groups = groups.flat_map { |group| group.group_by { |model| model.class.base_class }.values }
 
       until groups.empty?
-        groups = groups.flat_map do |group|
+        # Larger groups first, so a model reached from several places joins the one most likely to batch it
+        groups = groups.sort_by.with_index { |group, index| [-group.size, index] }.flat_map do |group|
           group = group.select { |model| visited_models.add?(model) }
           restored = group.select(&:auto_include_context_lost?)
-          Goldiloader::AutoIncludeContext.register_models(restored)
           restored.each { |model| model.auto_include_context_lost = false }
+          Goldiloader::AutoIncludeContext.register_models(restored.reject(&:new_record?))
           loaded_target_groups(group, reflections, scope_auto_includes)
         end
       end
@@ -71,12 +72,16 @@ module Goldiloader
 
     private
 
-    def collect_models(value, models)
+    def collect_groups(value, groups)
       case value
-      when ActiveRecord::Base then models << value
-      when ActiveRecord::Relation then models.concat(value.to_a)
-      when Array then value.each { |element| collect_models(element, models) }
-      when Hash then value.each_value { |element| collect_models(element, models) }
+      when ActiveRecord::Base then groups << [value]
+      when ActiveRecord::Relation then groups << value.records if value.loaded?
+      when Array, Hash
+        group = []
+        (value.is_a?(Hash) ? value.each_value : value).each do |element|
+          element.is_a?(ActiveRecord::Base) ? group << element : collect_groups(element, groups)
+        end
+        groups << group
       end
     end
 
@@ -92,16 +97,18 @@ module Goldiloader
           next unless model.association_cached?(reflection.name)
 
           association = model.association(reflection.name)
-          next unless association.loaded? && association.klass
+          next unless association.loaded?
 
           # Don't use Array.wrap(), see AutoIncludeContext#register_models
           target = association.target
           targets = target.is_a?(Array) ? target : [target].compact
-          next if targets.empty?
+          # Checked before klass, which raises for a polymorphic belongs_to with a nil target and a stale type
+          next if targets.empty? || association.klass.nil?
 
           if reflection.eager_loadable?(association.klass)
             (targets_by_reflection[reflection] ||= []).concat(targets)
-          elsif scope_auto_include?(association, scope_auto_includes)
+          elsif targets.one? || scope_auto_include?(association, scope_auto_includes)
+            # A single target gets the same context either way, so the scope isn't evaluated for it
             lazy_groups << targets
           else
             targets.each { |target_model| lazy_groups << [target_model] }

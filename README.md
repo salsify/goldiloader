@@ -157,10 +157,11 @@ blogs = Goldiloader.restore_auto_include(Rails.cache.fetch('blogs') { Blog.inclu
 blogs.each { |blog| blog.posts.each { |post| post.author } } # One query for all authors
 ```
 
-Only models read back by `Marshal` or the `ActiveRecord::MessagePack` serializer are changed: those loaded by the
-block on a cache miss, or loaded with `auto_include(false)`, are left as they were, so the result of
-`Rails.cache.fetch` can always be passed. It takes a model, a relation, or arrays and hashes holding models,
-skips anything else, and keeps models of unrelated classes apart.
+Only saved models read back by `Marshal` or the `ActiveRecord::MessagePack` serializer are changed: those loaded by
+the block on a cache miss, or loaded with `auto_include(false)`, are left as they were, so the result of
+`Rails.cache.fetch` can always be passed. It takes a model, a loaded relation, or arrays and hashes holding them.
+The models directly in each array or hash share a context, like a query result, apart from unrelated classes, so
+`{ featured: [...], archive: [...] }` gives each list its own. Unloaded relations and anything else are skipped.
 
 ### Association Options
 
