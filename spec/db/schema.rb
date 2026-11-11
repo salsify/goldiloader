@@ -147,6 +147,8 @@ class Post < ActiveRecord::Base
 
   has_many :unique_tags, -> { distinct }, through: :post_tags, source: :tag, class_name: 'Tag'
   has_many :tags_owned_by_users, -> { where(owner_type: 'User') }, through: :post_tags, source: :tag
+  has_many :author_blog1_posts, -> { where(title: ['blog1-post1', 'blog1-post2']) }, through: :author,
+                                                                                    source: :posts
 
   has_and_belongs_to_many :tags_without_auto_include, -> { auto_include(false) }, join_table: :post_tags,
                           class_name: 'Tag'

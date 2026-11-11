@@ -636,6 +636,8 @@ describe Goldiloader do
       end
 
       it "applies the scope correctly" do
+        # Read the association on the last post first so the auto eager load runs while the first post's
+        # tags are already loaded, then reverse back to compare in title order.
         expect(posts.reverse.map(&:tags_owned_by_users).reverse).to eq tags_owned_by_users
       end
 
@@ -644,6 +646,45 @@ describe Goldiloader do
         expect(posts.first.association(:tags_owned_by_users)).not_to be_loaded
         posts.drop(2).each do |post|
           expect(post.association(:tags_owned_by_users)).to be_loaded
+        end
+      end
+    end
+
+    context "when the through association was loaded without its source records" do
+      before do
+        posts.first.post_tags.map(&:tag_id)
+      end
+
+      it "applies the scope correctly" do
+        expect(posts.map(&:tags_owned_by_users)).to eq tags_owned_by_users
+      end
+
+      it "auto eager loads the association" do
+        posts.first.tags_owned_by_users.to_a
+        posts.drop(1).each do |post|
+          expect(post.association(:tags_owned_by_users)).to be_loaded
+        end
+      end
+    end
+
+    context "when a singular through association was loaded without its source records" do
+      let(:author_blog1_posts) do
+        blog1_post1, blog1_post2 = Post.where(blog: blog1).order(:title).to_a
+        [[blog1_post1], [blog1_post2], [], [blog1_post1]]
+      end
+
+      before do
+        posts.first.author.name
+      end
+
+      it "applies the scope correctly" do
+        expect(posts.map(&:author_blog1_posts)).to eq author_blog1_posts
+      end
+
+      it "auto eager loads the association" do
+        posts.first.author_blog1_posts.to_a
+        posts.drop(1).each do |post|
+          expect(post.association(:author_blog1_posts)).to be_loaded
         end
       end
     end

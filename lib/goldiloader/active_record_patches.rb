@@ -118,19 +118,22 @@ module Goldiloader
       end
       @eager_loadable_cache[target_klass]
     end
-
-    # Rails preloads a through association from the through and source records that are already loaded,
-    # dropping every scope value but `distinct`: https://github.com/salsify/goldiloader/issues/166
-    def eager_loadable_from_loaded_through?(target_klass)
-      @eager_loadable_from_loaded_through_cache ||= Hash.new do |cache, target_klass_key|
-        cache[target_klass_key] = scope.nil? ||
-          Goldiloader::ScopeInfo.new(scope_for(target_klass_key.unscoped)).distinct_only?
-      end
-      @eager_loadable_from_loaded_through_cache[target_klass]
-    end
   end
   ActiveRecord::Reflection::AssociationReflection.include(::Goldiloader::AssociationReflectionPatch)
   ActiveRecord::Reflection::ThroughReflection.include(::Goldiloader::AssociationReflectionPatch)
+
+  module ThroughReflectionPatch
+    # Rails preloads a through association from the source records already loaded on its through records,
+    # dropping every scope value but `distinct`: https://github.com/salsify/goldiloader/issues/166
+    def eager_loadable_from_loaded_source?(target_klass)
+      @eager_loadable_from_loaded_source_cache ||= Hash.new do |cache, target_klass_key|
+        cache[target_klass_key] = scope.nil? ||
+          Goldiloader::ScopeInfo.new(scope_for(target_klass_key.unscoped)).distinct_only?
+      end
+      @eager_loadable_from_loaded_source_cache[target_klass]
+    end
+  end
+  ActiveRecord::Reflection::ThroughReflection.include(::Goldiloader::ThroughReflectionPatch)
 
   module AssociationPatch
     extend ActiveSupport::Concern
@@ -236,19 +239,19 @@ module Goldiloader
     private
 
     def eager_loadable?
-      super && (reflection.eager_loadable_from_loaded_through?(klass) || !through_chain_loaded?)
+      super && (reflection.eager_loadable_from_loaded_source?(klass) || !source_loaded_on_through_records?)
     end
 
-    # A sibling association might have loaded the records this association goes through e.g. `tags` loads the
-    # `post_tags` that `tags_owned_by_users` goes through too. The generated association that a
-    # `has_and_belongs_to_many` goes through has no sibling so it's only loaded here in unusual cases.
-    def through_chain_loaded?
-      chain_reflection = reflection
-      while chain_reflection.through_reflection?
-        chain_reflection = chain_reflection.through_reflection
-        return true if owner.association(chain_reflection.name).loaded?
+    # A sibling association might have loaded the records this association would reuse e.g. `tags` loads the
+    # `post_tags` and their `tag` that `tags_owned_by_users` goes through too. Through records loaded without
+    # their source records are fine: Rails then queries the source records with the association's scope.
+    def source_loaded_on_through_records?
+      through_association = owner.association(through_reflection.name)
+      return false unless through_association.loaded?
+
+      Array.wrap(through_association.target).any? do |through_record|
+        through_record.association(source_reflection.name).loaded?
       end
-      false
     end
   end
   ::ActiveRecord::Associations::HasManyThroughAssociation.prepend(::Goldiloader::ThroughAssociationPatch)
