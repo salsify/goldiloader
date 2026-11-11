@@ -839,6 +839,75 @@ describe Goldiloader do
     end
   end
 
+  context "scoped through associations through a loaded scoped nested through association" do
+    let(:blogs) { Blog.order(:name).to_a }
+
+    before do
+      # The unscoped sibling loads the `posts`, their `post_tags` and each `tag`, so that `tags_owned_by_users`
+      # is then loaded lazily for each blog
+      blogs.first.tags.to_a
+      blogs.each { |blog| blog.tags_owned_by_users.to_a }
+    end
+
+    it "applies the scope correctly" do
+      expected = Goldiloader.disabled do
+        Blog.order(:name).map { |blog| blog.first_posts_of_tags_owned_by_users.to_a }
+      end
+      expect(blogs.map { |blog| blog.first_posts_of_tags_owned_by_users.to_a }).to eq expected
+      # Once for each of the blog's two tags owned by a user, not for the one owned by a group
+      expect(expected.first.map(&:title)).to eq ['blog1-post1', 'blog1-post1']
+    end
+  end
+
+  context "scoped through associations whose loaded source goes through a scoped nested through association" do
+    let!(:user_tag_child) { child_tag1.children.create!(name: 'user-tag-child') }
+    let!(:group_tag_child) { child_tag2.children.create!(name: 'group-tag-child') }
+    let(:blogs) { Blog.order(:name).to_a }
+
+    before do
+      # The unscoped sibling loads the `posts`, their `post_tags` and each `tag`, so that `user_tag_children`
+      # is then loaded lazily for each blog
+      blogs.first.tags.to_a
+      blogs.each { |blog| blog.user_tag_children.to_a }
+    end
+
+    it "applies the scope correctly" do
+      posts = blogs.flat_map(&:posts).sort_by(&:title)
+      expected = Goldiloader.disabled do
+        Post.order(:title).map { |post| post.ordered_blog_user_tag_children.to_a }
+      end
+      expect(posts.map { |post| post.ordered_blog_user_tag_children.to_a }).to eq expected
+      expect(expected.flatten.uniq).to eq [user_tag_child]
+    end
+  end
+
+  context "scoped through associations with a through source after the unscoped chain was auto eager loaded" do
+    let(:users) { User.order(:name).to_a }
+
+    before do
+      users.each { |user| user.posts.each { |post| post.tags.to_a } }
+    end
+
+    it "applies the scope correctly" do
+      expect(users.map { |user| user.posts_tags_owned_by_users.sort_by(&:id) })
+        .to eq [[child_tag1, child_tag3], [child_tag1], [child_tag1]]
+    end
+  end
+
+  context "scoped through associations through a through association after the unscoped chain was auto eager loaded" do
+    let!(:tag_children) { Array.new(2) { |index| child_tag1.children.create!(name: "parent1-child1-child#{index}") } }
+    let(:posts) { Post.order(:title).to_a }
+
+    before do
+      posts.each { |post| post.tags.each { |tag| tag.children.to_a } }
+    end
+
+    it "applies the scope correctly" do
+      expect(posts.map { |post| post.ordered_tag_children.to_a })
+        .to eq [tag_children.reverse, tag_children.reverse, tag_children.reverse, []]
+    end
+  end
+
   context "polymorphic associations with nil" do
     let!(:user) { User.create! }
     let!(:group) { Group.create! }

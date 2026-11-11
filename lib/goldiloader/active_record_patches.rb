@@ -267,8 +267,8 @@ module Goldiloader
     # `post_tags` and their `tag` that `tags_owned_by_users` goes through too. Rails reuses a loaded association
     # even when it holds nil or nothing, at every level of a nested through association, and loses the scope of
     # the association it preloads. Through records loaded without their source records are fine: the source
-    # records are queried with the association's scope (a scope with a condition on the through table then fails,
-    # as it does without Goldiloader).
+    # records are queried with the association's scope (a scope with a condition on the through table then
+    # raises on Rails versions without the fix, with or without this check).
     #
     # `preloaded_again` is true when Rails might preload `chain_reflection` although it's loaded on `record`.
     def scope_lost_by_reusing_loaded_records?(record, chain_reflection, preloaded_again: false)
@@ -279,14 +279,16 @@ module Goldiloader
       source_reflection = chain_reflection.source_reflection
       scope_lost = chain_reflection.scope_lost_by_reusing_loaded_records?(chain_reflection.klass)
       # Rails with the fix doesn't read a loaded through or source association that the scope filters: it
-      # preloads it again, and for a nested through association that reuses what's loaded further down
+      # preloads it again, and for a nested through association that reuses what's loaded further down. Which
+      # of the two it preloads again isn't worked out here, so a nested through association can still be kept
+      # out of the batch on those versions when Rails would get it right.
       preloads_again = RAILS_REQUERIES_FILTERED_SOURCE && scope_lost
       return true if scope_lost_by_reusing_loaded_records?(record, through_reflection, preloaded_again: preloads_again)
       return false unless scope_lost || source_reflection.through_reflection?
 
       any_reused_record?(record, through_reflection, preloaded_again: preloads_again) do |through_record|
         (scope_lost && reuses_loaded_source?(through_record, chain_reflection)) ||
-          scope_lost_by_reusing_loaded_records?(through_record, source_reflection, preloaded_again: preloads_again)
+          scope_lost_by_reusing_loaded_records?(through_record, source_reflection)
       end
     end
 
