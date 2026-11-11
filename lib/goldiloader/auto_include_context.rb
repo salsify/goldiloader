@@ -59,7 +59,12 @@ module Goldiloader
 
     alias_method :register_model, :register_models
 
-    attr_writer :suggestion_tracker
+    attr_writer :suggestion_tracker, :batched
+
+    # Lazily loaded from records loaded together, in suggestion mode
+    def batched?
+      @batched || false
+    end
 
     def suggestion_tracker
       @suggestion_tracker ||= SuggestionTracker.new

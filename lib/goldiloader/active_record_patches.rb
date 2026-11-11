@@ -169,15 +169,22 @@ module Goldiloader
 
     def load_with_suggestion
       auto_include_context = owner.auto_include_context
+      # Records Goldiloader would have eager loaded: loaded together, or lazily loaded from records loaded together
+      batched = auto_include_context.size > 1 || auto_include_context.batched?
+      # Like the preloader Goldiloader would use, don't raise on strict loading for them
+      result = batched ? skip_strict_loading { yield } : yield
+
       suggestion_tracker = auto_include_context.suggestion_tracker
-      Goldiloader::AssociationLoader.suggest(reflection) if suggestion_tracker.second_owner?(reflection, owner)
-      # Like the preloader Goldiloader would use, don't raise on strict loading records loaded together
-      result = auto_include_context.size > 1 ? skip_strict_loading { yield } : yield
+      # A polymorphic belongs_to is eager loaded with one query per target class
+      key = [reflection.active_record, reflection.name]
+      key << klass if reflection.polymorphic?
+      Goldiloader::AssociationLoader.suggest(reflection) if suggestion_tracker.second_owner?(key, owner)
       # find_target(async: true) returns a promise rather than records
       return result unless result.is_a?(Array) || result.is_a?(::ActiveRecord::Base)
 
-      Goldiloader::AutoIncludeContext.new.register_models(result).suggestion_tracker =
-        suggestion_tracker.nested_tracker(reflection)
+      nested_context = Goldiloader::AutoIncludeContext.new.register_models(result)
+      nested_context.suggestion_tracker = suggestion_tracker.nested_tracker(key)
+      nested_context.batched = batched
       result
     end
   end

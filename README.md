@@ -165,7 +165,8 @@ Goldiloader suggests eager loading Blog#posts, called from app/views/blogs/index
 ```
 
 Suggestion mode turns automatic eager loading off: the N+1 queries Goldiloader was saving come back while it is on.
-Goldiloader must be enabled for suggestions to be logged. [Custom preloads](#custom-preloads) still run once for the
+`Goldiloader.suggestion_mode` is process-wide like `Goldiloader.globally_enabled`, not thread local like
+`Goldiloader.enabled`. Goldiloader must be enabled for suggestions to be logged. [Custom preloads](#custom-preloads) still run once for the
 records a query loads, but once per owner for records loaded lazily: with `blog.posts` loaded blog by blog, a
 `goldiload` block on posts runs once per blog.
 

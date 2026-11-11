@@ -175,6 +175,7 @@ class User < ActiveRecord::Base
   has_many :posts, foreign_key: :author_id
   has_many :tags, as: :owner
   has_one :address
+  has_one :strict_address, class_name: 'Address', strict_loading: true
   has_one :address_without_auto_include, -> { auto_include(false) }, class_name: 'Address'
 
   has_one :scoped_address_with_default_scope_remove, -> { unscope(where: :city) }, class_name: 'ScopedAddress'
