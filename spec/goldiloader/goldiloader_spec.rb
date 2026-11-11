@@ -688,6 +688,48 @@ describe Goldiloader do
         end
       end
     end
+
+    context "when the source records were loaded as nil" do
+      let!(:post1) { Post.create! { |post| post.tags << child_tag1 } }
+      let!(:post2) { Post.create! { |post| post.tags << child_tag1 << child_tag2 } }
+      let(:posts) { Post.where(id: [post1.id, post2.id]).order(:id).to_a }
+
+      before do
+        Goldiloader.disabled do
+          ActiveRecord::Associations::Preloader.new(records: posts, associations: :post_tags).call
+          # Loads the first post's only tag, owned by a user, as nil
+          ActiveRecord::Associations::Preloader.new(
+            records: posts.first.post_tags.to_a, associations: :tag, scope: Tag.where(owner_type: 'Group')
+          ).call
+        end
+      end
+
+      it "applies the scope correctly" do
+        # Read the last post first so that its auto eager load could cover the first post
+        expect(posts.last.tags_owned_by_users.to_a).to eq [child_tag1]
+        expect(posts.first.tags_owned_by_users.to_a).to eq [child_tag1]
+      end
+    end
+  end
+
+  context "distinct has_many through associations after an unscoped sibling was auto eager loaded" do
+    let(:posts) { Post.order(:title).to_a }
+
+    before do
+      posts.first.tags.to_a
+    end
+
+    it "applies the scope correctly" do
+      expected = Goldiloader.disabled { Post.order(:title).map { |post| post.unique_tags.to_a } }
+      expect(posts.map { |post| post.unique_tags.to_a }).to eq expected
+    end
+
+    it "auto eager loads the association" do
+      posts.first.unique_tags.to_a
+      posts.drop(1).each do |post|
+        expect(post.association(:unique_tags)).to be_loaded
+      end
+    end
   end
 
   context "scoped has_and_belongs_to_many associations after an unscoped sibling was auto eager loaded" do
