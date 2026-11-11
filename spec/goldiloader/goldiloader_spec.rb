@@ -845,6 +845,13 @@ describe Goldiloader do
       expect(posts.map { |post| post.user_owned_tags.to_a }).to eq expected
       expect(posts.flat_map(&:user_owned_tags).map(&:class).uniq).to eq [UserOwnedTag]
     end
+
+    it "loads records of that class through a nested through association" do
+      blogs = Blog.order(:name).to_a
+      expected = Goldiloader.disabled { Blog.order(:name).map { |blog| blog.post_user_owned_tags.to_a } }
+      expect(blogs.map { |blog| blog.post_user_owned_tags.to_a }).to eq expected
+      expect(blogs.flat_map(&:post_user_owned_tags).map(&:class).uniq).to eq [UserOwnedTag]
+    end
   end
 
   context "through associations with a default scoped class_name after an unscoped sibling was auto eager loaded" do

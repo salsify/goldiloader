@@ -260,14 +260,17 @@ module Goldiloader
     private_constant :RAILS_REQUERIES_FILTERED_SOURCE
 
     def eager_loadable?
-      super && !(reflection.through_reflection? && other_class_than_source?(reflection, klass)) &&
-        !scope_lost_by_reusing_loaded_records?(owner, reflection, klass)
+      super && !other_class_than_source?(reflection) && !scope_lost_by_reusing_loaded_records?(owner, reflection)
     end
 
-    # Rails preloads a through association with a `class_name` other than its source's as the source's class
-    def other_class_than_source?(chain_reflection, target_klass)
+    # Rails preloads a through association with a `class_name` other than its source's as the source's class, at
+    # every level of a nested through association
+    def other_class_than_source?(chain_reflection)
+      return false unless chain_reflection.through_reflection?
+
       source_reflection = chain_reflection.source_reflection
-      !source_reflection.polymorphic? && target_klass != source_reflection.klass
+      (!source_reflection.polymorphic? && chain_reflection.klass != source_reflection.klass) ||
+        other_class_than_source?(chain_reflection.through_reflection) || other_class_than_source?(source_reflection)
     end
 
     # A sibling association might have loaded the records this association would reuse e.g. `tags` loads the
@@ -276,32 +279,28 @@ module Goldiloader
     # the association it preloads. Through records loaded without their source records are fine: the source
     # records are queried with the association's scope (a scope with a condition on the through table then fails,
     # as it does without Goldiloader).
-    def scope_lost_by_reusing_loaded_records?(record, chain_reflection, target_klass = nil)
+    def scope_lost_by_reusing_loaded_records?(record, chain_reflection)
       return false if loaded_association?(record, chain_reflection.name) || !chain_reflection.through_reflection?
 
       through_reflection = chain_reflection.through_reflection
       source_reflection = chain_reflection.source_reflection
       return true if scope_lost_by_reusing_loaded_records?(record, through_reflection)
 
-      target_klass ||= chain_reflection.klass
-      # With a `class_name` other than the source's class, the target class (and its default scope) is lost too
-      other_class = other_class_than_source?(chain_reflection, target_klass)
-      scope_lost = other_class || chain_reflection.scope_lost_by_reusing_loaded_records?(target_klass)
+      scope_lost = chain_reflection.scope_lost_by_reusing_loaded_records?(chain_reflection.klass)
       return false unless scope_lost || source_reflection.through_reflection?
 
       any_reused_record?(record, through_reflection) do |through_record|
-        (scope_lost && reuses_loaded_source?(through_record, chain_reflection, other_class)) ||
+        (scope_lost && reuses_loaded_source?(through_record, chain_reflection)) ||
           scope_lost_by_reusing_loaded_records?(through_record, source_reflection)
       end
     end
 
     # Whether preloading `chain_reflection` reuses something loaded on `through_record`, one of its through
     # records, in a way Rails doesn't guard against
-    def reuses_loaded_source?(through_record, chain_reflection, other_class)
+    def reuses_loaded_source?(through_record, chain_reflection)
       source_reflection = chain_reflection.source_reflection
-      # Rails with the fix still reuses what's loaded further down a nested through association, and source
-      # records of another class
-      return false if RAILS_REQUERIES_FILTERED_SOURCE && !other_class &&
+      # Rails with the fix still reuses what's loaded further down a nested through association
+      return false if RAILS_REQUERIES_FILTERED_SOURCE &&
                       !chain_reflection.through_reflection.through_reflection? &&
                       !source_reflection.through_reflection?
 

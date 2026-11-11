@@ -110,6 +110,8 @@ class Blog < ActiveRecord::Base
   has_many :tags_owned_by_users, -> { where(owner_type: 'User') }, through: :blog_post_tags, source: :tag
   # Unscoped, through `posts` and a scoped through source
   has_many :post_tags_owned_by_users, through: :posts, source: :tags_owned_by_users
+  # Through `posts` and a through source with a default scoped class_name
+  has_many :post_user_owned_tags, through: :posts, source: :user_owned_tags
 
   has_one :post_with_order, -> { order(:id) }, class_name: 'Post'
 
