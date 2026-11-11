@@ -108,6 +108,8 @@ class Blog < ActiveRecord::Base
   has_many :reverse_ordered_tags, -> { order(id: :desc) }, through: :posts, source: :tags
   has_many :blog_post_tags, through: :posts, source: :post_tags
   has_many :tags_owned_by_users, -> { where(owner_type: 'User') }, through: :blog_post_tags, source: :tag
+  # Unscoped, through `posts` and a scoped through source
+  has_many :post_tags_owned_by_users, through: :posts, source: :tags_owned_by_users
 
   has_one :post_with_order, -> { order(:id) }, class_name: 'Post'
 
@@ -160,6 +162,9 @@ class Post < ActiveRecord::Base
                           class_name: 'Tag'
   has_and_belongs_to_many :habtm_tags_owned_by_users, -> { where(owner_type: 'User') }, join_table: :post_tags,
                           class_name: 'Tag'
+  # Unscoped, through a scoped through association
+  has_many :tags_owned_by_users_children, through: :tags_owned_by_users, source: :children
+  has_many :tag_owner_users, through: :tags, source: :owner, source_type: 'User'
 
   has_many_attached :images
 

@@ -599,6 +599,10 @@ describe Goldiloader do
   context "scoped has_many through associations" do
     let(:posts) { Post.order(:title).to_a }
     let(:tags_owned_by_users) { [[child_tag1], [child_tag1], [child_tag1], [child_tag3]] }
+    # Rails versions with https://github.com/rails/rails/pull/59599 query filtered source records again
+    let(:rails_requeries_filtered_source) do
+      ActiveRecord::Associations::Preloader::ThroughAssociation.private_method_defined?(:source_scope_filters_source?)
+    end
 
     context "when the through association isn't loaded" do
       it "applies the scope correctly" do
@@ -622,10 +626,10 @@ describe Goldiloader do
         expect(posts.map(&:tags_owned_by_users)).to eq tags_owned_by_users
       end
 
-      it "doesn't auto eager load the association" do
+      it "auto eager loads the association only if Rails queries the filtered source records again" do
         posts.first.tags_owned_by_users.to_a
         posts.drop(1).each do |post|
-          expect(post.association(:tags_owned_by_users)).not_to be_loaded
+          expect(post.association(:tags_owned_by_users).loaded?).to eq rails_requeries_filtered_source
         end
       end
     end
@@ -641,9 +645,9 @@ describe Goldiloader do
         expect(posts.reverse.map(&:tags_owned_by_users).reverse).to eq tags_owned_by_users
       end
 
-      it "only auto eager loads the association for the other models" do
+      it "only auto eager loads the association for the other models unless Rails queries the filtered source again" do
         posts.second.tags_owned_by_users.to_a
-        expect(posts.first.association(:tags_owned_by_users)).not_to be_loaded
+        expect(posts.first.association(:tags_owned_by_users).loaded?).to eq rails_requeries_filtered_source
         posts.drop(2).each do |post|
           expect(post.association(:tags_owned_by_users)).to be_loaded
         end
@@ -776,11 +780,47 @@ describe Goldiloader do
       expect(blogs.map { |blog| blog.tags_owned_by_users.to_a }).to eq expected(:tags_owned_by_users)
     end
 
+    # The source association is a scoped through association, the association itself isn't scoped
+    it "applies the scope correctly when the source is a scoped through association" do
+      expect(blogs.map { |blog| blog.post_tags_owned_by_users.to_a }).to eq expected(:post_tags_owned_by_users)
+    end
+
     it "doesn't auto eager load the associations" do
       blogs.first.reverse_ordered_tags.to_a
       blogs.first.tags_owned_by_users.to_a
       expect(blogs.second.association(:reverse_ordered_tags)).not_to be_loaded
       expect(blogs.second.association(:tags_owned_by_users)).not_to be_loaded
+    end
+  end
+
+  context "through associations through a scoped through association after an unscoped sibling was auto eager loaded" do
+    let!(:user_tag_child) { child_tag1.children.create!(name: 'user-tag-child') }
+    let!(:group_tag_child) { child_tag2.children.create!(name: 'group-tag-child') }
+    let(:posts) { Post.order(:title).to_a }
+
+    before do
+      posts.first.tags.to_a
+    end
+
+    it "applies the scope correctly" do
+      expected = Goldiloader.disabled { Post.order(:title).map { |post| post.tags_owned_by_users_children.to_a } }
+      expect(posts.map { |post| post.tags_owned_by_users_children.to_a }).to eq expected
+      expect(expected.first).to eq [user_tag_child]
+    end
+  end
+
+  context "through associations with a source_type after the through association was loaded for some models" do
+    # The first post in title order, the only one with a tag owned by a group, comes last
+    let(:posts) { Post.order(title: :desc).to_a }
+
+    before do
+      Goldiloader.disabled { posts.last.tags.to_a }
+    end
+
+    it "only loads source records of that type" do
+      expected = Goldiloader.disabled { Post.order(title: :desc).map { |post| post.tag_owner_users.to_a } }
+      expect(posts.map { |post| post.tag_owner_users.to_a }).to eq expected
+      expect(expected.last).to eq [author1]
     end
   end
 

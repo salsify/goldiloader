@@ -124,20 +124,28 @@ module Goldiloader
 
   module ThroughReflectionPatch
     # Scope values that Rails keeps (`distinct`) or whose loss doesn't change the records the association holds
-    SCOPE_VALUES_SAFE_TO_DROP = [:distinct, :auto_include, :strict_loading, :annotate, :extending, :preload].freeze
+    SCOPE_VALUES_SAFE_TO_DROP = [:distinct, :auto_include, :annotate, :extending, :preload].freeze
     private_constant :SCOPE_VALUES_SAFE_TO_DROP
 
-    # Rails preloads a through association from the source records already loaded on its through records,
-    # dropping its scope: https://github.com/salsify/goldiloader/issues/166
-    def eager_loadable_from_loaded_source?(target_klass)
-      @eager_loadable_from_loaded_source_cache ||= Hash.new do |cache, target_klass_key|
-        # Compare with the unscoped values, which hold the type condition of an STI subclass
-        unscoped = target_klass_key.unscoped
-        cache[target_klass_key] = scope.nil? ||
-          scope_for(unscoped).values.except(*SCOPE_VALUES_SAFE_TO_DROP) ==
-            unscoped.values.except(*SCOPE_VALUES_SAFE_TO_DROP)
+    # Whether reusing loaded records loses part of this association's own scope or its `source_type`, as Rails
+    # does when it preloads it from records already loaded: https://github.com/salsify/goldiloader/issues/166
+    def scope_lost_by_reusing_loaded_records?(target_klass)
+      @scope_lost_by_reusing_loaded_records_cache ||= Hash.new do |cache, target_klass_key|
+        cache[target_klass_key] = if options[:source_type]
+                                    true
+                                  elsif scope.nil?
+                                    false
+                                  elsif scope.arity > 0
+                                    true
+                                  else
+                                    # Compare with the unscoped values, which hold the type condition of an STI
+                                    # subclass
+                                    unscoped = target_klass_key.unscoped
+                                    scope_for(unscoped).values.except(*SCOPE_VALUES_SAFE_TO_DROP) !=
+                                      unscoped.values.except(*SCOPE_VALUES_SAFE_TO_DROP)
+                                  end
       end
-      @eager_loadable_from_loaded_source_cache[target_klass]
+      @scope_lost_by_reusing_loaded_records_cache[target_klass]
     end
   end
   ActiveRecord::Reflection::ThroughReflection.include(::Goldiloader::ThroughReflectionPatch)
@@ -245,17 +253,47 @@ module Goldiloader
 
     private
 
+    # Rails versions with https://github.com/rails/rails/pull/59599 query the source records of a single level
+    # through association instead of reusing loaded ones when its scope or `source_type` filters them
+    RAILS_REQUERIES_FILTERED_SOURCE =
+      ::ActiveRecord::Associations::Preloader::ThroughAssociation.private_method_defined?(:source_scope_filters_source?)
+    private_constant :RAILS_REQUERIES_FILTERED_SOURCE
+
     def eager_loadable?
-      super && (reflection.eager_loadable_from_loaded_source?(klass) || !reuses_loaded_source_records?)
+      super && !scope_lost_by_reusing_loaded_records?(owner, reflection, klass)
     end
 
     # A sibling association might have loaded the records this association would reuse e.g. `tags` loads the
-    # `post_tags` and their `tag` that `tags_owned_by_users` goes through too. Rails reuses a loaded source
-    # association even when it holds nil or nothing. Through records loaded without their source records are
-    # queried with the association's scope (a scope with a condition on the through table then fails, as it
-    # does without Goldiloader).
-    def reuses_loaded_source_records?
-      reuses_loaded_association?(owner, reflection)
+    # `post_tags` and their `tag` that `tags_owned_by_users` goes through too. Rails reuses a loaded association
+    # even when it holds nil or nothing, at every level of a nested through association, and loses the scope of
+    # the association it preloads. Through records loaded without their source records are fine: the source
+    # records are queried with the association's scope (a scope with a condition on the through table then fails,
+    # as it does without Goldiloader).
+    def scope_lost_by_reusing_loaded_records?(record, chain_reflection, target_klass = nil)
+      return false if loaded_association?(record, chain_reflection.name) || !chain_reflection.through_reflection?
+
+      through_reflection = chain_reflection.through_reflection
+      source_reflection = chain_reflection.source_reflection
+      return true if scope_lost_by_reusing_loaded_records?(record, through_reflection)
+
+      scope_lost = chain_reflection.scope_lost_by_reusing_loaded_records?(target_klass || chain_reflection.klass)
+      any_reused_record?(record, through_reflection) do |through_record|
+        (scope_lost && reuses_loaded_source?(through_record, chain_reflection)) ||
+          scope_lost_by_reusing_loaded_records?(through_record, source_reflection)
+      end
+    end
+
+    # Whether preloading `chain_reflection` reuses something loaded on `through_record`, one of its through
+    # records, in a way Rails doesn't guard against
+    def reuses_loaded_source?(through_record, chain_reflection)
+      source_reflection = chain_reflection.source_reflection
+      # Rails with the fix still reuses what's loaded further down a nested through association
+      return false if RAILS_REQUERIES_FILTERED_SOURCE &&
+                      !chain_reflection.through_reflection.through_reflection? &&
+                      !source_reflection.through_reflection?
+
+      # Without the fix, through records are filtered by `source_type` only when the first owner has them loaded
+      chain_reflection.options[:source_type].present? || reuses_loaded_association?(through_record, source_reflection)
     end
 
     # Whether Rails reuses a loaded association instead of querying when preloading `chain_reflection` on
