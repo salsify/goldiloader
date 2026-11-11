@@ -178,7 +178,7 @@ module Goldiloader
       # A polymorphic belongs_to is eager loaded with one query per target class
       key = [reflection.active_record, reflection.name]
       key << klass if reflection.polymorphic?
-      Goldiloader::AssociationLoader.suggest(reflection) if suggestion_tracker.second_owner?(key, owner)
+      Goldiloader::AssociationLoader.suggest(reflection) if batched && suggestion_tracker.second_owner?(key, owner)
       # find_target(async: true) returns a promise rather than records
       return result unless result.is_a?(Array) || result.is_a?(::ActiveRecord::Base)
 

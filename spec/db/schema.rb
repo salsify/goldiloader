@@ -193,6 +193,12 @@ class ScopedAddress < ActiveRecord::Base
   belongs_to :user
 end
 
+class CompositeKeyPost < ActiveRecord::Base
+  self.table_name = 'posts'
+  self.primary_key = [:blog_id, :id]
+  belongs_to :author, class_name: 'User'
+end
+
 class Group < ActiveRecord::Base
   has_many :tags, as: :owner
 end

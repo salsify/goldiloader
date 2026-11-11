@@ -12,16 +12,20 @@ module Goldiloader
       @nested_trackers = {}
     end
 
-    # True the first time a second record loads the association
+    # True the first time a second record loads the association. A polymorphic belongs_to, whose key ends with its
+    # target class, is suggested once for all its target classes.
     def second_owner?(key, owner)
-      return false if @suggested.include?(key)
+      association_key = key.first(2)
+      return false if @suggested.include?(association_key)
 
-      owner_key = [owner.class, owner.id]
+      # Records loaded without their id, or part of a composite one, are told apart in memory
+      owner_id = owner.id
+      owner_key = owner_id.nil? || Array(owner_id).include?(nil) ? owner.object_id : [owner.class, owner_id]
       first_owner_key = (@first_owners[key] ||= owner_key)
       return false if first_owner_key == owner_key
 
       @first_owners.delete(key)
-      @suggested << key
+      @suggested << association_key
       true
     end
 

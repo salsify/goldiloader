@@ -1347,6 +1347,15 @@ describe Goldiloader do
       expect(suggestions).to be_empty
     end
 
+    it "doesn't log associations of the records a single record loads in turn" do
+      post = Post.find_by!(title: 'blog1-post1')
+      post.author.address
+      post.update!(author: author2)
+      post.reload_author.address
+
+      expect(suggestions).to be_empty
+    end
+
     it "doesn't log associations of polymorphic records of different classes" do
       tags = Tag.where(id: [parent_tag1.id, child_tag1.id]).order(:name).to_a
       tags.each { |tag| tag.owner.tags.to_a }
@@ -1359,6 +1368,25 @@ describe Goldiloader do
       tags.each { |tag| tag.owner.tags.to_a }
 
       expect(suggestions).to eq ['Tag#owner', 'User#tags']
+    end
+
+    it "logs a polymorphic belongs_to once for all its target classes" do
+      Tag.order(:name).each(&:owner)
+
+      expect(suggestions).to eq ['Tag#owner']
+    end
+
+    it "logs associations of records loaded without their id" do
+      Post.select(:author_id).order(:title).each(&:author)
+      CompositeKeyPost.select(:author_id).order(:title).each(&:author)
+
+      expect(suggestions).to eq ['Post#author', 'CompositeKeyPost#author']
+    end
+
+    it "logs associations of records loaded with part of their composite key" do
+      CompositeKeyPost.where(blog_id: blog1.id).select(:blog_id, :author_id).order(:title).each(&:author)
+
+      expect(suggestions).to eq ['CompositeKeyPost#author']
     end
 
     it "doesn't log associations of records reloaded by the same owner" do
