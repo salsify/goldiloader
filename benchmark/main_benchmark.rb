@@ -33,5 +33,15 @@ ForkingBenchmark.ips do |x|
     end
   end
 
+  x.report('Goldiloader disabled eager loading', setup: -> { require('goldiloader') }) do
+    Goldiloader.disabled do
+      ::Blog.all.includes(posts: :author).each do |blog|
+        blog.posts.each do |post|
+          post.author.id
+        end
+      end
+    end
+  end
+
   x.compare!
 end

@@ -7,6 +7,8 @@ class ExperimentServer
   OK = 'ok'
   SHUTDOWN = 'shutdown'
 
+  StepResult = Data.define(:allocations)
+
   def self.start(step:, setup: nil)
     read_pipe, child_write_pipe = IO.pipe
     child_read_pipe, write_pipe = IO.pipe
@@ -35,12 +37,13 @@ class ExperimentServer
         exit
       elsif command.start_with?(STEP)
         iterations = command.from(STEP_COMMAND_PREFIX_LENGTH).to_i
+        allocations_before = GC.stat(:total_allocated_objects)
         if step.arity > 0
           step.call(iterations)
         else
           iterations.times { step.call }
         end
-        write_pipe.puts(OK)
+        write_pipe.puts("#{OK} #{GC.stat(:total_allocated_objects) - allocations_before}")
       else
         warn("Unexpected command: #{command}")
         exit(1)
@@ -58,7 +61,11 @@ class ExperimentServer
 
   def step(iterations = 1)
     @write_pipe.puts("#{STEP} #{iterations}")
-    expect_response!(OK)
+    result = @read_pipe.readline.rstrip
+    status, allocations = result.split(' ', 2)
+    raise "Expected child response '#{OK}' but got '#{result}'" unless status == OK
+
+    StepResult.new(allocations: allocations.to_i)
   end
 
   def shutdown
