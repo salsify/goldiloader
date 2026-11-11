@@ -1321,6 +1321,25 @@ describe Goldiloader do
       expect(Post.order(:title).map { |post| post.blog.posts_count }).to eq [2, 2, 2, 2]
     end
 
+    it "still batches custom preloads of the records loaded together" do
+      blogs = Blog.order(:name).to_a
+
+      expect do
+        expect(blogs.map(&:posts_count)).to eq [2, 2]
+      end.to execute_queries(Post => 1)
+    end
+
+    it "keeps records dumpable with Marshal" do
+      marshalling_format_version = ActiveRecord.marshalling_format_version
+      ActiveRecord.marshalling_format_version = 6.1
+      blogs = Blog.order(:name).to_a
+      blogs.each { |blog| blog.posts.to_a }
+
+      expect(Marshal.load(Marshal.dump(blogs.first)).name).to eq 'blog1'
+    ensure
+      ActiveRecord.marshalling_format_version = marshalling_format_version
+    end
+
     it "doesn't log associations of a single record" do
       Blog.first.posts.to_a
 

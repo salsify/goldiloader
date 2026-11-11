@@ -163,7 +163,8 @@ Goldiloader suggests eager loading Blog#posts, called from app/views/blogs/index
 ```
 
 Suggestion mode turns automatic eager loading off: the N+1 queries Goldiloader was saving come back while it is on.
-Goldiloader must be enabled for suggestions to be logged. [Custom preloads](#custom-preloads) are still eager loaded.
+Goldiloader must be enabled for suggestions to be logged. [Custom preloads](#custom-preloads) are still eager loaded
+for the records loaded together.
 
 ### Association Options
 
