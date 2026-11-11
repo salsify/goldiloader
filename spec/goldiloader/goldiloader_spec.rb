@@ -1262,6 +1262,57 @@ describe Goldiloader do
       expect(auto_include_contexts(blogs)).to eq(expected_contexts)
     end
 
+    it "gives targets of associations that can't be eager loaded the contexts of a regular load" do
+      blogs = Blog.order(:name).to_a
+      blogs.each do |blog|
+        blog.limited_posts.to_a
+        blog.instance_dependent_posts.to_a
+        blog.post_with_order
+      end
+      expected_contexts = auto_include_contexts(blogs)
+      blogs = Goldiloader.restore_auto_include(read_back_from_cache(blogs))
+
+      expect(auto_include_contexts(blogs)).to eq(expected_contexts)
+      expect(blogs.first.limited_posts.first.auto_include_context.size).to eq(2)
+      expect(blogs.first.instance_dependent_posts.first.auto_include_context.size).to eq(2)
+    end
+
+    it "leaves models that weren't registered on purpose alone" do
+      unregistered_models = [
+        Blog.auto_include(false).order(:name).to_a,
+        Blog.find_by_sql('SELECT * FROM blogs ORDER BY name', auto_include: false),
+        [Blog.find(blog1.id), Blog.find(blog2.id)],
+        Blog.order(:name).flat_map { |blog| blog.posts_without_auto_include.to_a }
+      ]
+
+      unregistered_models.each do |models|
+        Goldiloader.restore_auto_include(models)
+
+        models.each do |model|
+          expect(model.auto_include_context.models).to eq([model])
+        end
+      end
+    end
+
+    it "restores models read back by the MessagePack cache serializer" do
+      require 'active_support/message_pack'
+      serializer = ActiveSupport::MessagePack::CacheSerializer
+      blogs = Blog.order(:name).to_a
+      blogs.each { |blog| blog.posts.to_a }
+      blogs = Goldiloader.restore_auto_include(serializer.load(serializer.dump(blogs)))
+
+      expect(blogs.first.auto_include_context.models).to eq(blogs)
+      expect(blogs.first.posts.first.auto_include_context.models).to eq(blogs.flat_map(&:posts))
+    end
+
+    it "finds models in nested arrays and hashes and skips anything else" do
+      cached = read_back_from_cache([[Blog.find(blog1.id)], { blog: Blog.find(blog2.id), count: 2 }, 'blogs'])
+      blogs = [cached.dig(0, 0), cached.dig(1, :blog)]
+
+      expect(Goldiloader.restore_auto_include(cached)).to equal(cached)
+      expect(blogs.first.auto_include_context.models).to eq(blogs)
+    end
+
     it "keeps the contexts of models that weren't read back from a cache" do
       blogs = Blog.order(:name).includes(:posts).to_a
       blog_context = blogs.first.auto_include_context
