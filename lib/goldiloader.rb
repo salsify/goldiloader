@@ -45,12 +45,13 @@ module Goldiloader
     end
 
     # Gives models read back from a cache, and the models of their loaded associations, the contexts a regular
-    # load would have given them. Other models, like those just loaded on a cache miss, are left as they are.
+    # load would have given them. Other models, like those just loaded on a cache miss, are left as they are and
+    # their associations aren't walked.
     # Takes a model, a loaded relation, or arrays and hashes holding them: the models directly in each array or
     # hash share a context, like a query result, and anything else is skipped.
     def restore_auto_include(models)
       groups = []
-      collect_groups(models, groups)
+      collect_groups(models, groups, Set.new.compare_by_identity)
       visited_models = Set.new.compare_by_identity
       reflections = Hash.new { |cache, model_class| cache[model_class] = model_class.reflect_on_all_associations }
       scope_auto_includes = {}.compare_by_identity
@@ -63,7 +64,8 @@ module Goldiloader
           restored = group.select(&:auto_include_context_lost?)
           restored.each { |model| model.auto_include_context_lost = false }
           Goldiloader::AutoIncludeContext.register_models(restored.reject(&:new_record?))
-          loaded_target_groups(group, reflections, scope_auto_includes)
+          # Marshal and MessagePack flag every model they read back, so only restored models lead to others
+          loaded_target_groups(restored, reflections, scope_auto_includes)
         end
       end
 
@@ -72,16 +74,19 @@ module Goldiloader
 
     private
 
-    def collect_groups(value, groups)
+    def collect_groups(value, groups, seen)
       case value
       when ActiveRecord::Base then groups << [value]
       when ActiveRecord::Relation then groups << value.records if value.loaded?
       when Array, Hash
+        # Cached data can hold itself
+        return unless seen.add?(value)
+
         group = []
         (value.is_a?(Hash) ? value.each_value : value).each do |element|
-          element.is_a?(ActiveRecord::Base) ? group << element : collect_groups(element, groups)
+          element.is_a?(ActiveRecord::Base) ? group << element : collect_groups(element, groups, seen)
         end
-        groups << group
+        groups << group unless group.empty?
       end
     end
 

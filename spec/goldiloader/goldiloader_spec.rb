@@ -1323,6 +1323,29 @@ describe Goldiloader do
       expect(cached[:archive].first.auto_include_context.models).to eq(cached[:archive])
     end
 
+    it "accepts cached data that holds itself" do
+      hash = { blog: Blog.find(blog1.id) }
+      hash[:self] = hash
+      array = [Blog.find(blog2.id)]
+      array << array
+      hash, array = read_back_from_cache([hash, array])
+
+      Goldiloader.restore_auto_include([hash, array])
+
+      expect(hash[:blog].auto_include_context.models).to eq([hash[:blog]])
+      expect(array.first.auto_include_context.models).to eq([array.first])
+    end
+
+    it "doesn't walk the associations of models that weren't read back from a cache" do
+      blogs = Blog.order(:name).includes(:posts).to_a
+      models = blogs + blogs.flat_map(&:posts)
+      models.each { |model| allow(model).to receive(:association_cached?).and_call_original }
+
+      Goldiloader.restore_auto_include(blogs)
+
+      models.each { |model| expect(model).not_to have_received(:association_cached?) }
+    end
+
     it "doesn't load a relation" do
       blogs = Blog.order(:name)
 
