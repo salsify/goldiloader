@@ -148,20 +148,30 @@ proper thread isolation in multi-threaded servers like Puma.
 
 Models dumped with `ActiveRecord.marshalling_format_version = 7.1` (the default under `config.load_defaults 7.1`
 and later), or with the `ActiveRecord::MessagePack` cache serializer, no longer know which models they were
-loaded with once read back from a cache, so each association loads one model at a time.
-`Goldiloader.restore_auto_include` restores automatic eager loading for them and for the models of their loaded
-associations, grouped as a regular load would have grouped them:
+loaded with once read back from a cache, so each association loads one model at a time. `Goldiloader::Cache.fetch`
+reads them from `Rails.cache` and, on a cache hit, restores automatic eager loading for them and for the models of
+their loaded associations. Its block must return a model, an array of models or `nil`:
 
 ```ruby
-blogs = Goldiloader.restore_auto_include(Rails.cache.fetch('blogs') { Blog.includes(:posts).to_a })
+blogs = Goldiloader::Cache.fetch('blogs', expires_in: 1.hour) { Blog.includes(:posts).to_a }
 blogs.each { |blog| blog.posts.each { |post| post.author } } # One query for all authors
 ```
 
-Only saved models read back by `Marshal` or the `ActiveRecord::MessagePack` serializer are changed: those loaded by
-the block on a cache miss, or loaded with `auto_include(false)`, are left as they were, so the result of
-`Rails.cache.fetch` can always be passed. It takes a model, a loaded relation, or arrays and hashes holding them.
-The models directly in each array or hash share a context, like a query result, apart from unrelated classes, so
-`{ featured: [...], archive: [...] }` gives each list its own. Unloaded relations and anything else are skipped.
+For other cache APIs or shapes of cached data, call `Goldiloader.reset_auto_include_context` with an array of models
+read back from a cache. The models of each base class in the array share a context, as if loaded by one query, even
+if they were loaded with `auto_include(false)`. The loaded targets of each of their associations share one, as if
+loaded with `includes`, except when the association's scope uses `auto_include(false)`: each target then gets its own.
+A scope that takes the owner isn't evaluated, so its targets share one. Only call it on a cache hit: models just
+loaded on a cache miss already have the right contexts.
+
+```ruby
+cache_hit = true
+blogs = Rails.cache.fetch('blogs') do
+  cache_hit = false
+  Blog.includes(:posts).to_a
+end
+Goldiloader.reset_auto_include_context(blogs) if cache_hit
+```
 
 ### Association Options
 

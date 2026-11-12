@@ -39,7 +39,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'cgi'
   spec.add_development_dependency 'combustion', '~> 1.5'
   spec.add_development_dependency 'coveralls_reborn', '>= 0.18.0'
-  spec.add_development_dependency 'msgpack'
   spec.add_development_dependency 'rails', '>= 7.2', '< 8.3'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec', '~> 3'

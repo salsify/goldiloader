@@ -9,7 +9,8 @@
   `auto_include: false` option to opt out.
   **Thanks [czj](https://github.com/czj)**
 - Optimize custom preloads.
-- Add `Goldiloader.restore_auto_include` to restore automatic eager loading of models read back from a cache.
+- Add `Goldiloader::Cache.fetch` and `Goldiloader.reset_auto_include_context` to restore automatic eager loading of models
+  read back from a cache.
   **Thanks [czj](https://github.com/czj)**
 
 ## 6.0.1

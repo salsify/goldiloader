@@ -5,7 +5,7 @@ module Goldiloader
     extend ActiveSupport::Concern
 
     included do
-      attr_writer :auto_include_context, :auto_include_context_lost
+      attr_writer :auto_include_context
 
       class << self
         delegate :auto_include, to: :all
@@ -15,20 +15,6 @@ module Goldiloader
     def initialize_copy(other)
       super
       @auto_include_context = nil
-      @auto_include_context_lost = false if @auto_include_context_lost
-    end
-
-    # Whether the model was read back from a cache and Goldiloader.restore_auto_include hasn't seen it yet.
-    # Only set when reading back from a cache, never on models loaded from the database.
-    def auto_include_context_lost?
-      @auto_include_context_lost == true
-    end
-
-    # Called by Marshal for models dumped with ActiveRecord.marshalling_format_version = 7.1, which leaves
-    # out the auto include context
-    def marshal_load(state)
-      super
-      @auto_include_context_lost = true
     end
 
     def auto_include_context
@@ -37,7 +23,6 @@ module Goldiloader
 
     def reload(*)
       @auto_include_context = nil
-      @auto_include_context_lost = false if @auto_include_context_lost
       super
     end
 
@@ -256,18 +241,6 @@ module Goldiloader
     end
   end
   ::ActiveRecord::Associations::CollectionProxy.prepend(::Goldiloader::CollectionProxyPatch)
-
-  # Models read back by the ActiveRecord::MessagePack cache serializer
-  module MessagePackDecoderPatch
-    def build_record(...)
-      model = super
-      model.auto_include_context_lost = true
-      model
-    end
-  end
-  # Defines constants only, without loading msgpack
-  require 'active_record/message_pack'
-  ::ActiveRecord::MessagePack::Decoder.prepend(::Goldiloader::MessagePackDecoderPatch)
 end
 
 Goldiloader::AssociationOptions.register

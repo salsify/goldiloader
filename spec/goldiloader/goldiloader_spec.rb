@@ -1213,7 +1213,7 @@ describe Goldiloader do
     end
   end
 
-  describe ".restore_auto_include" do
+  context "with models read back from a cache" do
     around do |example|
       marshalling_format_version = ActiveRecord.marshalling_format_version
       ActiveRecord.marshalling_format_version = 7.1
@@ -1222,301 +1222,13 @@ describe Goldiloader do
       ActiveRecord.marshalling_format_version = marshalling_format_version
     end
 
-    it "auto eager loads associations of models read back from a cache" do
-      blogs = Goldiloader.restore_auto_include(read_back_from_cache(Blog.order(:name).to_a))
-
-      expect do
-        blogs.first.posts.to_a
-
-        blogs.each do |blog|
-          expect(blog.association(:posts)).to be_loaded
-        end
-      end.to execute_queries(Post => 1)
-    end
-
-    it "registers the models of associations loaded before caching" do
-      blogs = Blog.order(:name).to_a
-      blogs.first.posts.to_a
-      blogs = Goldiloader.restore_auto_include(read_back_from_cache(blogs))
-      posts = blogs.flat_map(&:posts)
-
-      expect do
-        posts.first.author
-
-        posts.each do |post|
-          expect(post.association(:author)).to be_loaded
-        end
-      end.to execute_queries(User => 1)
-    end
-
-    it "gives models the contexts of a regular load" do
-      blogs = Blog.order(:name).to_a
-      blogs.each do |blog|
-        blog.posts.each { |post| post.tags.each(&:owner) }
-        blog.read_only_posts.each(&:author)
-        blog.posts_without_auto_include.each { |post| post.tags.each(&:owner) }
-      end
-      expected_contexts = auto_include_contexts(blogs)
-      blogs = Goldiloader.restore_auto_include(read_back_from_cache(blogs))
-
-      expect(auto_include_contexts(blogs)).to eq(expected_contexts)
-    end
-
-    it "gives targets of associations that can't be eager loaded the contexts of a regular load" do
-      blogs = Blog.order(:name).to_a
-      blogs.each do |blog|
-        blog.limited_posts.to_a
-        blog.instance_dependent_posts.to_a
-        blog.post_with_order
-      end
-      expected_contexts = auto_include_contexts(blogs)
-      blogs = Goldiloader.restore_auto_include(read_back_from_cache(blogs))
-
-      expect(auto_include_contexts(blogs)).to eq(expected_contexts)
-      expect(blogs.first.limited_posts.first.auto_include_context.size).to eq(2)
-      expect(blogs.first.instance_dependent_posts.first.auto_include_context.size).to eq(2)
-    end
-
-    it "leaves models that weren't registered on purpose alone" do
-      unregistered_models = [
-        Blog.auto_include(false).order(:name).to_a,
-        Blog.find_by_sql('SELECT * FROM blogs ORDER BY name', auto_include: false),
-        [Blog.find(blog1.id), Blog.find(blog2.id)],
-        Blog.order(:name).flat_map { |blog| blog.posts_without_auto_include.to_a }
-      ]
-
-      unregistered_models.each do |models|
-        Goldiloader.restore_auto_include(models)
-
-        models.each do |model|
-          expect(model.auto_include_context.models).to eq([model])
-        end
-      end
-    end
-
-    it "restores models read back by the MessagePack cache serializer" do
-      require 'active_support/message_pack'
-      serializer = ActiveSupport::MessagePack::CacheSerializer
-      blogs = Blog.order(:name).to_a
-      blogs.each { |blog| blog.posts.to_a }
-      blogs = Goldiloader.restore_auto_include(serializer.load(serializer.dump(blogs)))
-
-      expect(blogs.first.auto_include_context.models).to eq(blogs)
-      expect(blogs.first.posts.first.auto_include_context.models).to eq(blogs.flat_map(&:posts))
-    end
-
-    it "registers the models of each array or hash together and skips anything else" do
-      blogs = [Blog.find(blog1.id), Blog.find(blog2.id)]
-      cached = read_back_from_cache([*blogs, [User.find(author1.id)], { author: User.find(author2.id), count: 2 }, 'x'])
-
-      expect(Goldiloader.restore_auto_include(cached)).to equal(cached)
-      expect(cached.first.auto_include_context.models).to eq(cached.first(2))
-      expect(cached.dig(2, 0).auto_include_context.models).to eq([cached.dig(2, 0)])
-      expect(cached.dig(3, :author).auto_include_context.models).to eq([cached.dig(3, :author)])
-    end
-
-    it "registers separately cached lists of the same class separately" do
-      cached = read_back_from_cache(featured: Post.order(:id).first(2), archive: Post.order(:id).last(2))
-      Goldiloader.restore_auto_include(cached)
-
-      expect(cached[:featured].first.auto_include_context.models).to eq(cached[:featured])
-      expect(cached[:archive].first.auto_include_context.models).to eq(cached[:archive])
-    end
-
-    it "accepts cached data that holds itself" do
-      hash = { blog: Blog.find(blog1.id) }
-      hash[:self] = hash
-      array = [Blog.find(blog2.id)]
-      array << array
-      hash, array = read_back_from_cache([hash, array])
-
-      Goldiloader.restore_auto_include([hash, array])
-
-      expect(hash[:blog].auto_include_context.models).to eq([hash[:blog]])
-      expect(array.first.auto_include_context.models).to eq([array.first])
-    end
-
-    it "doesn't walk the associations of models that weren't read back from a cache" do
-      blogs = Blog.order(:name).includes(:posts).to_a
-      models = blogs + blogs.flat_map(&:posts)
-      models.each { |model| allow(model).to receive(:association_cached?).and_call_original }
-
-      Goldiloader.restore_auto_include(blogs)
-
-      models.each { |model| expect(model).not_to have_received(:association_cached?) }
-    end
-
-    it "doesn't load a relation" do
-      blogs = Blog.order(:name)
-
-      expect do
-        expect(Goldiloader.restore_auto_include(blogs)).to equal(blogs)
-      end.to execute_queries({})
-      expect(blogs).not_to be_loaded
-    end
-
-    it "doesn't register new records" do
-      blog = Blog.new(name: 'new')
-      2.times { |index| blog.posts.build(title: "new-#{index}") }
-      blogs = Goldiloader.restore_auto_include(read_back_from_cache([blog, Blog.new]))
-
-      expect(blogs.first.auto_include_context.models).to eq([blogs.first])
-      expect(blogs.first.posts.first.auto_include_context.models).to eq([blogs.first.posts.first])
-    end
-
-    it "skips a polymorphic belongs_to with no target and a type that no longer exists" do
-      post = Post.find(blog1.posts.first.id)
-      post.update_columns(owner_type: 'User', owner_id: nil)
-      post.reload.owner
-      # As if the owner's class had been removed since the post was cached
-      post.owner_type = 'RemovedOwner'
-      posts = Goldiloader.restore_auto_include(read_back_from_cache([post]))
-
-      expect(posts.first.auto_include_context.models).to eq(posts)
-    end
-
-    it "doesn't flag copies of models read back from a cache, nor reloaded models" do
-      blog = read_back_from_cache(Blog.find(blog1.id))
-
-      expect(blog.dup).not_to be_auto_include_context_lost
-      expect(blog.clone).not_to be_auto_include_context_lost
-      expect(blog.reload).not_to be_auto_include_context_lost
-    end
-
-    if Gem::Version.new(ActiveRecord::VERSION::STRING).release < Gem::Version.new('8.2')
-      it "leaves models dumped in the 6.1 format, which keeps their context, alone" do
-        ActiveRecord.marshalling_format_version = 6.1
-        blogs = Blog.order(:name).to_a
-        blogs.each { |blog| blog.posts.to_a }
-        blogs = read_back_from_cache(blogs)
-        context = blogs.first.auto_include_context
-
-        Goldiloader.restore_auto_include(blogs)
-
-        expect(blogs.first.auto_include_context).to equal(context)
-        expect(context.models).to eq(blogs)
-      end
-    end
-
-    it "keeps the contexts of models that weren't read back from a cache" do
-      blogs = Blog.order(:name).includes(:posts).to_a
-      blog_context = blogs.first.auto_include_context
-      post_context = blogs.first.posts.first.auto_include_context
-
-      expect(Goldiloader.restore_auto_include(blogs)).to equal(blogs)
-      expect(blogs.first.auto_include_context).to equal(blog_context)
-      expect(blogs.first.posts.first.auto_include_context).to equal(post_context)
-    end
-
-    it "registers models loaded back through an inverse association once" do
-      blogs = Blog.order(:name).to_a
-      blogs.each { |blog| blog.posts_with_inverse_of.to_a }
-      blogs = Goldiloader.restore_auto_include(read_back_from_cache(blogs))
-
-      expect(blogs.first.auto_include_context.models).to eq(blogs)
-    end
-
-    it "registers models of unrelated classes separately" do
-      models = Goldiloader.restore_auto_include(read_back_from_cache(Blog.order(:name).to_a + User.order(:name).to_a))
-      blogs, authors = models.partition { |model| model.is_a?(Blog) }
-
-      expect(blogs.first.auto_include_context.models).to eq(blogs)
-      expect(authors.first.auto_include_context.models).to eq(authors)
-    end
-
-    it "registers models of an STI hierarchy and their loaded associations together" do
-      author2.update!(type: 'Admin')
-      authors = User.order(:name).to_a
-      authors.each { |author| author.posts.to_a }
-      authors = Goldiloader.restore_auto_include(read_back_from_cache(authors))
-      posts = authors.flat_map(&:posts)
-
-      expect(authors.map(&:class)).to eq([User, Admin, User])
-      expect(authors.first.auto_include_context.models).to eq(authors)
-      expect(posts.first.auto_include_context.models).to eq(posts)
-    end
-
-    it "registers the loaded associations of a single model" do
-      blog = Blog.order(:name).first
-      blog.posts.to_a
-      blog = Goldiloader.restore_auto_include(read_back_from_cache(blog))
-
-      expect do
-        blog.posts.first.author
-
-        blog.posts.each do |post|
-          expect(post.association(:author)).to be_loaded
-        end
-      end.to execute_queries(User => 1)
-    end
-
-    it "returns the models in their order, nil included" do
-      blogs = Goldiloader.restore_auto_include(
-        read_back_from_cache([Blog.find(blog2.id), nil, Blog.find(blog1.id)])
-      )
-
-      expect(blogs).to eq([blog2, nil, blog1])
-      expect(blogs.first.auto_include_context.models).to eq(blogs.compact)
-    end
-
-    it "accepts nil" do
-      expect(Goldiloader.restore_auto_include(nil)).to be_nil
-    end
-
-    it "accepts a loaded relation" do
-      blogs = Blog.order(:name).load
-
-      expect(Goldiloader.restore_auto_include(blogs)).to equal(blogs)
-      expect(blogs.first.auto_include_context.models).to eq(blogs.to_a)
-    end
-
-    it "registers models of the same class loaded through different associations separately" do
-      blog = Blog.find(blog2.id)
-      blog.posts.to_a
-      blog.read_only_posts.to_a
-      blog = Goldiloader.restore_auto_include(read_back_from_cache(blog))
-
-      expect(blog.posts.first.auto_include_context.models).to eq(blog.posts.to_a)
-      expect(blog.read_only_posts.first.auto_include_context.models).to eq(blog.read_only_posts.to_a)
-    end
-
-    it "registers loaded polymorphic targets separately by class" do
-      tags = Tag.order(:name).to_a
-      tags.first.owner
-      tags = Goldiloader.restore_auto_include(read_back_from_cache(tags))
-      users, groups = tags.map(&:owner).uniq(&:object_id).partition { |owner| owner.is_a?(User) }
-
-      expect(users.first.auto_include_context.models).to eq(users)
-      expect(groups.first.auto_include_context.models).to eq(groups)
-    end
-
-    it "doesn't register loaded targets of associations with auto_include(false) together" do
-      blogs = Blog.order(:name).to_a
-      blogs.each { |blog| blog.posts_without_auto_include.to_a }
-      blogs = Goldiloader.restore_auto_include(read_back_from_cache(blogs))
-      post = blogs.first.posts_without_auto_include.first
-
-      expect(post.auto_include_context.models).to eq([post])
-    end
-
-    it "registers the models below associations with auto_include(false)" do
-      blogs = Blog.order(:name).to_a
-      blogs.each { |blog| blog.posts_without_auto_include.each { |post| post.tags.to_a } }
-      blogs = Goldiloader.restore_auto_include(read_back_from_cache(blogs))
-      posts = blogs.flat_map(&:posts_without_auto_include)
-
-      expect do
-        posts.each { |post| post.tags.each(&:parent) }
-      end.to execute_queries(Tag => posts.size)
-    end
-
     def read_back_from_cache(models)
       Marshal.load(Marshal.dump(models))
     end
 
     # The context of each model in the loaded graph, as class and id pairs, in traversal order
     def auto_include_contexts(models, visited = Set.new.compare_by_identity)
-      Array.wrap(models).flat_map do |model|
+      models.flat_map do |model|
         next [] unless visited.add?(model)
 
         context = model.auto_include_context.models.map { |peer| [peer.class.name, peer.id] }
@@ -1524,6 +1236,229 @@ describe Goldiloader do
           model.association(reflection.name).target if model.association_cached?(reflection.name)
         end
         [[model.class.name, model.id, context]] + auto_include_contexts(loaded_targets.flatten.compact, visited)
+      end
+    end
+
+    describe ".reset_auto_include_context" do
+      it "auto eager loads associations of models read back from a cache" do
+        blogs = Goldiloader.reset_auto_include_context(read_back_from_cache(Blog.order(:name).to_a))
+
+        expect do
+          blogs.first.posts.to_a
+
+          blogs.each do |blog|
+            expect(blog.association(:posts)).to be_loaded
+          end
+        end.to execute_queries(Post => 1)
+      end
+
+      it "registers the models of associations loaded before caching" do
+        blogs = Blog.order(:name).to_a
+        blogs.first.posts.to_a
+        blogs = Goldiloader.reset_auto_include_context(read_back_from_cache(blogs))
+        posts = blogs.flat_map(&:posts)
+
+        expect do
+          posts.first.author
+
+          posts.each do |post|
+            expect(post.association(:author)).to be_loaded
+          end
+        end.to execute_queries(User => 1)
+      end
+
+      it "gives models the contexts of a load with includes" do
+        blogs = Blog.order(:name).includes(
+          posts: { tags: :owner },
+          read_only_posts: :author,
+          limited_posts: :author,
+          posts_without_auto_include: :tags
+        ).to_a
+        expected_contexts = auto_include_contexts(blogs)
+        blogs = read_back_from_cache(blogs)
+
+        expect { Goldiloader.reset_auto_include_context(blogs) }.to execute_queries({})
+        expect(auto_include_contexts(blogs)).to eq(expected_contexts)
+      end
+
+      it "gives models of a scoped has_and_belongs_to_many the contexts of a load with includes" do
+        posts = Post.order(:id).includes(:tags_without_auto_include).to_a
+        expected_contexts = auto_include_contexts(posts)
+        posts = Goldiloader.reset_auto_include_context(read_back_from_cache(posts))
+
+        expect(auto_include_contexts(posts)).to eq(expected_contexts)
+      end
+
+      it "registers the loaded targets of each association together, as if they had been preloaded" do
+        blogs = Blog.order(:name).to_a
+        blogs.each do |blog|
+          blog.limited_posts.to_a
+          blog.instance_dependent_posts.to_a
+          blog.posts_without_auto_include.to_a
+        end
+        blogs = read_back_from_cache(blogs)
+
+        expect { Goldiloader.reset_auto_include_context(blogs) }.to execute_queries({})
+        expect(blogs.first.limited_posts.first.auto_include_context.models).to eq(blogs.flat_map(&:limited_posts))
+        expect(blogs.first.instance_dependent_posts.first.auto_include_context.models)
+          .to eq(blogs.flat_map(&:instance_dependent_posts))
+        blogs.flat_map(&:posts_without_auto_include).each do |post|
+          expect(post.auto_include_context.models).to eq([post])
+        end
+      end
+
+      it "doesn't register new records" do
+        blog = Blog.find(blog1.id)
+        blog.posts.to_a
+        blog.posts.build(title: 'new')
+        blog = Goldiloader.reset_auto_include_context(read_back_from_cache([blog, Blog.new])).first
+
+        expect(blog.posts.last.auto_include_context.models).to eq([blog.posts.last])
+        expect(blog.posts.first.auto_include_context.models).to eq(blog.posts.select(&:persisted?))
+      end
+
+      it "registers models of the same class loaded through different associations separately" do
+        blog = Blog.find(blog2.id)
+        blog.posts.to_a
+        blog.read_only_posts.to_a
+        blog = Goldiloader.reset_auto_include_context(read_back_from_cache([blog])).first
+
+        expect(blog.posts.first.auto_include_context.models).to eq(blog.posts.to_a)
+        expect(blog.read_only_posts.first.auto_include_context.models).to eq(blog.read_only_posts.to_a)
+      end
+
+      it "registers loaded polymorphic targets separately by class" do
+        tags = Tag.order(:name).to_a
+        tags.first.owner
+        tags = Goldiloader.reset_auto_include_context(read_back_from_cache(tags))
+        users, groups = tags.map(&:owner).uniq(&:object_id).partition { |owner| owner.is_a?(User) }
+
+        expect(users.first.auto_include_context.models).to eq(users)
+        expect(groups.first.auto_include_context.models).to eq(groups)
+      end
+
+      it "registers models of an STI hierarchy and their loaded associations together" do
+        author2.update!(type: 'Admin')
+        authors = User.order(:name).to_a
+        authors.each { |author| author.posts.to_a }
+        authors = Goldiloader.reset_auto_include_context(read_back_from_cache(authors))
+        posts = authors.flat_map(&:posts)
+
+        expect(authors.map(&:class)).to eq([User, Admin, User])
+        expect(authors.first.auto_include_context.models).to eq(authors)
+        expect(posts.first.auto_include_context.models).to eq(posts)
+      end
+
+      it "registers models loaded back through an inverse association once" do
+        blogs = Blog.order(:name).to_a
+        blogs.each { |blog| blog.posts_with_inverse_of.to_a }
+        blogs = Goldiloader.reset_auto_include_context(read_back_from_cache(blogs))
+
+        expect(blogs.first.auto_include_context.models).to eq(blogs)
+      end
+
+      it "returns the models in their order, nil included" do
+        blogs = Goldiloader.reset_auto_include_context(
+          read_back_from_cache([Blog.find(blog2.id), nil, Blog.find(blog1.id)])
+        )
+
+        expect(blogs).to eq([blog2, nil, blog1])
+        expect(blogs.first.auto_include_context.models).to eq(blogs.compact)
+      end
+
+      it "registers models of unrelated classes separately" do
+        models = Goldiloader.reset_auto_include_context(
+          read_back_from_cache(Blog.order(:name).to_a + User.order(:name).to_a)
+        )
+        blogs, authors = models.partition { |model| model.is_a?(Blog) }
+
+        expect(blogs.first.auto_include_context.models).to eq(blogs)
+        expect(authors.first.auto_include_context.models).to eq(authors)
+      end
+
+      it "accepts a loaded scoped polymorphic belongs_to whose type was cleared" do
+        tag = Tag.find_by!(owner: author1)
+        tag.scoped_owner
+        # Shares its columns with the scoped association, whose target stays loaded
+        tag.owner = nil
+        tags = Goldiloader.reset_auto_include_context(read_back_from_cache([tag]))
+
+        expect(tags.first.scoped_owner).to eq(author1)
+        expect(tags.first.scoped_owner.auto_include_context.models).to eq([tags.first.scoped_owner])
+      end
+
+      it "replaces the contexts models already have" do
+        blogs = [Blog.find(blog1.id), Blog.find(blog2.id)]
+
+        Goldiloader.reset_auto_include_context(blogs)
+
+        expect(blogs.first.auto_include_context.models).to eq(blogs)
+      end
+    end
+
+    describe Goldiloader::Cache do
+      let(:cache) { ActiveSupport::Cache::MemoryStore.new }
+
+      before do
+        allow(Rails).to receive(:cache).and_return(cache)
+      end
+
+      it "auto eager loads associations of models read back on a cache hit" do
+        Goldiloader::Cache.fetch('blogs') { Blog.order(:name).includes(:posts).to_a }
+        blogs = Goldiloader::Cache.fetch('blogs') { raise 'cache miss' }
+        posts = blogs.flat_map(&:posts)
+
+        expect(blogs.first.auto_include_context.models).to eq(blogs)
+        expect do
+          posts.first.author
+
+          posts.each do |post|
+            expect(post.association(:author)).to be_loaded
+          end
+        end.to execute_queries(User => 1)
+      end
+
+      it "auto eager loads associations of a single model read back on a cache hit" do
+        Goldiloader::Cache.fetch('blog') { Blog.includes(:posts).find(blog1.id) }
+        blog = Goldiloader::Cache.fetch('blog') { raise 'cache miss' }
+
+        expect(blog.posts.first.auto_include_context.models).to eq(blog.posts.to_a)
+      end
+
+      it "leaves the contexts of models loaded on a cache miss alone" do
+        allow(Goldiloader).to receive(:reset_auto_include_context)
+
+        blogs = Goldiloader::Cache.fetch('blogs') { Blog.order(:name).to_a }
+
+        expect(blogs).to eq([blog1, blog2])
+        expect(Goldiloader).not_to have_received(:reset_auto_include_context)
+      end
+
+      it "passes its options to Rails.cache" do
+        allow(cache).to receive(:fetch).and_call_original
+
+        Goldiloader::Cache.fetch('blogs', expires_in: 60) { Blog.order(:name).to_a }
+
+        expect(cache).to have_received(:fetch).with('blogs', { expires_in: 60 })
+      end
+
+      it "accepts nil" do
+        expect(Goldiloader::Cache.fetch('blog') { Blog.find_by(name: 'missing') }).to be_nil
+        expect(Goldiloader::Cache.fetch('blog') { raise 'cache miss' }).to be_nil
+      end
+
+      it "accepts nil in an array" do
+        Goldiloader::Cache.fetch('blogs') { [Blog.find(blog1.id), nil] }
+        blogs = Goldiloader::Cache.fetch('blogs') { raise 'cache miss' }
+
+        expect(blogs).to eq([blog1, nil])
+      end
+
+      it "raises for other values without caching them" do
+        expect do
+          Goldiloader::Cache.fetch('blogs') { { featured: Blog.order(:name).to_a } }
+        end.to raise_error(ArgumentError, /not Hash/)
+        expect(cache.exist?('blogs')).to be(false)
       end
     end
   end
