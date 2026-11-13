@@ -16,6 +16,7 @@ ActiveRecord::Schema.define(version: 0) do
 
   create_table(:users, force: true) do |t|
     t.string :name
+    t.string :type
   end
 
   create_table(:addresses, force: true) do |t|
@@ -207,6 +208,9 @@ class User < ActiveRecord::Base
   has_one :scoped_address_with_default_scope_remove, -> { unscope(where: :city) }, class_name: 'ScopedAddress'
 
   has_one_attached :avatar
+end
+
+class Admin < User
 end
 
 class Address < ActiveRecord::Base

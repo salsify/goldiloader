@@ -9,6 +9,9 @@
   `auto_include: false` option to opt out.
   **Thanks [czj](https://github.com/czj)**
 - Optimize custom preloads.
+- Add `Goldiloader::Cache.fetch` and `Goldiloader.reset_auto_include_context` to restore automatic eager loading of models
+  read back from a cache.
+  **Thanks [czj](https://github.com/czj)**
 - Fix [issue 166](https://github.com/salsify/goldiloader/issues/166) - Don't auto eager load through associations
   whose source records are already loaded when Rails would then drop their scope, or the scope of a nested through
   association. Reading an unscoped sibling first now runs one query per model for such an association, except for
