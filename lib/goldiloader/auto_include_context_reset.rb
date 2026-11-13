@@ -43,8 +43,9 @@ module Goldiloader
 
           # Don't use Array.wrap(), see AutoIncludeContext#register_models
           target = association.target
-          targets = target.is_a?(Array) ? target : [target].compact
-          next if targets.empty?
+          next if target.blank?
+
+          targets = target.is_a?(Array) ? target : [target]
 
           if auto_include_disabled?(association, disabled_scopes)
             targets.each { |target_model| single_groups << [target_model] }
