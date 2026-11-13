@@ -599,10 +599,8 @@ describe Goldiloader do
   context "scoped has_many through associations" do
     let(:posts) { Post.order(:title).to_a }
     let(:tags_owned_by_users) { [[child_tag1], [child_tag1], [child_tag1], [child_tag3]] }
-    # Rails versions with https://github.com/rails/rails/pull/59599 query filtered source records again
-    let(:rails_requeries_filtered_source) do
-      ActiveRecord::Associations::Preloader::ThroughAssociation.const_defined?(:SOURCE_REUSING_SCOPE_VALUES, false)
-    end
+    # Rails 8.2 queries filtered records again (https://github.com/rails/rails/pull/59599)
+    let(:rails_requeries_filtered_records) { !Goldiloader::Compatibility.pre_rails_8_2? }
 
     context "when the through association isn't loaded" do
       it "applies the scope correctly" do
@@ -629,7 +627,7 @@ describe Goldiloader do
       it "auto eager loads the association only if Rails queries the filtered source records again" do
         posts.first.tags_owned_by_users.to_a
         posts.drop(1).each do |post|
-          expect(post.association(:tags_owned_by_users).loaded?).to eq rails_requeries_filtered_source
+          expect(post.association(:tags_owned_by_users).loaded?).to eq rails_requeries_filtered_records
         end
       end
     end
@@ -647,7 +645,7 @@ describe Goldiloader do
 
       it "only auto eager loads the association for the other models unless Rails queries the filtered source again" do
         posts.second.tags_owned_by_users.to_a
-        expect(posts.first.association(:tags_owned_by_users).loaded?).to eq rails_requeries_filtered_source
+        expect(posts.first.association(:tags_owned_by_users).loaded?).to eq rails_requeries_filtered_records
         posts.drop(2).each do |post|
           expect(post.association(:tags_owned_by_users)).to be_loaded
         end
@@ -768,6 +766,14 @@ describe Goldiloader do
     end
   end
 
+  # Goldiloader leaves through associations to Rails from 8.2 on, which still drops the scope of some nested
+  # through associations that reuse loaded records
+  def pending_nested_through_fix_on_rails_8_2
+    return if Goldiloader::Compatibility.pre_rails_8_2?
+
+    pending("Rails fixes nested through associations in https://github.com/rails/rails/pull/59797")
+  end
+
   context "scoped nested through associations after an unscoped sibling was auto eager loaded" do
     let(:blogs) { Blog.order(:name).to_a }
 
@@ -783,6 +789,7 @@ describe Goldiloader do
 
     # The source association is a through association itself e.g. `Post#tags`
     it "applies the scope correctly when the source is a through association" do
+      pending_nested_through_fix_on_rails_8_2
       expect(blogs.map { |blog| blog.reverse_ordered_tags.to_a }).to eq expected(:reverse_ordered_tags)
     end
 
@@ -790,6 +797,7 @@ describe Goldiloader do
     # through are, along with their source records e.g. `Blog#blog_post_tags` goes through the loaded `posts`
     # and their loaded `post_tags`, whose `tag` is loaded too.
     it "applies the scope correctly when the through association is a through association" do
+      pending_nested_through_fix_on_rails_8_2
       expect(blogs.map { |blog| blog.tags_owned_by_users.to_a }).to eq expected(:tags_owned_by_users)
     end
 
@@ -798,11 +806,12 @@ describe Goldiloader do
       expect(blogs.map { |blog| blog.post_tags_owned_by_users.to_a }).to eq expected(:post_tags_owned_by_users)
     end
 
-    it "doesn't auto eager load the associations" do
+    it "auto eager loads the associations only from Rails 8.2 on" do
       blogs.first.reverse_ordered_tags.to_a
       blogs.first.tags_owned_by_users.to_a
-      expect(blogs.second.association(:reverse_ordered_tags)).not_to be_loaded
-      expect(blogs.second.association(:tags_owned_by_users)).not_to be_loaded
+      rails_8_2 = !Goldiloader::Compatibility.pre_rails_8_2?
+      expect(blogs.second.association(:reverse_ordered_tags).loaded?).to eq rails_8_2
+      expect(blogs.second.association(:tags_owned_by_users).loaded?).to eq rails_8_2
     end
   end
 
@@ -833,6 +842,7 @@ describe Goldiloader do
     end
 
     it "applies the scope correctly" do
+      pending_nested_through_fix_on_rails_8_2
       expected = Goldiloader.disabled { Blog.order(:name).map { |blog| blog.tags_owned_by_users.to_a } }
       expect(blogs.map { |blog| blog.tags_owned_by_users.to_a }).to eq expected
       expect(expected.first).to eq [child_tag1, child_tag1]
@@ -850,6 +860,7 @@ describe Goldiloader do
     end
 
     it "applies the scope correctly" do
+      pending_nested_through_fix_on_rails_8_2
       expected = Goldiloader.disabled do
         Blog.order(:name).map { |blog| blog.first_posts_of_tags_owned_by_users.to_a }
       end
@@ -872,6 +883,7 @@ describe Goldiloader do
     end
 
     it "applies the scope correctly" do
+      pending_nested_through_fix_on_rails_8_2
       posts = blogs.flat_map(&:posts).sort_by(&:title)
       expected = Goldiloader.disabled do
         Post.order(:title).map { |post| post.ordered_blog_user_tag_children.to_a }

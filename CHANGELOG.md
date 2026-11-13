@@ -12,10 +12,9 @@
 - Add `Goldiloader::Cache.fetch` and `Goldiloader.reset_auto_include_context` to restore automatic eager loading of models
   read back from a cache.
   **Thanks [czj](https://github.com/czj)**
-- Fix [issue 166](https://github.com/salsify/goldiloader/issues/166) - Don't auto eager load through associations
-  whose source records are already loaded when Rails would then drop their scope, or the scope of a nested through
-  association. Reading an unscoped sibling first now runs one query per model for such an association, except for
-  single level through associations on Rails versions that fix it. **Thanks [czj](https://github.com/czj)**
+- Fix [issue 166](https://github.com/salsify/goldiloader/issues/166) - On Rails before 8.2, don't auto eager load
+  a scoped through association whose records are already loaded, since Rails would then drop its scope. Reading an
+  unscoped sibling first now runs one query per model for such an association. **Thanks [czj](https://github.com/czj)**
 
 ## 6.0.1
 - Add Ruby 4.0 testing.

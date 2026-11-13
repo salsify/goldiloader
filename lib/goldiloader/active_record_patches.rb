@@ -253,55 +253,35 @@ module Goldiloader
 
     private
 
-    # Rails versions with https://github.com/rails/rails/pull/59599 query the through or source records of a
-    # through association again instead of reusing loaded ones when its scope filters them
-    RAILS_REQUERIES_FILTERED_SOURCE =
-      ::ActiveRecord::Associations::Preloader::ThroughAssociation.const_defined?(:SOURCE_REUSING_SCOPE_VALUES, false)
-    private_constant :RAILS_REQUERIES_FILTERED_SOURCE
-
+    # Rails 8.2 queries loaded through or source records again when the association's scope filters them
+    # (https://github.com/rails/rails/pull/59599, and https://github.com/rails/rails/pull/59797 for nested
+    # through associations), so only earlier versions need the check
     def eager_loadable?
+      return super unless ::Goldiloader::Compatibility.pre_rails_8_2?
+
       super && !scope_lost_by_reusing_loaded_records?(owner, reflection)
     end
 
     # A sibling association might have loaded the records this association would reuse e.g. `tags` loads the
     # `post_tags` and their `tag` that `tags_owned_by_users` goes through too. Rails reuses a loaded association
     # even when it holds nil or nothing, at every level of a nested through association, and loses the scope of
-    # the association it preloads. Through records loaded without their source records are fine: the source
-    # records are queried with the association's scope (a scope with a condition on the through table then
-    # raises on Rails versions without the fix, with or without this check).
-    #
-    # `preloaded_again` is true when Rails might preload `chain_reflection` although it's loaded on `record`.
-    def scope_lost_by_reusing_loaded_records?(record, chain_reflection, preloaded_again: false)
+    # the association it preloads. Through records loaded without their source records aren't checked: the
+    # source records are queried with the association's scope (a scope with a condition on the through table
+    # then raises, and one with a condition and an order can lose the order, with or without this check).
+    def scope_lost_by_reusing_loaded_records?(record, chain_reflection)
       return false unless chain_reflection.through_reflection?
-      return false if !preloaded_again && loaded_association?(record, chain_reflection.name)
+      return false if loaded_association?(record, chain_reflection.name)
 
       through_reflection = chain_reflection.through_reflection
       source_reflection = chain_reflection.source_reflection
       scope_lost = chain_reflection.scope_lost_by_reusing_loaded_records?(chain_reflection.klass)
-      # Rails with the fix doesn't read a loaded through or source association that the scope filters: it
-      # preloads it again, and for a nested through association that reuses what's loaded further down. Which
-      # of the two it preloads again isn't worked out here, so a nested through association can still be kept
-      # out of the batch on those versions when Rails would get it right.
-      preloads_again = RAILS_REQUERIES_FILTERED_SOURCE && scope_lost
-      return true if scope_lost_by_reusing_loaded_records?(record, through_reflection, preloaded_again: preloads_again)
+      return true if scope_lost_by_reusing_loaded_records?(record, through_reflection)
       return false unless scope_lost || source_reflection.through_reflection?
 
-      any_reused_record?(record, through_reflection, preloaded_again: preloads_again) do |through_record|
-        (scope_lost && reuses_loaded_source?(through_record, chain_reflection)) ||
+      any_loaded_record?(record, through_reflection) do |through_record|
+        (scope_lost && reuses_loaded_association?(through_record, source_reflection)) ||
           scope_lost_by_reusing_loaded_records?(through_record, source_reflection)
       end
-    end
-
-    # Whether preloading `chain_reflection` reuses something loaded on `through_record`, one of its through
-    # records, in a way Rails doesn't guard against
-    def reuses_loaded_source?(through_record, chain_reflection)
-      source_reflection = chain_reflection.source_reflection
-      # Rails with the fix still reuses what's loaded further down a nested through association
-      return false if RAILS_REQUERIES_FILTERED_SOURCE &&
-                      !chain_reflection.through_reflection.through_reflection? &&
-                      !source_reflection.through_reflection?
-
-      reuses_loaded_association?(through_record, source_reflection)
     end
 
     # Whether Rails reuses a loaded association instead of querying when preloading `chain_reflection` on
@@ -311,24 +291,23 @@ module Goldiloader
       return true if loaded_association?(record, chain_reflection.name)
       return false unless chain_reflection.through_reflection?
 
-      any_reused_record?(record, chain_reflection.through_reflection) do |through_record|
+      any_loaded_record?(record, chain_reflection.through_reflection) do |through_record|
         reuses_loaded_association?(through_record, chain_reflection.source_reflection)
       end
     end
 
-    # Whether the block returns true for any record Rails reuses when preloading `chain_reflection` on `record`.
-    # When Rails might preload a loaded association again (`preloaded_again`), it reuses what's loaded further
-    # down instead, so both are checked.
-    def any_reused_record?(record, chain_reflection, preloaded_again: false, &block)
-      loaded = loaded_association?(record, chain_reflection.name)
-      if loaded
+    # Whether the block returns true for any loaded record of `chain_reflection` on `record`. When a through
+    # association isn't loaded, its records are looked for in what's loaded at each level of its chain.
+    def any_loaded_record?(record, chain_reflection, &block)
+      if loaded_association?(record, chain_reflection.name)
         target = record.association(chain_reflection.name).target
-        return true if target.is_a?(Array) ? target.any?(&block) : !target.nil? && yield(target)
-      end
-      return false if (loaded && !preloaded_again) || !chain_reflection.through_reflection?
-
-      any_reused_record?(record, chain_reflection.through_reflection) do |through_record|
-        any_reused_record?(through_record, chain_reflection.source_reflection, &block)
+        target.is_a?(Array) ? target.any?(&block) : !target.nil? && yield(target)
+      elsif chain_reflection.through_reflection?
+        any_loaded_record?(record, chain_reflection.through_reflection) do |through_record|
+          any_loaded_record?(through_record, chain_reflection.source_reflection, &block)
+        end
+      else
+        false
       end
     end
 
