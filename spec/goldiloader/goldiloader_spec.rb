@@ -596,6 +596,330 @@ describe Goldiloader do
     end
   end
 
+  context "scoped has_many through associations" do
+    let(:posts) { Post.order(:title).to_a }
+    let(:tags_owned_by_users) { [[child_tag1], [child_tag1], [child_tag1], [child_tag3]] }
+    # Rails 8.2 queries filtered records again (https://github.com/rails/rails/pull/59599)
+    let(:rails_requeries_filtered_records) { !Goldiloader::Compatibility.pre_rails_8_2? }
+
+    context "when the through association isn't loaded" do
+      it "applies the scope correctly" do
+        expect(posts.map(&:tags_owned_by_users)).to eq tags_owned_by_users
+      end
+
+      it "auto eager loads the association" do
+        posts.first.tags_owned_by_users.to_a
+        posts.drop(1).each do |post|
+          expect(post.association(:tags_owned_by_users)).to be_loaded
+        end
+      end
+    end
+
+    context "when an unscoped sibling was auto eager loaded" do
+      before do
+        posts.first.tags.to_a
+      end
+
+      it "applies the scope correctly" do
+        expect(posts.map(&:tags_owned_by_users)).to eq tags_owned_by_users
+      end
+
+      it "auto eager loads the association only if Rails queries the filtered source records again" do
+        posts.first.tags_owned_by_users.to_a
+        posts.drop(1).each do |post|
+          expect(post.association(:tags_owned_by_users).loaded?).to eq rails_requeries_filtered_records
+        end
+      end
+    end
+
+    context "when the through association is only loaded for some models" do
+      before do
+        Goldiloader.disabled { posts.first.post_tags.each(&:tag) }
+      end
+
+      it "applies the scope correctly" do
+        # Read the association on the last post first so the auto eager load runs while the first post's
+        # tags are already loaded, then reverse back to compare in title order.
+        expect(posts.reverse.map(&:tags_owned_by_users).reverse).to eq tags_owned_by_users
+      end
+
+      it "only auto eager loads the association for the other models unless Rails queries the filtered source again" do
+        posts.second.tags_owned_by_users.to_a
+        expect(posts.first.association(:tags_owned_by_users).loaded?).to eq rails_requeries_filtered_records
+        posts.drop(2).each do |post|
+          expect(post.association(:tags_owned_by_users)).to be_loaded
+        end
+      end
+    end
+
+    context "when the through association was loaded without its source records" do
+      before do
+        posts.first.post_tags.map(&:tag_id)
+      end
+
+      it "applies the scope correctly" do
+        expect(posts.map(&:tags_owned_by_users)).to eq tags_owned_by_users
+      end
+
+      it "auto eager loads the association" do
+        posts.first.tags_owned_by_users.to_a
+        posts.drop(1).each do |post|
+          expect(post.association(:tags_owned_by_users)).to be_loaded
+        end
+      end
+    end
+
+    context "when the scope only preloads and an unscoped sibling was auto eager loaded" do
+      before do
+        posts.first.tags.to_a
+      end
+
+      it "auto eager loads the association" do
+        posts.first.tags_with_owner.to_a
+        posts.drop(1).each do |post|
+          expect(post.association(:tags_with_owner)).to be_loaded
+        end
+      end
+    end
+
+    context "when a singular through association was loaded without its source records" do
+      let(:author_blog1_posts) do
+        blog1_post1, blog1_post2 = Post.where(blog: blog1).order(:title).to_a
+        [[blog1_post1], [blog1_post2], [], [blog1_post1]]
+      end
+
+      before do
+        posts.first.author.name
+      end
+
+      it "applies the scope correctly" do
+        expect(posts.map(&:author_blog1_posts)).to eq author_blog1_posts
+      end
+
+      it "auto eager loads the association" do
+        posts.first.author_blog1_posts.to_a
+        posts.drop(1).each do |post|
+          expect(post.association(:author_blog1_posts)).to be_loaded
+        end
+      end
+    end
+
+    context "when the source records were loaded as nil" do
+      let!(:post1) { Post.create! { |post| post.tags << child_tag1 } }
+      let!(:post2) { Post.create! { |post| post.tags << child_tag1 << child_tag2 } }
+      let(:posts) { Post.where(id: [post1.id, post2.id]).order(:id).to_a }
+
+      before do
+        Goldiloader.disabled do
+          ActiveRecord::Associations::Preloader.new(records: posts, associations: :post_tags).call
+          # Loads the first post's only tag, owned by a user, as nil
+          ActiveRecord::Associations::Preloader.new(
+            records: posts.first.post_tags.to_a, associations: :tag, scope: Tag.where(owner_type: 'Group')
+          ).call
+        end
+      end
+
+      it "applies the scope correctly" do
+        # Read the last post first so that its auto eager load could cover the first post
+        expect(posts.last.tags_owned_by_users.to_a).to eq [child_tag1]
+        expect(posts.first.tags_owned_by_users.to_a).to eq [child_tag1]
+      end
+    end
+  end
+
+  context "distinct has_many through associations after an unscoped sibling was auto eager loaded" do
+    let(:posts) { Post.order(:title).to_a }
+
+    before do
+      posts.first.tags.to_a
+    end
+
+    it "applies the scope correctly" do
+      expected = Goldiloader.disabled { Post.order(:title).map { |post| post.unique_tags.to_a } }
+      expect(posts.map { |post| post.unique_tags.to_a }).to eq expected
+    end
+
+    it "auto eager loads the association" do
+      posts.first.unique_tags.to_a
+      posts.drop(1).each do |post|
+        expect(post.association(:unique_tags)).to be_loaded
+      end
+    end
+  end
+
+  context "scoped has_and_belongs_to_many associations after an unscoped sibling was auto eager loaded" do
+    let(:posts) { Post.order(:title).to_a }
+
+    before do
+      posts.first.tags.to_a
+    end
+
+    it "applies the scope correctly" do
+      expect(posts.map(&:habtm_tags_owned_by_users)).to eq [[child_tag1], [child_tag1], [child_tag1], [child_tag3]]
+    end
+
+    it "auto eager loads the association" do
+      posts.first.habtm_tags_owned_by_users.to_a
+      posts.drop(1).each do |post|
+        expect(post.association(:habtm_tags_owned_by_users)).to be_loaded
+      end
+    end
+  end
+
+  # Goldiloader leaves through associations to Rails from 8.2 on, which still drops the scope of some nested
+  # through associations that reuse loaded records
+  def pending_nested_through_fix_on_rails_8_2
+    return if Goldiloader::Compatibility.pre_rails_8_2?
+
+    pending("Rails fixes nested through associations in https://github.com/rails/rails/pull/59797")
+  end
+
+  context "scoped nested through associations after an unscoped sibling was auto eager loaded" do
+    let(:blogs) { Blog.order(:name).to_a }
+
+    def expected(association_name)
+      Goldiloader.disabled do
+        Blog.order(:name).map { |blog| blog.public_send(association_name).to_a }
+      end
+    end
+
+    before do
+      blogs.first.tags.to_a
+    end
+
+    # The source association is a through association itself e.g. `Post#tags`
+    it "applies the scope correctly when the source is a through association" do
+      pending_nested_through_fix_on_rails_8_2
+      expect(blogs.map { |blog| blog.reverse_ordered_tags.to_a }).to eq expected(:reverse_ordered_tags)
+    end
+
+    # The through association is a through association itself that isn't loaded, but the records it goes
+    # through are, along with their source records e.g. `Blog#blog_post_tags` goes through the loaded `posts`
+    # and their loaded `post_tags`, whose `tag` is loaded too.
+    it "applies the scope correctly when the through association is a through association" do
+      pending_nested_through_fix_on_rails_8_2
+      expect(blogs.map { |blog| blog.tags_owned_by_users.to_a }).to eq expected(:tags_owned_by_users)
+    end
+
+    # The source association is a scoped through association, the association itself isn't scoped
+    it "applies the scope correctly when the source is a scoped through association" do
+      expect(blogs.map { |blog| blog.post_tags_owned_by_users.to_a }).to eq expected(:post_tags_owned_by_users)
+    end
+
+    it "auto eager loads the associations only from Rails 8.2 on" do
+      blogs.first.reverse_ordered_tags.to_a
+      blogs.first.tags_owned_by_users.to_a
+      rails_8_2 = !Goldiloader::Compatibility.pre_rails_8_2?
+      expect(blogs.second.association(:reverse_ordered_tags).loaded?).to eq rails_8_2
+      expect(blogs.second.association(:tags_owned_by_users).loaded?).to eq rails_8_2
+    end
+  end
+
+  context "through associations through a scoped through association after an unscoped sibling was auto eager loaded" do
+    let!(:user_tag_child) { child_tag1.children.create!(name: 'user-tag-child') }
+    let!(:group_tag_child) { child_tag2.children.create!(name: 'group-tag-child') }
+    let(:posts) { Post.order(:title).to_a }
+
+    before do
+      posts.first.tags.to_a
+    end
+
+    it "applies the scope correctly" do
+      expected = Goldiloader.disabled { Post.order(:title).map { |post| post.tags_owned_by_users_children.to_a } }
+      expect(posts.map { |post| post.tags_owned_by_users_children.to_a }).to eq expected
+      expect(expected.first).to eq [user_tag_child]
+    end
+  end
+
+  context "scoped nested through associations whose through association was loaded without its source records" do
+    let(:blogs) { Blog.order(:name).to_a }
+
+    before do
+      # Each blog's `blog_post_tags` come from their own query, without their `tag`. The unscoped sibling then
+      # loads the `posts`, their `post_tags` and each `tag` that `blog_post_tags` goes through.
+      Goldiloader.disabled { blogs.each { |blog| blog.blog_post_tags.to_a } }
+      blogs.first.tags.to_a
+    end
+
+    it "applies the scope correctly" do
+      pending_nested_through_fix_on_rails_8_2
+      expected = Goldiloader.disabled { Blog.order(:name).map { |blog| blog.tags_owned_by_users.to_a } }
+      expect(blogs.map { |blog| blog.tags_owned_by_users.to_a }).to eq expected
+      expect(expected.first).to eq [child_tag1, child_tag1]
+    end
+  end
+
+  context "scoped through associations through a loaded scoped nested through association" do
+    let(:blogs) { Blog.order(:name).to_a }
+
+    before do
+      # The unscoped sibling loads the `posts`, their `post_tags` and each `tag`, so that `tags_owned_by_users`
+      # is then loaded lazily for each blog
+      blogs.first.tags.to_a
+      blogs.each { |blog| blog.tags_owned_by_users.to_a }
+    end
+
+    it "applies the scope correctly" do
+      pending_nested_through_fix_on_rails_8_2
+      expected = Goldiloader.disabled do
+        Blog.order(:name).map { |blog| blog.first_posts_of_tags_owned_by_users.to_a }
+      end
+      expect(blogs.map { |blog| blog.first_posts_of_tags_owned_by_users.to_a }).to eq expected
+      # Once for each of the blog's two tags owned by a user, not for the one owned by a group
+      expect(expected.first.map(&:title)).to eq ['blog1-post1', 'blog1-post1']
+    end
+  end
+
+  context "scoped through associations whose loaded source goes through a scoped nested through association" do
+    let!(:user_tag_child) { child_tag1.children.create!(name: 'user-tag-child') }
+    let!(:group_tag_child) { child_tag2.children.create!(name: 'group-tag-child') }
+    let(:blogs) { Blog.order(:name).to_a }
+
+    before do
+      # The unscoped sibling loads the `posts`, their `post_tags` and each `tag`, so that `user_tag_children`
+      # is then loaded lazily for each blog
+      blogs.first.tags.to_a
+      blogs.each { |blog| blog.user_tag_children.to_a }
+    end
+
+    it "applies the scope correctly" do
+      pending_nested_through_fix_on_rails_8_2
+      posts = blogs.flat_map(&:posts).sort_by(&:title)
+      expected = Goldiloader.disabled do
+        Post.order(:title).map { |post| post.ordered_blog_user_tag_children.to_a }
+      end
+      expect(posts.map { |post| post.ordered_blog_user_tag_children.to_a }).to eq expected
+      expect(expected.flatten.uniq).to eq [user_tag_child]
+    end
+  end
+
+  context "scoped through associations with a through source after the unscoped chain was auto eager loaded" do
+    let(:users) { User.order(:name).to_a }
+
+    before do
+      users.each { |user| user.posts.each { |post| post.tags.to_a } }
+    end
+
+    it "applies the scope correctly" do
+      expect(users.map { |user| user.posts_tags_owned_by_users.sort_by(&:id) })
+        .to eq [[child_tag1, child_tag3], [child_tag1], [child_tag1]]
+    end
+  end
+
+  context "scoped through associations through a through association after the unscoped chain was auto eager loaded" do
+    let!(:tag_children) { Array.new(2) { |index| child_tag1.children.create!(name: "parent1-child1-child#{index}") } }
+    let(:posts) { Post.order(:title).to_a }
+
+    before do
+      posts.each { |post| post.tags.each { |tag| tag.children.to_a } }
+    end
+
+    it "applies the scope correctly" do
+      expect(posts.map { |post| post.ordered_tag_children.to_a })
+        .to eq [tag_children.reverse, tag_children.reverse, tag_children.reverse, []]
+    end
+  end
+
   context "polymorphic associations with nil" do
     let!(:user) { User.create! }
     let!(:group) { Group.create! }

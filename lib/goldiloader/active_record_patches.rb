@@ -122,6 +122,34 @@ module Goldiloader
   ActiveRecord::Reflection::AssociationReflection.include(::Goldiloader::AssociationReflectionPatch)
   ActiveRecord::Reflection::ThroughReflection.include(::Goldiloader::AssociationReflectionPatch)
 
+  module ThroughReflectionPatch
+    # Scope values that Rails keeps (`distinct`) or whose loss doesn't change the records the association holds
+    SCOPE_VALUES_SAFE_TO_DROP = [
+      :distinct, :auto_include, :annotate, :extending, :preload, :includes, :references, :optimizer_hints, :create_with
+    ].freeze
+    private_constant :SCOPE_VALUES_SAFE_TO_DROP
+
+    # Whether reusing loaded records loses part of this association's own scope, as Rails does when it preloads
+    # it from records already loaded: https://github.com/salsify/goldiloader/issues/166
+    def scope_lost_by_reusing_loaded_records?(target_klass)
+      @scope_lost_by_reusing_loaded_records_cache ||= Hash.new do |cache, target_klass_key|
+        cache[target_klass_key] = if scope.nil?
+                                    false
+                                  elsif scope.arity > 0
+                                    true
+                                  else
+                                    # Compare with the unscoped values, which hold the type condition of an STI
+                                    # subclass
+                                    unscoped = target_klass_key.unscoped
+                                    scope_for(unscoped).values.except(*SCOPE_VALUES_SAFE_TO_DROP) !=
+                                      unscoped.values.except(*SCOPE_VALUES_SAFE_TO_DROP)
+                                  end
+      end
+      @scope_lost_by_reusing_loaded_records_cache[target_klass]
+    end
+  end
+  ActiveRecord::Reflection::ThroughReflection.include(::Goldiloader::ThroughReflectionPatch)
+
   module AssociationPatch
     extend ActiveSupport::Concern
 
@@ -221,6 +249,71 @@ module Goldiloader
       through_association.loaded? && Array.wrap(through_association.target).none? do |record|
         record.new_record? || record.changed? || record.destroyed?
       end
+    end
+
+    private
+
+    # Rails 8.2 queries loaded through or source records again when the association's scope filters them
+    # (https://github.com/rails/rails/pull/59599, and https://github.com/rails/rails/pull/59797 for nested
+    # through associations), so only earlier versions need the check
+    def eager_loadable?
+      return super unless ::Goldiloader::Compatibility.pre_rails_8_2?
+
+      super && !scope_lost_by_reusing_loaded_records?(owner, reflection)
+    end
+
+    # A sibling association might have loaded the records this association would reuse e.g. `tags` loads the
+    # `post_tags` and their `tag` that `tags_owned_by_users` goes through too. Rails reuses a loaded association
+    # even when it holds nil or nothing, at every level of a nested through association, and loses the scope of
+    # the association it preloads. Through records loaded without their source records aren't checked: the
+    # source records are queried with the association's scope (a scope with a condition on the through table
+    # then raises, and one with a condition and an order can lose the order, with or without this check).
+    def scope_lost_by_reusing_loaded_records?(record, chain_reflection)
+      return false unless chain_reflection.through_reflection?
+      return false if loaded_association?(record, chain_reflection.name)
+
+      through_reflection = chain_reflection.through_reflection
+      source_reflection = chain_reflection.source_reflection
+      scope_lost = chain_reflection.scope_lost_by_reusing_loaded_records?(chain_reflection.klass)
+      return true if scope_lost_by_reusing_loaded_records?(record, through_reflection)
+      return false unless scope_lost || source_reflection.through_reflection?
+
+      any_loaded_record?(record, through_reflection) do |through_record|
+        (scope_lost && reuses_loaded_association?(through_record, source_reflection)) ||
+          scope_lost_by_reusing_loaded_records?(through_record, source_reflection)
+      end
+    end
+
+    # Whether Rails reuses a loaded association instead of querying when preloading `chain_reflection` on
+    # `record`. For a through association that isn't loaded, Rails reuses whatever is loaded at each level of its
+    # chain e.g. the loaded `post_tags` of a blog's loaded `posts` for `has_many :blog_post_tags, through: :posts`.
+    def reuses_loaded_association?(record, chain_reflection)
+      return true if loaded_association?(record, chain_reflection.name)
+      return false unless chain_reflection.through_reflection?
+
+      any_loaded_record?(record, chain_reflection.through_reflection) do |through_record|
+        reuses_loaded_association?(through_record, chain_reflection.source_reflection)
+      end
+    end
+
+    # Whether the block returns true for any loaded record of `chain_reflection` on `record`. When a through
+    # association isn't loaded, its records are looked for in what's loaded at each level of its chain.
+    def any_loaded_record?(record, chain_reflection, &block)
+      if loaded_association?(record, chain_reflection.name)
+        target = record.association(chain_reflection.name).target
+        target.is_a?(Array) ? target.any?(&block) : !target.nil? && yield(target)
+      elsif chain_reflection.through_reflection?
+        any_loaded_record?(record, chain_reflection.through_reflection) do |through_record|
+          any_loaded_record?(through_record, chain_reflection.source_reflection, &block)
+        end
+      else
+        false
+      end
+    end
+
+    # Checks association_cached? first so that no association gets instantiated
+    def loaded_association?(record, name)
+      record.association_cached?(name) && record.association(name).loaded?
     end
   end
   ::ActiveRecord::Associations::HasManyThroughAssociation.prepend(::Goldiloader::ThroughAssociationPatch)
