@@ -104,6 +104,19 @@ class Blog < ActiveRecord::Base
   has_many :authors, through: :posts
   has_many :addresses, through: :authors
 
+  # Nested through associations: `Post#tags` and `blog_post_tags` are through associations themselves
+  has_many :tags, through: :posts
+  has_many :reverse_ordered_tags, -> { order(id: :desc) }, through: :posts, source: :tags
+  has_many :blog_post_tags, through: :posts, source: :post_tags
+  has_many :tags_owned_by_users, -> { where(owner_type: 'User') }, through: :blog_post_tags, source: :tag
+  # Unscoped, through `posts` and a scoped through source
+  has_many :post_tags_owned_by_users, through: :posts, source: :tags_owned_by_users
+  # Scoped, through a scoped nested through association and a through source
+  has_many :first_posts_of_tags_owned_by_users, -> { where(title: 'blog1-post1') }, through: :tags_owned_by_users,
+                                                                                   source: :posts
+  # Unscoped, through a scoped nested through association
+  has_many :user_tag_children, through: :tags_owned_by_users, source: :children
+
   has_one :post_with_order, -> { order(:id) }, class_name: 'Post'
 
   def posts_count
@@ -147,9 +160,21 @@ class Post < ActiveRecord::Base
   belongs_to :owner, polymorphic: true
 
   has_many :unique_tags, -> { distinct }, through: :post_tags, source: :tag, class_name: 'Tag'
+  has_many :tags_owned_by_users, -> { where(owner_type: 'User') }, through: :post_tags, source: :tag
+  has_many :tags_with_owner, -> { includes(:owner) }, through: :post_tags, source: :tag
+  has_many :author_blog1_posts, -> { where(title: ['blog1-post1', 'blog1-post2']) }, through: :author,
+                                                                                    source: :posts
 
   has_and_belongs_to_many :tags_without_auto_include, -> { auto_include(false) }, join_table: :post_tags,
                           class_name: 'Tag'
+  has_and_belongs_to_many :habtm_tags_owned_by_users, -> { where(owner_type: 'User') }, join_table: :post_tags,
+                          class_name: 'Tag'
+  # Unscoped, through a scoped through association
+  has_many :tags_owned_by_users_children, through: :tags_owned_by_users, source: :children
+  # Scoped, through a through association
+  has_many :ordered_tag_children, -> { order(id: :desc) }, through: :tags, source: :children
+  # Scoped, with a source that goes through a scoped nested through association
+  has_many :ordered_blog_user_tag_children, -> { order(id: :desc) }, through: :blog, source: :user_tag_children
 
   has_many_attached :images
 
@@ -174,6 +199,8 @@ end
 
 class User < ActiveRecord::Base
   has_many :posts, foreign_key: :author_id
+  # Scoped, with a through source
+  has_many :posts_tags_owned_by_users, -> { where(owner_type: 'User') }, through: :posts, source: :tags
   has_many :tags, as: :owner
   has_one :address
   has_one :address_without_auto_include, -> { auto_include(false) }, class_name: 'Address'
