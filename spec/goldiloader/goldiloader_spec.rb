@@ -766,14 +766,6 @@ describe Goldiloader do
     end
   end
 
-  # Goldiloader leaves through associations to Rails from 8.2 on, which still drops the scope of some nested
-  # through associations that reuse loaded records
-  def pending_nested_through_fix_on_rails_8_2
-    return if Goldiloader::Compatibility.pre_rails_8_2?
-
-    pending("Rails fixes nested through associations in https://github.com/rails/rails/pull/59797")
-  end
-
   context "scoped nested through associations after an unscoped sibling was auto eager loaded" do
     let(:blogs) { Blog.order(:name).to_a }
 
@@ -789,7 +781,6 @@ describe Goldiloader do
 
     # The source association is a through association itself e.g. `Post#tags`
     it "applies the scope correctly when the source is a through association" do
-      pending_nested_through_fix_on_rails_8_2
       expect(blogs.map { |blog| blog.reverse_ordered_tags.to_a }).to eq expected(:reverse_ordered_tags)
     end
 
@@ -797,7 +788,6 @@ describe Goldiloader do
     # through are, along with their source records e.g. `Blog#blog_post_tags` goes through the loaded `posts`
     # and their loaded `post_tags`, whose `tag` is loaded too.
     it "applies the scope correctly when the through association is a through association" do
-      pending_nested_through_fix_on_rails_8_2
       expect(blogs.map { |blog| blog.tags_owned_by_users.to_a }).to eq expected(:tags_owned_by_users)
     end
 
@@ -842,10 +832,14 @@ describe Goldiloader do
     end
 
     it "applies the scope correctly" do
-      pending_nested_through_fix_on_rails_8_2
       expected = Goldiloader.disabled { Blog.order(:name).map { |blog| blog.tags_owned_by_users.to_a } }
       expect(blogs.map { |blog| blog.tags_owned_by_users.to_a }).to eq expected
       expect(expected.first).to eq [child_tag1, child_tag1]
+    end
+
+    it "auto eager loads the association" do
+      blogs.first.tags_owned_by_users.to_a
+      expect(blogs.second.association(:tags_owned_by_users)).to be_loaded
     end
   end
 
@@ -860,7 +854,6 @@ describe Goldiloader do
     end
 
     it "applies the scope correctly" do
-      pending_nested_through_fix_on_rails_8_2
       expected = Goldiloader.disabled do
         Blog.order(:name).map { |blog| blog.first_posts_of_tags_owned_by_users.to_a }
       end
@@ -868,12 +861,18 @@ describe Goldiloader do
       # Once for each of the blog's two tags owned by a user, not for the one owned by a group
       expect(expected.first.map(&:title)).to eq ['blog1-post1', 'blog1-post1']
     end
+
+    it "auto eager loads the association" do
+      blogs.first.first_posts_of_tags_owned_by_users.to_a
+      expect(blogs.second.association(:first_posts_of_tags_owned_by_users)).to be_loaded
+    end
   end
 
   context "scoped through associations whose loaded source goes through a scoped nested through association" do
     let!(:user_tag_child) { child_tag1.children.create!(name: 'user-tag-child') }
     let!(:group_tag_child) { child_tag2.children.create!(name: 'group-tag-child') }
     let(:blogs) { Blog.order(:name).to_a }
+    let(:posts) { blogs.flat_map(&:posts).sort_by(&:title) }
 
     before do
       # The unscoped sibling loads the `posts`, their `post_tags` and each `tag`, so that `user_tag_children`
@@ -883,13 +882,19 @@ describe Goldiloader do
     end
 
     it "applies the scope correctly" do
-      pending_nested_through_fix_on_rails_8_2
-      posts = blogs.flat_map(&:posts).sort_by(&:title)
       expected = Goldiloader.disabled do
         Post.order(:title).map { |post| post.ordered_blog_user_tag_children.to_a }
       end
       expect(posts.map { |post| post.ordered_blog_user_tag_children.to_a }).to eq expected
       expect(expected.flatten.uniq).to eq [user_tag_child]
+    end
+
+    it "auto eager loads the association only from Rails 8.2 on" do
+      posts.first.ordered_blog_user_tag_children.to_a
+      rails_8_2 = !Goldiloader::Compatibility.pre_rails_8_2?
+      posts.drop(1).each do |post|
+        expect(post.association(:ordered_blog_user_tag_children).loaded?).to eq rails_8_2
+      end
     end
   end
 
