@@ -268,31 +268,27 @@ module Goldiloader
     # the association it preloads. Through records loaded without their source records aren't checked: the
     # source records are queried with the association's scope (a scope with a condition on the through table
     # then raises, and one with a condition and an order can lose the order, with or without this check).
-    def scope_lost_by_reusing_loaded_records?(record, chain_reflection)
+    #
+    # `as_scoped_source` is true when Rails preloads `chain_reflection` as the source of a scoped through
+    # association with that association's scope e.g. the `tag` of each `post_tag` for `tags_owned_by_users`.
+    def scope_lost_by_reusing_loaded_records?(record, chain_reflection, as_scoped_source: false)
+      return as_scoped_source if loaded_association?(record, chain_reflection.name)
       return false unless chain_reflection.through_reflection?
-      return false if loaded_association?(record, chain_reflection.name)
 
       through_reflection = chain_reflection.through_reflection
       source_reflection = chain_reflection.source_reflection
-      scope_lost = chain_reflection.scope_lost_by_reusing_loaded_records?(chain_reflection.klass)
+
+      # Preloading the through records can lose the through association's own scope
       return true if scope_lost_by_reusing_loaded_records?(record, through_reflection)
-      return false unless scope_lost || source_reflection.through_reflection?
 
+      # Nothing to lose unless a scope applies to the source records or the source has its own through chain
+      source_scoped = as_scoped_source ||
+                      chain_reflection.scope_lost_by_reusing_loaded_records?(chain_reflection.klass)
+      return false unless source_scoped || source_reflection.through_reflection?
+
+      # Preloading the source records of each through record can lose this association's scope or one it inherits
       any_loaded_record?(record, through_reflection) do |through_record|
-        (scope_lost && reuses_loaded_association?(through_record, source_reflection)) ||
-          scope_lost_by_reusing_loaded_records?(through_record, source_reflection)
-      end
-    end
-
-    # Whether Rails reuses a loaded association instead of querying when preloading `chain_reflection` on
-    # `record`. For a through association that isn't loaded, Rails reuses whatever is loaded at each level of its
-    # chain e.g. the loaded `post_tags` of a blog's loaded `posts` for `has_many :blog_post_tags, through: :posts`.
-    def reuses_loaded_association?(record, chain_reflection)
-      return true if loaded_association?(record, chain_reflection.name)
-      return false unless chain_reflection.through_reflection?
-
-      any_loaded_record?(record, chain_reflection.through_reflection) do |through_record|
-        reuses_loaded_association?(through_record, chain_reflection.source_reflection)
+        scope_lost_by_reusing_loaded_records?(through_record, source_reflection, as_scoped_source: source_scoped)
       end
     end
 
