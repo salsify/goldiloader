@@ -1840,7 +1840,7 @@ describe Goldiloader do
     end
 
     it "doesn't log an association loaded again by the same record" do
-      blog = Blog.find(blog1.id)
+      blog = Blog.order(:name).to_a.first
       blog.posts.to_a
       blog.posts.reload.to_a
 
