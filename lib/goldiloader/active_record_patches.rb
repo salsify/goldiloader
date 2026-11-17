@@ -211,18 +211,23 @@ module Goldiloader
     end
 
     def load_with_suggestion
+      result = yield
+      # find_target(async: true) returns a promise: suggest once its query has run
+      return result.then { |records| suggest_and_track(records) } if result.is_a?(::ActiveRecord::Promise)
+
+      suggest_and_track(result)
+    end
+
+    def suggest_and_track(result)
       auto_include_context = owner.auto_include_context
       # Records Goldiloader would have eager loaded: loaded together, or lazily loaded from records loaded together
       batched = auto_include_context.size > 1 || auto_include_context.batched?
-      result = yield
-
       suggestion_tracker = auto_include_context.suggestion_tracker
       key = suggestion_key
       if batched && suggestion_tracker.second_owner?(key, owner) && suggestable?
         Goldiloader::AssociationLoader.suggest(reflection)
       end
-      # find_target(async: true) returns a promise rather than records
-      return result unless result.is_a?(Array) || result.is_a?(::ActiveRecord::Base)
+      return result if result.nil?
 
       nested_context = Goldiloader::AutoIncludeContext.new.register_models(result)
       nested_context.suggestion_tracker = suggestion_tracker.nested_tracker(key)

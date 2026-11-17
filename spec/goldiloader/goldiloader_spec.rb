@@ -2002,10 +2002,20 @@ describe Goldiloader do
     end
 
     if ActiveRecord::VERSION::MAJOR >= 8
-      it "returns the promise of an async load" do
-        post = Post.order(:title).to_a.first
+      it "logs an async load once its records are read" do
+        posts = Post.order(:title).to_a
+        posts.first.blog
+        promise = posts.last.association(:blog).send(:find_target, async: true)
+        expect(suggestions).to be_empty
 
-        expect(post.association(:blog).send(:find_target, async: true).value).to eq blog1
+        blog = promise.value
+        expect(blog).to eq blog2
+        expect(suggestions).to eq ['Post#blog']
+
+        # The blog is tracked with the blog loaded before it
+        blog.posts.to_a
+        posts.first.blog.posts.to_a
+        expect(suggestions).to eq ['Post#blog', 'Blog#posts']
       end
     end
 
