@@ -199,6 +199,12 @@ Suggestion mode turns automatic eager loading off: the N+1 queries Goldiloader w
 records a query loads, but once per owner for records loaded lazily: with `blog.posts` loaded blog by blog, a
 `goldiload` block on posts runs once per blog.
 
+Before Rails 8.2, a `has_many :through` or `has_one :through` association whose scope changes the records it loads
+(e.g. a `where` or an `order`), or one that goes through such an association, is never suggested: Rails drops that
+scope when an association eager loaded before it already loaded the records it goes through. With
+`has_many :tags_owned_by_users, -> { where(owner_type: 'User') }, through: :post_tags, source: :tag`,
+`includes(:tags, :tags_owned_by_users)` would load every tag into `tags_owned_by_users`.
+
 ### Association Options
 
 Goldiloader supports a few options on ActiveRecord associations to customize its behavior.

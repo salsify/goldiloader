@@ -1884,6 +1884,56 @@ describe Goldiloader do
       expect(suggestions).to eq ['Tag#owner', 'User#tags']
     end
 
+    # Rails before 8.2 drops the scope of `tags_owned_by_users` when it preloads it with an association that loads
+    # the `post_tags` and their `tag` it goes through, e.g. `includes(:tags, :tags_owned_by_users)`:
+    # https://github.com/salsify/goldiloader/issues/166
+    it "logs a through association whose scope Rails drops with loaded records only from Rails 8.2 on" do
+      posts = Post.order(:title).to_a
+      posts.each { |post| post.tags.to_a }
+      lazily_loaded = posts.map { |post| post.tags_owned_by_users.to_a }
+      posts.each { |post| post.tags_owned_by_users_children.to_a }
+      Blog.order(:name).each do |blog|
+        blog.tags_owned_by_users.to_a
+        blog.post_tags_owned_by_users.to_a
+      end
+
+      following_suggestions = Goldiloader.disabled do
+        Post.order(:title).includes(:tags, :tags_owned_by_users).map { |post| post.tags_owned_by_users.to_a }
+      end
+      expect(following_suggestions == lazily_loaded).to eq !Goldiloader::Compatibility.pre_rails_8_2?
+      expect(suggestions).to eq(
+        if Goldiloader::Compatibility.pre_rails_8_2?
+          ['Post#tags']
+        else
+          ['Post#tags', 'Post#tags_owned_by_users', 'Post#tags_owned_by_users_children',
+           'Blog#tags_owned_by_users', 'Blog#post_tags_owned_by_users']
+        end
+      )
+    end
+
+    # `includes({ posts: :tags }, :posts_tags_owned_by_users)` drops its scope before Rails 8.2
+    it "logs a scoped through association whose through records nested suggestions load only from Rails 8.2 on" do
+      User.order(:name).each do |user|
+        user.posts_tags_owned_by_users.to_a
+        user.posts.each { |post| post.tags.to_a }
+      end
+
+      expect(suggestions).to include('User#posts', 'Post#tags')
+      expect(suggestions.include?('User#posts_tags_owned_by_users')).to eq !Goldiloader::Compatibility.pre_rails_8_2?
+    end
+
+    it "logs a through association whose scope Rails keeps with loaded records, or that only it loads" do
+      posts = Post.order(:title).to_a
+      posts.each { |post| post.tags.to_a }
+      posts.each { |post| post.unique_tags.to_a }
+      posts.each { |post| post.tags_with_owner.to_a }
+      posts.each { |post| post.habtm_tags_owned_by_users.to_a }
+
+      expect(suggestions).to eq [
+        'Post#tags', 'Post#unique_tags', 'Post#tags_with_owner', 'Post#habtm_tags_owned_by_users'
+      ]
+    end
+
     it "logs a polymorphic belongs_to once for all its target classes" do
       Tag.order(:name).each(&:owner)
 
