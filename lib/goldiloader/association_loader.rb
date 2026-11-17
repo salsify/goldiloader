@@ -17,12 +17,22 @@ module Goldiloader
       return unless logger&.info?
 
       message = +"Goldiloader suggests eager loading #{reflection.active_record.name}##{reflection.name}"
-      location = ::ActiveRecord::LogSubscriber.backtrace_cleaner.clean(caller(1).lazy).first
+      location = application_location
       message << ", called from #{location}" if location
       logger.info(message)
     end
 
     private
+
+    # Like Active Record's verbose query logs, without building the whole backtrace
+    def application_location
+      backtrace_cleaner = ::ActiveRecord::LogSubscriber.backtrace_cleaner
+      Thread.each_caller_location do |location|
+        frame = backtrace_cleaner.clean_frame(location)
+        return frame if frame
+      end
+      nil
+    end
 
     def eager_load(models, association_name)
       ::ActiveRecord::Associations::Preloader.new(records: models, associations: [association_name]).call
