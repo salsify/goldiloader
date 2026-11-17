@@ -4,12 +4,11 @@ module Goldiloader
   # Tracks the lazy loads of the records loaded together, and of the records they lazily load in turn,
   # to tell when eager loading an association would have saved a query. Keys are classes and association
   # names, and owners are tracked by class and id, so records cached with Marshal can still be dumped and
-  # records loaded again, e.g. by a reload, count as the same owner. The associations already suggested are shared by
-  # every tracker of the records a query loads and of the records they lazily load in turn, so each is logged once.
+  # records loaded again, e.g. by a reload, count as the same owner.
   class SuggestionTracker
-    def initialize(suggested = Set.new)
+    def initialize
       @first_owners = {}
-      @suggested = suggested
+      @suggested = Set.new
       @nested_trackers = {}
     end
 
@@ -31,12 +30,7 @@ module Goldiloader
     end
 
     def nested_tracker(key)
-      @nested_trackers[key] ||= SuggestionTracker.new(@suggested)
-    end
-
-    # Tracks records loaded together apart from those of this tracker, sharing only the associations already suggested
-    def separate_tracker
-      SuggestionTracker.new(@suggested)
+      @nested_trackers[key] ||= SuggestionTracker.new
     end
   end
 end

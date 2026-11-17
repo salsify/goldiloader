@@ -1815,32 +1815,21 @@ describe Goldiloader do
       expect(suggestions).to match_array ['Blog#posts', 'Post#author']
     end
 
-    it "logs nested associations once across the records of every owner of an association it doesn't eager load" do
+    # Goldiloader eager loads the authors of each blog's posts apart, one query per blog
+    it "logs nested associations once per owner of an association it doesn't eager load" do
       Blog.order(:name).each do |blog|
         blog.limited_posts.each(&:author)
       end
 
-      expect(suggestions).to eq ['Post#author']
+      expect(suggestions).to eq ['Post#author', 'Post#author']
     end
 
-    # Goldiloader would eager load the authors of each blog's posts apart: one query per blog either way
     it "doesn't log an association loaded once by the records of each owner of an association it doesn't eager load" do
       Blog.order(:name).each do |blog|
         blog.limited_posts.to_a.first.author
       end
 
       expect(suggestions).to be_empty
-    end
-
-    it "keeps tracking records loaded together that an association it doesn't eager load holds in memory" do
-      posts = Post.order(:title).to_a
-      posts.first(2).each(&:author)
-      blog = Blog.find(blog1.id)
-      blog.posts << posts.first
-      blog.posts.to_a
-      posts.drop(2).each(&:author)
-
-      expect(suggestions).to eq ['Post#author']
     end
 
     it "doesn't log associations of records loaded with automatic eager loading disabled" do

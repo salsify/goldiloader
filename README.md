@@ -187,9 +187,11 @@ Goldiloader.suggestion_mode = true
 An association is logged once, when a second record loads it, among the records a query loads and the records they
 load lazily in turn: `Blog.all.each { |blog| blog.posts.each(&:author) }` logs `Blog#posts` and `Post#author` once
 each, not `Post#author` once per blog. A record that loads an association again logs nothing, even as a new instance
-of the same row, e.g. after `blog.posts.reload`, unless it was loaded without its id. Records an association's scope
-loads with `includes` are tracked apart for each owner. Suggestions are logged at the `info` level of the Active Record
-logger, with the first application line of the backtrace:
+of the same row, e.g. after `blog.posts.reload`, unless it was loaded without its id. The records of an association
+Goldiloader doesn't eager load, e.g. one with a `limit`, and those an association's scope loads with `includes`, are
+tracked apart for each owner, as Goldiloader eager loads their associations: one of those can be logged once per
+owner. Suggestions are logged at the `info` level of the Active Record logger, with the first application line of the
+backtrace:
 
 ```
 Goldiloader suggests eager loading Blog#posts, called from app/views/blogs/index.html.erb:12:in ...
