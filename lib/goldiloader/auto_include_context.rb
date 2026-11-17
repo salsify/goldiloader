@@ -70,6 +70,10 @@ module Goldiloader
       @suggestion_tracker ||= SuggestionTracker.new
     end
 
+    def suggestion_tracker?
+      !@suggestion_tracker.nil?
+    end
+
     prepend Goldiloader::CustomPreloads
   end
 end

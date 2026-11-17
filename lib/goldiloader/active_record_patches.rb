@@ -194,10 +194,10 @@ module Goldiloader
 
       if loaded? && !stale_target?
         target
-      elsif !auto_include?
-        Goldiloader.suggestion_mode ? load_without_suggestion { yield } : yield
       elsif Goldiloader.suggestion_mode
-        load_with_suggestion { yield }
+        auto_include? ? load_with_suggestion { yield } : load_without_suggestion { yield }
+      elsif !auto_include?
+        yield
       elsif owner.auto_include_context.size == 1
         # Bypassing the preloader for a single model reduces object allocations by ~5% in benchmarks.
         # The loaded models need no registering here: as of
@@ -236,13 +236,17 @@ module Goldiloader
     end
 
     # Records of an association Goldiloader doesn't eager load keep the context their query gave them, alone or
-    # together, as without suggestion mode. Records loaded together share the tracker of the owner's association,
-    # so that the associations they load are suggested once rather than once per owner.
+    # together, as without suggestion mode, and their own tracker: Goldiloader wouldn't eager load their associations
+    # across owners. The associations already suggested are shared, so that each is still logged once. Records the
+    # association held in memory keep the tracker of the records loaded with them.
     def load_without_suggestion
       result = yield
       if result.is_a?(Array) && result.size > 1
-        result.first.auto_include_context.suggestion_tracker =
-          owner.auto_include_context.suggestion_tracker.nested_tracker(suggestion_key)
+        suggestion_tracker = owner.auto_include_context.suggestion_tracker
+        result.each do |record|
+          context = record.auto_include_context
+          context.suggestion_tracker = suggestion_tracker.separate_tracker unless context.suggestion_tracker?
+        end
       end
       result
     end
