@@ -1964,39 +1964,25 @@ describe Goldiloader do
     it "doesn't log an association whose load raises" do
       blogs = Blog.order(:name).to_a
       blogs.first.posts.to_a
-      allow(blogs.last.association(:posts)).to receive(:skip_strict_loading).and_raise(ActiveRecord::StatementInvalid)
+      blogs.last.strict_loading!
 
-      expect { blogs.last.posts.to_a }.to raise_error(ActiveRecord::StatementInvalid)
+      expect { blogs.last.posts.to_a }.to raise_error(ActiveRecord::StrictLoadingViolationError)
       expect(suggestions).to be_empty
     end
 
-    it "doesn't raise on strict loading records loaded together" do
+    # The N+1 queries strict loading catches run again, unlike with automatic eager loading
+    it "raises on strict loading records loaded together" do
       blogs = Blog.strict_loading.order(:name).to_a
 
-      expect(blogs.map { |blog| blog.posts.map(&:title) }).to eq [
-        ['blog1-post1', 'blog1-post2'],
-        ['blog2-post1', 'blog2-post2']
-      ]
-      expect(suggestions).to eq ['Blog#posts']
+      expect { blogs.first.posts.to_a }.to raise_error(ActiveRecord::StrictLoadingViolationError)
     end
 
-    it "doesn't raise on strict loading records loaded lazily from records loaded together" do
-      Blog.create!(name: 'blog3').posts.create!(title: 'blog3-post1', author: author1)
-      Blog.create!(name: 'blog4').posts.create!(title: 'blog4-post1', author: author2)
-      blogs = Blog.where(name: ['blog3', 'blog4']).order(:name).to_a
+    it "raises on strict loading records loaded lazily from records loaded together as Rails does" do
+      blogs = Blog.order(:name).to_a
       blogs.each { |blog| blog.strict_loading!(true, mode: :n_plus_one_only) }
+      posts = blogs.first.posts.to_a
 
-      expect(blogs.map { |blog| blog.posts.map { |post| post.author.name } }).to eq [['author1'], ['author2']]
-    end
-
-    it "doesn't raise on a strict loading association of records loaded lazily from records loaded together" do
-      expect(Post.order(:title).map { |post| post.author.strict_address.city }).to eq [
-        'author1-city', 'author2-city', 'author3-city', 'author1-city'
-      ]
-    end
-
-    it "still raises on strict loading a single record" do
-      expect { Blog.strict_loading.find(blog1.id).posts.to_a }.to raise_error(ActiveRecord::StrictLoadingViolationError)
+      expect { posts.first.author }.to raise_error(ActiveRecord::StrictLoadingViolationError)
     end
 
     if ActiveRecord::VERSION::MAJOR >= 8

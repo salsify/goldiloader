@@ -214,8 +214,7 @@ module Goldiloader
       auto_include_context = owner.auto_include_context
       # Records Goldiloader would have eager loaded: loaded together, or lazily loaded from records loaded together
       batched = auto_include_context.size > 1 || auto_include_context.batched?
-      # Like the preloader Goldiloader would use, don't raise on strict loading for them
-      result = batched ? skip_strict_loading { yield } : yield
+      result = yield
 
       suggestion_tracker = auto_include_context.suggestion_tracker
       # A polymorphic belongs_to is eager loaded with one query per target class
