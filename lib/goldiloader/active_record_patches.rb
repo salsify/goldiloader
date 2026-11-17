@@ -195,7 +195,7 @@ module Goldiloader
       if loaded? && !stale_target?
         target
       elsif !auto_include?
-        yield
+        Goldiloader.suggestion_mode ? load_without_suggestion { yield } : yield
       elsif Goldiloader.suggestion_mode
         load_with_suggestion { yield }
       elsif owner.auto_include_context.size == 1
@@ -217,9 +217,7 @@ module Goldiloader
       result = yield
 
       suggestion_tracker = auto_include_context.suggestion_tracker
-      # A polymorphic belongs_to is eager loaded with one query per target class
-      key = [reflection.active_record, reflection.name]
-      key << klass if reflection.polymorphic?
+      key = suggestion_key
       if batched && suggestion_tracker.second_owner?(key, owner) && suggestable?
         Goldiloader::AssociationLoader.suggest(reflection)
       end
@@ -230,6 +228,25 @@ module Goldiloader
       nested_context.suggestion_tracker = suggestion_tracker.nested_tracker(key)
       nested_context.batched = batched
       result
+    end
+
+    # Records of an association Goldiloader doesn't eager load keep the context their query gave them, alone or
+    # together, as without suggestion mode. Records loaded together share the tracker of the owner's association,
+    # so that the associations they load are suggested once rather than once per owner.
+    def load_without_suggestion
+      result = yield
+      if result.is_a?(Array) && result.size > 1
+        result.first.auto_include_context.suggestion_tracker =
+          owner.auto_include_context.suggestion_tracker.nested_tracker(suggestion_key)
+      end
+      result
+    end
+
+    # A polymorphic belongs_to is eager loaded with one query per target class
+    def suggestion_key
+      key = [reflection.active_record, reflection.name]
+      key << klass if reflection.polymorphic?
+      key
     end
 
     # Whether eager loading this association, as a suggestion advises, loads the same records

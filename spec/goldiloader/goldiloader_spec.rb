@@ -1815,6 +1815,22 @@ describe Goldiloader do
       expect(suggestions).to match_array ['Blog#posts', 'Post#author']
     end
 
+    it "logs nested associations once across the records of every owner of an association it doesn't eager load" do
+      Blog.order(:name).each do |blog|
+        blog.limited_posts.each(&:author)
+      end
+
+      expect(suggestions).to eq ['Post#author']
+    end
+
+    it "doesn't log associations of records loaded with automatic eager loading disabled" do
+      Blog.order(:name).each do |blog|
+        blog.posts_without_auto_include.each(&:author)
+      end
+
+      expect(suggestions).to be_empty
+    end
+
     it "logs associations of records loaded through a singular association" do
       Post.order(:title).each do |post|
         post.author.address
