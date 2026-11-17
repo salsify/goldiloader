@@ -186,16 +186,18 @@ Goldiloader.suggestion_mode = true
 
 An association is logged once, when a second record loads it, among the records a query loads and the records they
 load lazily in turn: `Blog.all.each { |blog| blog.posts.each(&:author) }` logs `Blog#posts` and `Post#author` once
-each, not `Post#author` once per blog. Loading an association again on the same record, e.g. after a reload, logs
-nothing, except on records loaded without their id, which only their place in memory tells apart. Suggestions are
-logged at the `info` level of the Active Record logger, with the first application line of the backtrace:
+each, not `Post#author` once per blog. A record that loads an association again logs nothing, even as a new instance
+of the same row, e.g. after `blog.posts.reload`, unless it was loaded without its id. Records an association's scope
+loads with `includes` are tracked apart for each owner. Suggestions are logged at the `info` level of the Active Record
+logger, with the first application line of the backtrace:
 
 ```
 Goldiloader suggests eager loading Blog#posts, called from app/views/blogs/index.html.erb:12:in ...
 ```
 
 Suggestion mode turns automatic eager loading off: the N+1 queries Goldiloader was saving come back while it is on,
-and [strict loading](#strict_loading) raises on them as it does without Goldiloader.
+and [strict loading](#strict_loading) raises on them as it does without Goldiloader: code that eager
+loading keeps from raising `ActiveRecord::StrictLoadingViolationError` raises while the mode is on.
 `Goldiloader.suggestion_mode` is process-wide like `Goldiloader.globally_enabled`, not thread local like
 `Goldiloader.enabled`. Goldiloader must be enabled for suggestions to be logged. [Custom preloads](#custom-preloads) still run once for the
 records a query loads, but once per owner for records loaded lazily: with `blog.posts` loaded blog by blog, a
