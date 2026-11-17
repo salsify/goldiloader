@@ -189,9 +189,9 @@ load lazily in turn: `Blog.all.each { |blog| blog.posts.each(&:author) }` logs `
 each, not `Post#author` once per blog. A record that loads an association again logs nothing, even as a new instance
 of the same row, e.g. after `blog.posts.reload`, unless it was loaded without its id. The records of an association
 Goldiloader doesn't eager load, e.g. one with a `limit`, and those an association's scope loads with `includes`, are
-tracked apart for each owner, as Goldiloader eager loads their associations: one of those can be logged once per
-owner. Suggestions are logged at the `info` level of the Active Record logger, with the first application line of the
-backtrace:
+tracked apart for each owner: an association they load is logged once per owner, or not at all when each owner's
+records load it once. Suggestions are logged at the `info` level of the Active Record logger, with the first
+application line of the backtrace:
 
 ```
 Goldiloader suggests eager loading Blog#posts, called from app/views/blogs/index.html.erb:12:in ...
@@ -298,7 +298,7 @@ It might still be possible to eager load these with Goldiloader by using [custom
 
 ### strict_loading
 
-Associations that Goldiloader eager loads never raise `ActiveRecord::StrictLoadingViolationError`, since there is no N+1 left to catch. Rails still raises when a model was loaded on its own, or with automatic eager loading disabled, so a test with a single record can raise where the same code with several records doesn't.
+Associations that Goldiloader eager loads never raise `ActiveRecord::StrictLoadingViolationError`, since there is no N+1 left to catch. Rails still raises when a model was loaded on its own, or with automatic eager loading disabled, so a test with a single record can raise where the same code with several records doesn't. It also raises in [suggestion mode](#suggestion-mode), which leaves associations lazily loaded.
 
 
 ### Eager Loading Limitation Workarounds

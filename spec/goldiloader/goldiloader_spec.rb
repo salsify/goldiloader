@@ -2010,6 +2010,15 @@ describe Goldiloader do
       expect { posts.first.author }.to raise_error(ActiveRecord::StrictLoadingViolationError)
     end
 
+    it "returns records that define then" do
+      User.define_method(:then) { :user_then }
+
+      expect(Post.order(:title).map(&:author)).to eq [author1, author2, author3, author1]
+      expect(suggestions).to eq ['Post#author']
+    ensure
+      User.remove_method(:then)
+    end
+
     if ActiveRecord::VERSION::MAJOR >= 8
       it "logs an async load once its records are read" do
         posts = Post.order(:title).to_a

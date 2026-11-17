@@ -197,8 +197,7 @@ module Goldiloader
       elsif !auto_include?
         yield
       elsif Goldiloader.suggestion_mode
-        # find_target(async: true) returns a promise: suggest once its query has run
-        yield.then { |result| suggest_and_track(result) }
+        load_with_suggestion { yield }
       elsif owner.auto_include_context.size == 1
         # Bypassing the preloader for a single model reduces object allocations by ~5% in benchmarks.
         # The loaded models need no registering here: as of
@@ -209,6 +208,14 @@ module Goldiloader
         Goldiloader::AssociationLoader.load(owner, reflection.name)
         target
       end
+    end
+
+    def load_with_suggestion
+      result = yield
+      # find_target(async: true) returns a promise: suggest once its query has run. Records may define then.
+      return result.then { |records| suggest_and_track(records) } if result.is_a?(::ActiveRecord::Promise)
+
+      suggest_and_track(result)
     end
 
     def suggest_and_track(result)
