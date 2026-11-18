@@ -173,6 +173,44 @@ end
 Goldiloader.reset_auto_include_context(blogs) if cache_hit
 ```
 
+### Suggestion Mode
+
+Goldiloader can log the associations it would eager load and leave Active Record to load them one record at a time,
+e.g. to find the N+1 queries of an application before relying on automatic eager loading, or to spot an association
+that is better loaded explicitly:
+
+```ruby
+# config/initializers/goldiloader.rb
+Goldiloader.suggestion_mode = true
+```
+
+An association is logged once, when a second record loads it, among the records a query loads and the records they
+load lazily in turn: `Blog.all.each { |blog| blog.posts.each(&:author) }` logs `Blog#posts` and `Post#author` once
+each, not `Post#author` once per blog. A record that loads an association again logs nothing, even as a new instance
+of the same row, e.g. after `blog.posts.reload`, unless it was loaded without its id. The records of an association
+Goldiloader doesn't eager load, e.g. one with a `limit`, and those an association's scope loads with `includes`, are
+tracked apart for each owner: an association they load is logged once per owner, or not at all when each owner's
+records load it once. Suggestions are logged at the `info` level of the Active Record logger, with the first
+application line of the backtrace:
+
+```
+Goldiloader suggests eager loading Blog#posts, called from app/views/blogs/index.html.erb:12:in ...
+```
+
+Suggestion mode turns automatic eager loading off: the N+1 queries Goldiloader was saving come back while it is on,
+and [strict loading](#strict_loading) raises on them as it does without Goldiloader: code that eager
+loading keeps from raising `ActiveRecord::StrictLoadingViolationError` raises while the mode is on.
+`Goldiloader.suggestion_mode` is process-wide like `Goldiloader.globally_enabled`, not thread local like
+`Goldiloader.enabled`. Goldiloader must be enabled for suggestions to be logged. [Custom preloads](#custom-preloads) still run once for the
+records a query loads, but once per owner for records loaded lazily: with `blog.posts` loaded blog by blog, a
+`goldiload` block on posts runs once per blog.
+
+Before Rails 8.2, a `has_many :through` or `has_one :through` association whose scope changes the records it loads
+(e.g. a `where` or an `order`), or one that goes through such an association, is never suggested: Rails drops that
+scope when an association eager loaded before it already loaded the records it goes through. With
+`has_many :tags_owned_by_users, -> { where(owner_type: 'User') }, through: :post_tags, source: :tag`,
+`includes(:tags, :tags_owned_by_users)` would load every tag into `tags_owned_by_users`.
+
 ### Association Options
 
 Goldiloader supports a few options on ActiveRecord associations to customize its behavior.
@@ -260,7 +298,7 @@ It might still be possible to eager load these with Goldiloader by using [custom
 
 ### strict_loading
 
-Associations that Goldiloader eager loads never raise `ActiveRecord::StrictLoadingViolationError`, since there is no N+1 left to catch. Rails still raises when a model was loaded on its own, or with automatic eager loading disabled, so a test with a single record can raise where the same code with several records doesn't.
+Associations that Goldiloader eager loads never raise `ActiveRecord::StrictLoadingViolationError`, since there is no N+1 left to catch. Rails still raises when a model was loaded on its own, or with automatic eager loading disabled, so a test with a single record can raise where the same code with several records doesn't. It also raises in [suggestion mode](#suggestion-mode), which leaves associations lazily loaded.
 
 
 ### Eager Loading Limitation Workarounds

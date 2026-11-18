@@ -147,6 +147,21 @@ module Goldiloader
       end
       @scope_lost_by_reusing_loaded_records_cache[target_klass]
     end
+
+    # Whether reusing loaded records can lose this association's scope or the scope of a through association in its
+    # chain, whichever association loaded them e.g. `includes(:tags, :tags_owned_by_users)` or
+    # `includes({ post_tags: :tag }, :tags_owned_by_users)`. A has_and_belongs_to_many goes through join records
+    # that only it loads.
+    def scope_lost_by_reusing_loaded_records_in_chain?
+      return @scope_lost_by_reusing_loaded_records_in_chain if defined?(@scope_lost_by_reusing_loaded_records_in_chain)
+
+      @scope_lost_by_reusing_loaded_records_in_chain =
+        !parent_reflection.is_a?(::ActiveRecord::Reflection::HasAndBelongsToManyReflection) &&
+        (scope_lost_by_reusing_loaded_records?(klass) ||
+          [through_reflection, source_reflection].any? do |chain_reflection|
+            chain_reflection.through_reflection? && chain_reflection.scope_lost_by_reusing_loaded_records_in_chain?
+          end)
+    end
   end
   ActiveRecord::Reflection::ThroughReflection.include(::Goldiloader::ThroughReflectionPatch)
 
@@ -181,6 +196,8 @@ module Goldiloader
         target
       elsif !auto_include?
         yield
+      elsif Goldiloader.suggestion_mode
+        load_with_suggestion { yield }
       elsif owner.auto_include_context.size == 1
         # Bypassing the preloader for a single model reduces object allocations by ~5% in benchmarks.
         # The loaded models need no registering here: as of
@@ -191,6 +208,38 @@ module Goldiloader
         Goldiloader::AssociationLoader.load(owner, reflection.name)
         target
       end
+    end
+
+    def load_with_suggestion
+      result = yield
+      # find_target(async: true) returns a promise: suggest once its query has run. Records may define then.
+      return result.then { |records| suggest_and_track(records) } if result.is_a?(::ActiveRecord::Promise)
+
+      suggest_and_track(result)
+    end
+
+    def suggest_and_track(result)
+      auto_include_context = owner.auto_include_context
+      # Records Goldiloader would have eager loaded: loaded together, or lazily loaded from records loaded together
+      batched = auto_include_context.size > 1 || auto_include_context.batched?
+      suggestion_tracker = auto_include_context.suggestion_tracker
+      # A polymorphic belongs_to is eager loaded with one query per target class
+      key = [reflection.active_record, reflection.name]
+      key << klass if reflection.polymorphic?
+      if batched && suggestion_tracker.second_owner?(key, owner) && suggestable?
+        Goldiloader::AssociationLoader.suggest(reflection)
+      end
+      return result if result.nil?
+
+      nested_context = Goldiloader::AutoIncludeContext.new.register_models(result)
+      nested_context.suggestion_tracker = suggestion_tracker.nested_tracker(key)
+      nested_context.batched = batched
+      result
+    end
+
+    # Whether eager loading this association, as a suggestion advises, loads the same records
+    def suggestable?
+      true
     end
   end
   ::ActiveRecord::Associations::Association.include(::Goldiloader::AssociationPatch)
@@ -260,6 +309,15 @@ module Goldiloader
       return super unless ::Goldiloader::Compatibility.pre_rails_8_2?
 
       super && !scope_lost_by_reusing_loaded_records?(owner, reflection)
+    end
+
+    # In suggestion mode the associations eager_loadable? looks at are loaded lazily, so it finds none loaded, but
+    # following the suggestions could preload one that loads the records this association goes through, which
+    # then loses its scope. The check relies on the reflections alone.
+    def suggestable?
+      return super unless ::Goldiloader::Compatibility.pre_rails_8_2?
+
+      super && !reflection.scope_lost_by_reusing_loaded_records_in_chain?
     end
 
     # A sibling association might have loaded the records this association would reuse e.g. `tags` loads the

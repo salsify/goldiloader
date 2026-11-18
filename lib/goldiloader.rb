@@ -9,6 +9,7 @@ require 'goldiloader/association_options'
 require 'goldiloader/association_loader'
 require 'goldiloader/auto_include_context_reset'
 require 'goldiloader/cache'
+require 'goldiloader/suggestion_tracker'
 
 ActiveSupport.on_load(:active_record) do
   # Defer referencing ActiveRecord class until it's loaded
@@ -21,6 +22,9 @@ module Goldiloader
 
     # Sets the process-wide enabled status
     attr_accessor :globally_enabled
+
+    # Logs the associations that would be auto eager loaded instead of loading them
+    attr_accessor :suggestion_mode
 
     def enabled?
       Thread.current.fetch(:goldiloader_enabled, globally_enabled)
@@ -55,4 +59,5 @@ module Goldiloader
   end
 
   self.globally_enabled = true
+  self.suggestion_mode = false
 end
